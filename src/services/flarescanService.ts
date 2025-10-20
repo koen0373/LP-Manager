@@ -1,7 +1,4 @@
 import type { PositionRow } from '../types/positions';
-import { getLpPositionsOnChain } from './pmFallback';
-// import { POSITION_MANAGER_ABI, ERC20_ABI } from '../abi/positionManager';
-
 // FlareScan API endpoints - using local proxy to avoid CORS
 const FLARESCAN_API = '/api/flarescan';
 const ENOSYS_POSITION_MANAGER = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657';
@@ -18,6 +15,44 @@ const SELECTORS = {
 
 // Token metadata cache
 const tokenCache = new Map<string, { symbol: string; name: string; decimals: number }>();
+const positionsCache = new Map<string, { expires: number; data: PositionRow[] }>();
+const CACHE_TTL_MS = 30_000; // 30 seconds cache to avoid spamming the API
+
+function normaliseAddress(address: string): `0x${string}` {
+  if (!address) {
+    throw new Error('Wallet address is required');
+  }
+  return (address.startsWith('0x') ? address : `0x${address}`).toLowerCase() as `0x${string}`;
+}
+
+function getCachedPositions(address: `0x${string}`): PositionRow[] | null {
+  const cached = positionsCache.get(address);
+  if (!cached) {
+    return null;
+  }
+
+  if (Date.now() > cached.expires) {
+    positionsCache.delete(address);
+    return null;
+  }
+
+  return cached.data;
+}
+
+function setCachedPositions(address: `0x${string}`, data: PositionRow[]): void {
+  positionsCache.set(address, {
+    data,
+    expires: Date.now() + CACHE_TTL_MS,
+  });
+
+  // Prevent unbounded growth
+  if (positionsCache.size > 50) {
+    const firstKey = positionsCache.keys().next().value;
+    if (firstKey) {
+      positionsCache.delete(firstKey);
+    }
+  }
+}
 
 // Helper function to call FlareScan API via local proxy with retry logic
 async function callFlareScan(method: string, params: unknown[] = [], retries = 3): Promise<unknown> {
@@ -145,23 +180,43 @@ function decodeString(hex: string): string {
 // Get wallet's LP positions with Viem fallback
 export async function getWalletPositions(walletAddress: string): Promise<PositionRow[]> {
   try {
-    console.log(`Fetching positions for wallet: ${walletAddress}`);
-
-    // Try Viem first (more reliable)
-    try {
-      console.log('Attempting to fetch positions using Viem...');
-      const viemPositions = await getLpPositionsOnChain(walletAddress as `0x${string}`);
-      if (viemPositions.length > 0) {
-        console.log(`Successfully fetched ${viemPositions.length} positions using Viem`);
-        return viemPositions;
-      }
-    } catch (viemError) {
-      console.warn('Viem fetch failed, falling back to FlareScan API:', viemError);
+    const normalizedAddress = normaliseAddress(walletAddress);
+    const cached = getCachedPositions(normalizedAddress);
+    if (cached) {
+      return cached;
     }
 
-    // Fallback to FlareScan API
+    console.log(`Fetching positions for wallet: ${normalizedAddress}`);
+
+    // Try server-side viem endpoint first to avoid hitting FlareScan unnecessarily
+    try {
+      const response = await fetch(`/api/positions?address=${normalizedAddress}`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const positions = (await response.json()) as PositionRow[];
+        setCachedPositions(normalizedAddress, positions);
+        return positions;
+      }
+
+      const errorText = await response.text();
+      console.warn(
+        `Positions API response not OK (${response.status}). Falling back to Viem/FlareScan directly.`,
+        errorText
+      );
+    } catch (apiError) {
+      console.warn('Positions API call failed, falling back locally:', apiError);
+    }
+
+    // Final fallback executed locally so the UI remains functional even if the API route fails
     console.log('Falling back to FlareScan API...');
-    return await getWalletPositionsFlareScan(walletAddress);
+    const fallbackPositions = await getWalletPositionsViaFlareScan(normalizedAddress);
+    setCachedPositions(normalizedAddress, fallbackPositions);
+    return fallbackPositions;
   } catch (error) {
     console.error('Failed to fetch wallet positions:', error);
     return [];
@@ -169,13 +224,14 @@ export async function getWalletPositions(walletAddress: string): Promise<Positio
 }
 
 // FlareScan API implementation (fallback)
-async function getWalletPositionsFlareScan(walletAddress: string): Promise<PositionRow[]> {
+export async function getWalletPositionsViaFlareScan(walletAddress: string): Promise<PositionRow[]> {
   try {
+    const normalised = normaliseAddress(walletAddress);
     // Get balance of NFTs (number of positions)
     const balanceData = await callFlareScan('eth_call', [
       {
         to: ENOSYS_POSITION_MANAGER,
-        data: `${SELECTORS.balanceOf}${walletAddress.slice(2).padStart(64, '0')}`,
+        data: `${SELECTORS.balanceOf}${normalised.slice(2).padStart(64, '0')}`,
       },
       'latest',
     ]);
@@ -198,7 +254,7 @@ async function getWalletPositionsFlareScan(walletAddress: string): Promise<Posit
       // Process batch in parallel
       const batchPromises = [];
       for (let i = batchStart; i < batchEnd; i++) {
-        batchPromises.push(processPosition(walletAddress, i));
+        batchPromises.push(processPosition(normalised, i));
       }
 
       try {
@@ -280,7 +336,7 @@ async function parsePositionData(tokenId: number, positionData: string): Promise
     const tickUpper = parseInt(tickUpperHex, 16);
     
     // Extract liquidity (128 bits = 32 hex chars)
-    const liquidityHex = data.slice(210, 242);
+    // const liquidityHex = data.slice(210, 242);
     // const liquidity = BigInt('0x' + liquidityHex); // Temporarily disabled
     
     // Get token metadata

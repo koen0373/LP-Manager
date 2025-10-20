@@ -1,13 +1,32 @@
-import { createPublicClient, http } from 'viem';
+import { createPublicClient, fallback, http } from 'viem';
 import { flare } from '../lib/chainFlare';
 import PositionManagerABI from '../abis/NonfungiblePositionManager.json';
 import type { PositionRow } from '../types/positions';
 
 const pm = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657' as `0x${string}`;
 
+const rpcTransports = fallback([
+  http(flare.rpcUrls.default.http[0], {
+    batch: { batchSize: 15, wait: 50 },
+    retryCount: 2,
+    retryDelay: 250,
+  }),
+  http(flare.rpcUrls.default.http[1] ?? 'https://flare.public-rpc.com', {
+    batch: { batchSize: 15, wait: 75 },
+    retryCount: 2,
+    retryDelay: 350,
+  }),
+  http('https://1rpc.io/flare', {
+    batch: { batchSize: 10, wait: 100 },
+    retryCount: 2,
+    retryDelay: 350,
+  }),
+]);
+
 const publicClient = createPublicClient({
   chain: flare,
-  transport: http(flare.rpcUrls.default.http[0], { batch: true }),
+  transport: rpcTransports,
+  pollingInterval: 6_000,
 });
 
 // Token metadata cache
@@ -79,9 +98,29 @@ function tickToPrice(tick: number): number {
 }
 
 // Parse position data from Viem result
-async function parsePositionData(tokenId: bigint, positionData: any): Promise<PositionRow | null> {
+type RawPositionTuple = [
+  bigint,
+  `0x${string}`,
+  `0x${string}`,
+  `0x${string}`,
+  number | bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint
+];
+
+async function parsePositionData(
+  tokenId: bigint,
+  positionData: readonly unknown[] | Record<string, unknown>
+): Promise<PositionRow | null> {
   try {
-    const [nonce, operator, token0, token1, fee, tickLower, tickUpper, liquidity, feeGrowthInside0LastX128, feeGrowthInside1LastX128, tokensOwed0, tokensOwed1] = positionData;
+    const values = Array.isArray(positionData) ? positionData : Object.values(positionData);
+    const tuple = values as RawPositionTuple;
+    const [, , token0, token1, feeRaw, tickLowerRaw, tickUpperRaw] = tuple;
 
     // Get token metadata
     const [token0Meta, token1Meta] = await Promise.all([
@@ -90,14 +129,14 @@ async function parsePositionData(tokenId: bigint, positionData: any): Promise<Po
     ]);
 
     // Convert ticks to prices
-    const tickLowerPrice = tickToPrice(Number(tickLower));
-    const tickUpperPrice = tickToPrice(Number(tickUpper));
+    const tickLowerPrice = tickToPrice(Number(tickLowerRaw));
+    const tickUpperPrice = tickToPrice(Number(tickUpperRaw));
 
     // Create position row
     return {
       id: tokenId.toString(),
       pairLabel: `${token0Meta.symbol} - ${token1Meta.symbol}`,
-      feeTierBps: Number(fee),
+      feeTierBps: Number(feeRaw),
       tickLowerLabel: tickLowerPrice.toFixed(5),
       tickUpperLabel: tickUpperPrice.toFixed(5),
       tvlUsd: 0, // TODO: Calculate from liquidity and current prices
@@ -145,36 +184,46 @@ export async function getLpPositionsOnChain(owner: `0x${string}`): Promise<Posit
       return [];
     }
 
-    // Get all token IDs
-    const tokenIds = await Promise.all(
-      Array.from({ length: count }, (_, i) =>
-        publicClient.readContract({
+    const tokenIds: bigint[] = [];
+    for (let i = 0; i < count; i++) {
+      try {
+        const tokenId = await publicClient.readContract({
           address: pm,
           abi: PositionManagerABI,
           functionName: 'tokenOfOwnerByIndex',
           args: [owner, BigInt(i)],
-        })
-      )
-    );
+        });
+        tokenIds.push(tokenId);
+      } catch (tokenErr) {
+        console.error(`Failed to fetch tokenOfOwnerByIndex(${i})`, tokenErr);
+      }
 
-    // Get all position data
-    const positions = await Promise.all(
-      tokenIds.map(tokenId =>
-        publicClient.readContract({
+      if (i < count - 1) {
+        await new Promise(resolve => setTimeout(resolve, 120));
+      }
+    }
+
+    const parsedPositions: PositionRow[] = [];
+    for (let index = 0; index < tokenIds.length; index++) {
+      const tokenId = tokenIds[index];
+      try {
+        const positionData = await publicClient.readContract({
           address: pm,
           abi: PositionManagerABI,
           functionName: 'positions',
           args: [tokenId],
-        }).then((pos) => ({ tokenId, ...pos }))
-      )
-    );
+        });
 
-    // Parse position data
-    const parsedPositions: PositionRow[] = [];
-    for (const { tokenId, ...positionData } of positions) {
-      const parsed = await parsePositionData(tokenId, Object.values(positionData));
-      if (parsed) {
-        parsedPositions.push(parsed);
+        const parsed = await parsePositionData(tokenId, positionData);
+        if (parsed) {
+          parsedPositions.push(parsed);
+        }
+      } catch (positionErr) {
+        console.error(`Failed to fetch position details for token ${tokenId}`, positionErr);
+      }
+
+      if (index < tokenIds.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 150));
       }
     }
 

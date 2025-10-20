@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   // Pages Router configuratie
   reactStrictMode: true,
   // Removed output: 'export' to enable API routes
-  trailingSlash: true,
+  // Removed trailingSlash: true to avoid conflicts with API routes
   images: {
     unoptimized: true,
   },

@@ -185,15 +185,15 @@ async function parsePositionData(
       getTokenMetadata(token1),
     ]);
 
+    // Calculate prices from ticks (simplified for now)
+    const lowerPrice = tickToPrice(Number(tickLowerRaw), token0Meta.decimals, token1Meta.decimals);
+    const upperPrice = tickToPrice(Number(tickUpperRaw), token0Meta.decimals, token1Meta.decimals);
+    
     // Calculate pool address
     const poolAddress = getPoolAddress(UNISWAP_V3_FACTORY, token0, token1, Number(feeRaw));
     
     // Get pool state
     const { sqrtPriceX96, tick: currentTick } = await getPoolState(poolAddress);
-    
-    // Calculate prices from ticks
-    const lowerPrice = tickToPrice(Number(tickLowerRaw), token0Meta.decimals, token1Meta.decimals);
-    const upperPrice = tickToPrice(Number(tickUpperRaw), token0Meta.decimals, token1Meta.decimals);
     
     // Calculate amounts
     const { amount0, amount1 } = calcAmountsForPosition(
@@ -249,8 +249,8 @@ async function parsePositionData(
         decimals: token1Meta.decimals
       },
       // New fields
-      amount0,
-      amount1,
+      amount0: amount0.toString(),
+      amount1: amount1.toString(),
       lowerPrice,
       upperPrice,
       isInRange: inRange,

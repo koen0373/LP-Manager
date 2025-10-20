@@ -4,6 +4,15 @@ import { getLpPositionsOnChain } from '../../src/services/pmFallback';
 import { getWalletPositionsViaFlareScan } from '../../src/services/flarescanService';
 import type { PositionRow } from '../../src/types/positions';
 
+// Helper to serialize BigInt values for JSON
+function serializePositionRow(position: any): PositionRow {
+  return {
+    ...position,
+    amount0: position.amount0?.toString() || '0',
+    amount1: position.amount1?.toString() || '0',
+  };
+}
+
 const CACHE_TTL_MS = 30_000;
 const cache = new Map<string, { expires: number; data: PositionRow[] }>();
 
@@ -59,9 +68,10 @@ export default async function handler(
 
   try {
     const viemPositions = await getLpPositionsOnChain(normalizedAddress as `0x${string}`);
-    setCached(normalizedAddress, viemPositions);
+    const serializedPositions = viemPositions.map(serializePositionRow);
+    setCached(normalizedAddress, serializedPositions);
     res.setHeader('Cache-Control', 's-maxage=20, stale-while-revalidate=60');
-    res.status(200).json(viemPositions);
+    res.status(200).json(serializedPositions);
     return;
   } catch (viemError) {
     console.error('Viem position fetch failed in /api/positions:', viemError);

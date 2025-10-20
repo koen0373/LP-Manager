@@ -63,9 +63,9 @@ export default function PositionsTable({
                 {/* TVL */}
                 <div className="text-center">
                   <div className="text-white font-medium">${formatUsd(position.tvlUsd || 0)}</div>
-                  {position.amount0 > 0n && position.amount1 > 0n && (
+                  {position.amount0 !== '0' && position.amount1 !== '0' && (
                     <div className="text-enosys-subtext text-xs">
-                      {position.amount0.toString()} {position.token0.symbol} + {position.amount1.toString()} {position.token1.symbol}
+                      {position.amount0} {position.token0.symbol} + {position.amount1} {position.token1.symbol}
                     </div>
                   )}
                 </div>

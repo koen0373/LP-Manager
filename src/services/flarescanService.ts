@@ -1,7 +1,7 @@
 import type { PositionRow } from '../types/positions';
 import { tickToPrice, formatPrice } from '../utils/positions';
 // FlareScan API endpoints - using local proxy to avoid CORS
-const FLARESCAN_API = '/api/flarescan';
+const FLARESCAN_API = process.env.FLARESCAN_PROXY_URL || 'http://localhost:3000/api/flarescan';
 const ENOSYS_POSITION_MANAGER = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657';
 
 // Function selectors
@@ -376,8 +376,8 @@ async function parsePositionData(tokenId: number, positionData: string): Promise
         decimals: token1Meta.decimals
       },
       // New fields with default values for FlareScan fallback
-      amount0: 0n,
-      amount1: 0n,
+      amount0: '0',
+      amount1: '0',
       lowerPrice,
       upperPrice,
       isInRange: inRange,

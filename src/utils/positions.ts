@@ -1,6 +1,6 @@
-import { getAddress } from 'viem';
+import { getAddress, keccak256, toHex } from 'viem';
 
-// Uniswap V3 Pool address calculation
+// Uniswap V3 Pool address calculation using CREATE2
 export function getPoolAddress(
   factory: `0x${string}`,
   token0: `0x${string}`,
@@ -10,15 +10,25 @@ export function getPoolAddress(
   // Sort tokens for deterministic address
   const [tokenA, tokenB] = token0 < token1 ? [token0, token1] : [token1, token0];
   
-  // Create init code hash (this is the standard Uniswap V3 init code hash)
+  // Enosys V3 init code hash (this should be the actual hash from the deployed bytecode)
   const initCodeHash = '0xe34f199b19b2b4df1fadadee7d189f9a9b2d5280a30515ccec2e659a864a801f';
   
-  // Create salt
-  const salt = `0x${fee.toString(16).padStart(8, '0')}${tokenA.slice(2)}${tokenB.slice(2)}`;
+  // Create salt: fee (4 bytes) + tokenA (20 bytes) + tokenB (20 bytes)
+  const feeHex = fee.toString(16).padStart(8, '0');
+  const tokenAHex = tokenA.slice(2).toLowerCase();
+  const tokenBHex = tokenB.slice(2).toLowerCase();
+  const salt = `0x${feeHex}${tokenAHex}${tokenBHex}`;
   
-  // Calculate CREATE2 address (simplified for now)
-  // In a real implementation, you'd use proper CREATE2 calculation
-  const address = getAddress('0x0000000000000000000000000000000000000000');
+  // CREATE2 formula: keccak256(0xff + factory + salt + initCodeHash)
+  const factoryHex = factory.slice(2).toLowerCase();
+  const saltHex = salt.slice(2);
+  const initCodeHashHex = initCodeHash.slice(2);
+  
+  const create2Input = `0xff${factoryHex}${saltHex}${initCodeHashHex}`;
+  const addressHash = keccak256(`0x${create2Input}`);
+  
+  // Take last 20 bytes (40 hex chars) as address
+  const address = getAddress(`0x${addressHash.slice(-40)}`);
   
   return address;
 }

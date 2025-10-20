@@ -12,9 +12,10 @@ type TokenIconProps = {
 // Robuuste icon mapping - alleen lokale WEBP bestanden
 const getTokenIcon = (symbol?: string): string => {
   const sym = (symbol || "").toUpperCase().trim();
+  const normalized = sym.replace(/[^A-Z0-9]/g, '');
   
   // Directe mapping naar bestaande WEBP bestanden
-  switch (sym) {
+  switch (normalized || sym) {
     case 'WFLR':
       return '/icons/flr.webp'; // WFLR gebruikt FLR icoon
     case 'SFLR':

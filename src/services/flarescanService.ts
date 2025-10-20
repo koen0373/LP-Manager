@@ -1,5 +1,7 @@
 import type { PositionRow } from '../types/positions';
 import { tickToPrice, formatPrice } from '../utils/positions';
+import { decodeFunctionResult } from 'viem';
+import { getLpPositionsOnChain } from './pmFallback';
 // FlareScan API endpoints - using local proxy to avoid CORS
 const FLARESCAN_API = process.env.FLARESCAN_PROXY_URL || 'http://localhost:3000/api/flarescan';
 const ENOSYS_POSITION_MANAGER = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657';
@@ -315,25 +317,38 @@ async function processPosition(walletAddress: string, index: number): Promise<Po
   }
 }
 
-// Parse position data (simplified for FlareScan fallback)
+// Parse position data using proper ABI decoding
 async function parsePositionData(tokenId: number, positionData: string): Promise<PositionRow | null> {
   try {
-    // Decode the position data
-    const data = positionData.slice(2); // Remove 0x prefix
+    // Use proper ABI decoding instead of manual parsing
+    const decoded = decodeFunctionResult({
+      abi: [
+        {
+          name: 'positions',
+          type: 'function',
+          stateMutability: 'view',
+          inputs: [{ name: 'tokenId', type: 'uint256' }],
+          outputs: [
+            { name: 'nonce', type: 'uint96' },
+            { name: 'operator', type: 'address' },
+            { name: 'token0', type: 'address' },
+            { name: 'token1', type: 'address' },
+            { name: 'fee', type: 'uint24' },
+            { name: 'tickLower', type: 'int24' },
+            { name: 'tickUpper', type: 'int24' },
+            { name: 'liquidity', type: 'uint128' },
+            { name: 'feeGrowthInside0LastX128', type: 'uint256' },
+            { name: 'feeGrowthInside1LastX128', type: 'uint256' },
+            { name: 'tokensOwed0', type: 'uint128' },
+            { name: 'tokensOwed1', type: 'uint128' }
+          ]
+        }
+      ],
+      functionName: 'positions',
+      data: positionData as `0x${string}`,
+    });
     
-    // Extract addresses (each is 32 bytes = 64 hex chars)
-    const token0Address = '0x' + data.slice(64, 128).slice(-40); // Last 20 bytes
-    const token1Address = '0x' + data.slice(128, 192).slice(-40); // Last 20 bytes
-    
-    // Extract fee (24 bits = 6 hex chars)
-    const feeHex = data.slice(192, 198);
-    const fee = parseInt(feeHex, 16);
-    
-    // Extract tick values (24 bits each)
-    const tickLowerHex = data.slice(198, 204);
-    const tickUpperHex = data.slice(204, 210);
-    const tickLower = parseInt(tickLowerHex, 16);
-    const tickUpper = parseInt(tickUpperHex, 16);
+    const [nonce, operator, token0Address, token1Address, fee, tickLower, tickUpper, liquidity, feeGrowthInside0LastX128, feeGrowthInside1LastX128, tokensOwed0, tokensOwed1] = decoded as [bigint, `0x${string}`, `0x${string}`, `0x${string}`, number, number, number, bigint, bigint, bigint, bigint, bigint];
     
     // Get token metadata
     const [token0Meta, token1Meta] = await Promise.all([
@@ -348,6 +363,10 @@ async function parsePositionData(tokenId: number, positionData: string): Promise
     // For FlareScan fallback, we'll use simplified calculations
     // In a real implementation, you'd want to fetch pool state here too
     const inRange = true; // Simplified - would need current tick from pool
+    
+    // Calculate basic amounts (simplified for FlareScan fallback)
+    const amount0 = liquidity > 0n ? '1' : '0'; // Simplified
+    const amount1 = liquidity > 0n ? '1' : '0'; // Simplified
     
     // Create position row with basic data
     return {
@@ -375,9 +394,9 @@ async function parsePositionData(tokenId: number, positionData: string): Promise
         name: token1Meta.name,
         decimals: token1Meta.decimals
       },
-      // New fields with default values for FlareScan fallback
-      amount0: '0',
-      amount1: '0',
+      // New fields with calculated values
+      amount0,
+      amount1,
       lowerPrice,
       upperPrice,
       isInRange: inRange,

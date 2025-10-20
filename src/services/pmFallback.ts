@@ -42,8 +42,78 @@ const poolCache = new Map<string, {
 }>();
 const POOL_CACHE_TTL = 30000; // 30 seconds
 
-// Uniswap V3 Factory address (standard address)
-const UNISWAP_V3_FACTORY = '0x1F98431c8aD98523631AE4a59f267346ea31F984' as `0x${string}`;
+// Factory cache
+const factoryCache = new Map<string, { factory: `0x${string}`; timestamp: number }>();
+const FACTORY_CACHE_TTL = 300000; // 5 minutes
+
+// Get factory address from PositionManager
+async function getFactoryAddress(): Promise<`0x${string}`> {
+  const cacheKey = 'factory';
+  const cached = factoryCache.get(cacheKey);
+  
+  if (cached && Date.now() - cached.timestamp < FACTORY_CACHE_TTL) {
+    return cached.factory;
+  }
+  
+  try {
+    const factory = await publicClient.readContract({
+      address: pm,
+      abi: [
+        {
+          name: 'factory',
+          type: 'function',
+          stateMutability: 'view',
+          inputs: [],
+          outputs: [{ name: '', type: 'address' }]
+        }
+      ],
+      functionName: 'factory',
+    });
+    
+    const factoryAddress = factory as `0x${string}`;
+    factoryCache.set(cacheKey, { factory: factoryAddress, timestamp: Date.now() });
+    return factoryAddress;
+  } catch (error) {
+    console.error('Failed to get factory address:', error);
+    // Fallback to a default factory address
+    return '0x1F98431c8aD98523631AE4a59f267346ea31F984' as `0x${string}`;
+  }
+}
+
+// Get pool address from factory
+async function getPoolAddressFromFactory(
+  factory: `0x${string}`,
+  token0: `0x${string}`,
+  token1: `0x${string}`,
+  fee: number
+): Promise<`0x${string}`> {
+  try {
+    const poolAddress = await publicClient.readContract({
+      address: factory,
+      abi: [
+        {
+          name: 'getPool',
+          type: 'function',
+          stateMutability: 'view',
+          inputs: [
+            { name: 'tokenA', type: 'address' },
+            { name: 'tokenB', type: 'address' },
+            { name: 'fee', type: 'uint24' }
+          ],
+          outputs: [{ name: '', type: 'address' }]
+        }
+      ],
+      functionName: 'getPool',
+      args: [token0, token1, fee],
+    });
+    
+    return poolAddress as `0x${string}`;
+  } catch (error) {
+    console.error('Failed to get pool address from factory:', error);
+    // Fallback to CREATE2 calculation
+    return getPoolAddress(factory, token0, token1, fee);
+  }
+}
 
 // Get token metadata using Viem
 async function getTokenMetadata(address: `0x${string}`): Promise<{ symbol: string; name: string; decimals: number }> {
@@ -189,8 +259,9 @@ async function parsePositionData(
     const lowerPrice = tickToPrice(Number(tickLowerRaw), token0Meta.decimals, token1Meta.decimals);
     const upperPrice = tickToPrice(Number(tickUpperRaw), token0Meta.decimals, token1Meta.decimals);
     
-    // Calculate pool address
-    const poolAddress = getPoolAddress(UNISWAP_V3_FACTORY, token0, token1, Number(feeRaw));
+    // Get factory address and pool address
+    const factory = await getFactoryAddress();
+    const poolAddress = await getPoolAddressFromFactory(factory, token0, token1, Number(feeRaw));
     
     // Get pool state
     const { sqrtPriceX96, tick: currentTick } = await getPoolState(poolAddress);

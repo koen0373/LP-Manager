@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Pages Router configuratie
   reactStrictMode: true,
-  output: 'export',
+  // Removed output: 'export' to enable API routes
   trailingSlash: true,
   images: {
     unoptimized: true,

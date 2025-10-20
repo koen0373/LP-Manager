@@ -1,8 +1,8 @@
 import type { PositionRow } from '../types/positions';
 // import { POSITION_MANAGER_ABI, ERC20_ABI } from '../abi/positionManager';
 
-// FlareScan API endpoints
-const FLARESCAN_API = 'https://flare-api.flare.network/ext/C/rpc';
+// FlareScan API endpoints - using local proxy to avoid CORS
+const FLARESCAN_API = '/api/flarescan';
 const ENOSYS_POSITION_MANAGER = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657';
 
 // Function selectors
@@ -18,32 +18,35 @@ const SELECTORS = {
 // Token metadata cache
 const tokenCache = new Map<string, { symbol: string; name: string; decimals: number }>();
 
-// Helper function to call FlareScan API
+// Helper function to call FlareScan API via local proxy
 async function callFlareScan(method: string, params: unknown[] = []): Promise<unknown> {
   try {
+    console.log(`Calling FlareScan API: ${method}`, params);
+    
     const response = await fetch(FLARESCAN_API, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        jsonrpc: '2.0',
         method,
         params,
-        id: 1,
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`FlareScan API error: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`FlareScan API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    
     if (data.error) {
-      throw new Error(`FlareScan API error: ${data.error.message}`);
+      throw new Error(`FlareScan API error: ${data.error}`);
     }
 
-    return data.result;
+    console.log(`FlareScan API response for ${method}:`, data);
+    return data;
   } catch (error) {
     console.error('FlareScan API call failed:', error);
     throw error;

@@ -4,12 +4,11 @@ import { getLpPositionsOnChain } from '../../src/services/pmFallback';
 import { getWalletPositionsViaFlareScan } from '../../src/services/flarescanService';
 import type { PositionRow } from '../../src/types/positions';
 
-// Helper to serialize BigInt values for JSON
-function serializePositionRow(position: any): PositionRow {
+// Helper to serialize PositionRow for JSON response
+function serializePositionRow(position: PositionRow): PositionRow {
   return {
     ...position,
-    amount0: position.amount0?.toString() || '0',
-    amount1: position.amount1?.toString() || '0',
+    // All fields are already serializable (numbers/strings)
   };
 }
 

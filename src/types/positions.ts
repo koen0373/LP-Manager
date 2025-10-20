@@ -6,18 +6,18 @@ export interface TokenInfo {
 }
 
 export interface PositionData {
-  nonce: string;
+  nonce: number;
   operator: `0x${string}`;
   token0: `0x${string}`;
   token1: `0x${string}`;
   fee: number;
   tickLower: number;
   tickUpper: number;
-  liquidity: string;
-  feeGrowthInside0LastX128: string;
-  feeGrowthInside1LastX128: string;
-  tokensOwed0: string;
-  tokensOwed1: string;
+  liquidity: number;
+  feeGrowthInside0LastX128: number;
+  feeGrowthInside1LastX128: number;
+  tokensOwed0: number;
+  tokensOwed1: number;
 }
 
 export interface PositionRow {

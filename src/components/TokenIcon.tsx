@@ -11,8 +11,9 @@ type TokenIconProps = {
 
 // Robuuste icon mapping - alleen lokale WEBP bestanden
 const getTokenIcon = (symbol?: string): string => {
-  const sym = (symbol || "").toUpperCase().trim();
-  const normalized = sym.replace(/[^A-Z0-9]/g, '');
+  const sym = (symbol || "").trim();
+  // Normalize Unicode characters (NFKD) and remove all non-alphanumeric
+  const normalized = sym.normalize('NFKD').replace(/[^A-Z0-9]/g, '').toUpperCase();
   
   // Directe mapping naar bestaande WEBP bestanden
   switch (normalized || sym) {

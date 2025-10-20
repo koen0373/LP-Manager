@@ -1,7 +1,15 @@
 import type { PositionRow } from '../types/positions';
-import { tickToPrice, formatPrice } from '../utils/positions';
-import { decodeFunctionResult } from 'viem';
-import { getLpPositionsOnChain } from './pmFallback';
+import { 
+  getFactoryAddress, 
+  getPoolAddress, 
+  getPoolState, 
+  decodePositionData,
+  tickToPrice, 
+  calcAmountsForPosition, 
+  isInRange, 
+  formatPrice,
+  calculatePositionValue
+} from '../utils/poolHelpers';
 // FlareScan API endpoints - using local proxy to avoid CORS
 const FLARESCAN_API = process.env.FLARESCAN_PROXY_URL || 'http://localhost:3000/api/flarescan';
 const ENOSYS_POSITION_MANAGER = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657';
@@ -317,38 +325,20 @@ async function processPosition(walletAddress: string, index: number): Promise<Po
   }
 }
 
-// Parse position data using proper ABI decoding
+// Parse position data using shared helpers
 async function parsePositionData(tokenId: number, positionData: string): Promise<PositionRow | null> {
   try {
-    // Use proper ABI decoding instead of manual parsing
-    const decoded = decodeFunctionResult({
-      abi: [
-        {
-          name: 'positions',
-          type: 'function',
-          stateMutability: 'view',
-          inputs: [{ name: 'tokenId', type: 'uint256' }],
-          outputs: [
-            { name: 'nonce', type: 'uint96' },
-            { name: 'operator', type: 'address' },
-            { name: 'token0', type: 'address' },
-            { name: 'token1', type: 'address' },
-            { name: 'fee', type: 'uint24' },
-            { name: 'tickLower', type: 'int24' },
-            { name: 'tickUpper', type: 'int24' },
-            { name: 'liquidity', type: 'uint128' },
-            { name: 'feeGrowthInside0LastX128', type: 'uint256' },
-            { name: 'feeGrowthInside1LastX128', type: 'uint256' },
-            { name: 'tokensOwed0', type: 'uint128' },
-            { name: 'tokensOwed1', type: 'uint128' }
-          ]
-        }
-      ],
-      functionName: 'positions',
-      data: positionData as `0x${string}`,
-    });
-    
-    const [nonce, operator, token0Address, token1Address, fee, tickLower, tickUpper, liquidity, feeGrowthInside0LastX128, feeGrowthInside1LastX128, tokensOwed0, tokensOwed1] = decoded as [bigint, `0x${string}`, `0x${string}`, `0x${string}`, number, number, number, bigint, bigint, bigint, bigint, bigint];
+    // Use shared ABI decoding
+    const {
+      token0: token0Address,
+      token1: token1Address,
+      fee,
+      tickLower,
+      tickUpper,
+      liquidity,
+      tokensOwed0,
+      tokensOwed1,
+    } = decodePositionData(positionData);
     
     // Get token metadata
     const [token0Meta, token1Meta] = await Promise.all([
@@ -360,23 +350,47 @@ async function parsePositionData(tokenId: number, positionData: string): Promise
     const lowerPrice = tickToPrice(tickLower, token0Meta.decimals, token1Meta.decimals);
     const upperPrice = tickToPrice(tickUpper, token0Meta.decimals, token1Meta.decimals);
     
-    // For FlareScan fallback, we'll use simplified calculations
-    // In a real implementation, you'd want to fetch pool state here too
-    const inRange = true; // Simplified - would need current tick from pool
+    // Get factory address and pool address
+    const factory = await getFactoryAddress(ENOSYS_POSITION_MANAGER as `0x${string}`);
+    const poolAddress = await getPoolAddress(factory, token0Address, token1Address, fee);
     
-    // Calculate basic amounts (simplified for FlareScan fallback)
-    const amount0 = liquidity > 0n ? '1' : '0'; // Simplified
-    const amount1 = liquidity > 0n ? '1' : '0'; // Simplified
+    // Get pool state
+    const { sqrtPriceX96, tick: currentTick } = await getPoolState(poolAddress);
     
-    // Create position row with basic data
+    // Calculate amounts using proper Uniswap V3 math
+    const { amount0, amount1 } = calcAmountsForPosition(
+      liquidity,
+      sqrtPriceX96,
+      tickLower,
+      tickUpper,
+      token0Meta.decimals,
+      token1Meta.decimals
+    );
+    
+    // Check if in range
+    const inRange = isInRange(currentTick, tickLower, tickUpper);
+    
+    // Calculate TVL and rewards
+    const { tvlUsd, rewardsUsd } = await calculatePositionValue(
+      amount0,
+      amount1,
+      tokensOwed0,
+      tokensOwed1,
+      token0Meta.symbol,
+      token1Meta.symbol,
+      token0Meta.decimals,
+      token1Meta.decimals
+    );
+    
+    // Create position row with real data
     return {
       id: tokenId.toString(),
       pairLabel: `${token0Meta.symbol} - ${token1Meta.symbol}`,
       feeTierBps: fee,
       tickLowerLabel: formatPrice(lowerPrice),
       tickUpperLabel: formatPrice(upperPrice),
-      tvlUsd: 0, // Would need pool state and liquidity to calculate
-      rewardsUsd: 0, // Would need tokensOwed data
+      tvlUsd,
+      rewardsUsd,
       rflrAmount: 0,
       rflrUsd: 0,
       rflrPriceUsd: 0.01758,
@@ -394,13 +408,13 @@ async function parsePositionData(tokenId: number, positionData: string): Promise
         name: token1Meta.name,
         decimals: token1Meta.decimals
       },
-      // New fields with calculated values
-      amount0,
-      amount1,
+      // New fields with real calculated values
+      amount0: amount0.toString(),
+      amount1: amount1.toString(),
       lowerPrice,
       upperPrice,
       isInRange: inRange,
-      poolAddress: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+      poolAddress,
     };
   } catch (error) {
     console.error('Failed to parse position data:', error);

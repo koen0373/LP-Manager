@@ -2,8 +2,16 @@ import { createPublicClient, fallback, http } from 'viem';
 import { flare } from '../lib/chainFlare';
 import PositionManagerABI from '../abis/NonfungiblePositionManager.json';
 import type { PositionRow } from '../types/positions';
-import { getPoolAddress, tickToPrice, calcAmountsForPosition, isInRange, formatPrice } from '../utils/positions';
-import { getTokenPrice, calculateUsdValue } from './tokenPrices';
+import { 
+  getFactoryAddress, 
+  getPoolAddress, 
+  getPoolState, 
+  tickToPrice, 
+  calcAmountsForPosition, 
+  isInRange, 
+  formatPrice,
+  calculatePositionValue
+} from '../utils/poolHelpers';
 
 const pm = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657' as `0x${string}`;
 
@@ -34,86 +42,7 @@ const publicClient = createPublicClient({
 // Token metadata cache
 const tokenCache = new Map<string, { symbol: string; name: string; decimals: number }>();
 
-// Pool state cache
-const poolCache = new Map<string, { 
-  sqrtPriceX96: bigint; 
-  tick: number; 
-  timestamp: number 
-}>();
-const POOL_CACHE_TTL = 30000; // 30 seconds
 
-// Factory cache
-const factoryCache = new Map<string, { factory: `0x${string}`; timestamp: number }>();
-const FACTORY_CACHE_TTL = 300000; // 5 minutes
-
-// Get factory address from PositionManager
-async function getFactoryAddress(): Promise<`0x${string}`> {
-  const cacheKey = 'factory';
-  const cached = factoryCache.get(cacheKey);
-  
-  if (cached && Date.now() - cached.timestamp < FACTORY_CACHE_TTL) {
-    return cached.factory;
-  }
-  
-  try {
-    const factory = await publicClient.readContract({
-      address: pm,
-      abi: [
-        {
-          name: 'factory',
-          type: 'function',
-          stateMutability: 'view',
-          inputs: [],
-          outputs: [{ name: '', type: 'address' }]
-        }
-      ],
-      functionName: 'factory',
-    });
-    
-    const factoryAddress = factory as `0x${string}`;
-    factoryCache.set(cacheKey, { factory: factoryAddress, timestamp: Date.now() });
-    return factoryAddress;
-  } catch (error) {
-    console.error('Failed to get factory address:', error);
-    // Fallback to a default factory address
-    return '0x1F98431c8aD98523631AE4a59f267346ea31F984' as `0x${string}`;
-  }
-}
-
-// Get pool address from factory
-async function getPoolAddressFromFactory(
-  factory: `0x${string}`,
-  token0: `0x${string}`,
-  token1: `0x${string}`,
-  fee: number
-): Promise<`0x${string}`> {
-  try {
-    const poolAddress = await publicClient.readContract({
-      address: factory,
-      abi: [
-        {
-          name: 'getPool',
-          type: 'function',
-          stateMutability: 'view',
-          inputs: [
-            { name: 'tokenA', type: 'address' },
-            { name: 'tokenB', type: 'address' },
-            { name: 'fee', type: 'uint24' }
-          ],
-          outputs: [{ name: '', type: 'address' }]
-        }
-      ],
-      functionName: 'getPool',
-      args: [token0, token1, fee],
-    });
-    
-    return poolAddress as `0x${string}`;
-  } catch (error) {
-    console.error('Failed to get pool address from factory:', error);
-    // Fallback to CREATE2 calculation
-    return getPoolAddress(factory, token0, token1, fee);
-  }
-}
 
 // Get token metadata using Viem
 async function getTokenMetadata(address: `0x${string}`): Promise<{ symbol: string; name: string; decimals: number }> {
@@ -255,18 +184,18 @@ async function parsePositionData(
       getTokenMetadata(token1),
     ]);
 
-    // Calculate prices from ticks (simplified for now)
+    // Calculate prices from ticks
     const lowerPrice = tickToPrice(Number(tickLowerRaw), token0Meta.decimals, token1Meta.decimals);
     const upperPrice = tickToPrice(Number(tickUpperRaw), token0Meta.decimals, token1Meta.decimals);
     
     // Get factory address and pool address
-    const factory = await getFactoryAddress();
-    const poolAddress = await getPoolAddressFromFactory(factory, token0, token1, Number(feeRaw));
+    const factory = await getFactoryAddress(pm);
+    const poolAddress = await getPoolAddress(factory, token0, token1, Number(feeRaw));
     
     // Get pool state
     const { sqrtPriceX96, tick: currentTick } = await getPoolState(poolAddress);
     
-    // Calculate amounts
+    // Calculate amounts using proper Uniswap V3 math
     const { amount0, amount1 } = calcAmountsForPosition(
       liquidity,
       sqrtPriceX96,
@@ -279,19 +208,17 @@ async function parsePositionData(
     // Check if in range
     const inRange = isInRange(currentTick, Number(tickLowerRaw), Number(tickUpperRaw));
     
-    // Get token prices
-    const [token0Price, token1Price] = await Promise.all([
-      getTokenPrice(token0Meta.symbol),
-      getTokenPrice(token1Meta.symbol),
-    ]);
-    
-    // Calculate TVL
-    const tvlUsd = calculateUsdValue(amount0, token0Meta.decimals, token0Price) + 
-                   calculateUsdValue(amount1, token1Meta.decimals, token1Price);
-    
-    // Calculate rewards (unclaimed fees)
-    const rewardsUsd = calculateUsdValue(tokensOwed0, token0Meta.decimals, token0Price) + 
-                       calculateUsdValue(tokensOwed1, token1Meta.decimals, token1Price);
+    // Calculate TVL and rewards
+    const { tvlUsd, rewardsUsd } = await calculatePositionValue(
+      amount0,
+      amount1,
+      tokensOwed0,
+      tokensOwed1,
+      token0Meta.symbol,
+      token1Meta.symbol,
+      token0Meta.decimals,
+      token1Meta.decimals
+    );
 
     // Create position row
     return {

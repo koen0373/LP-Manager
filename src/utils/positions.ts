@@ -1,4 +1,4 @@
-import { getAddress, keccak256, toHex } from 'viem';
+import { getAddress, keccak256 } from 'viem';
 
 // Uniswap V3 Pool address calculation using CREATE2
 export function getPoolAddress(

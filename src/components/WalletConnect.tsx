@@ -13,9 +13,11 @@ declare global {
 
 interface WalletConnectProps {
   className?: string;
+  onWalletConnected?: (address: string) => void;
+  onWalletDisconnected?: () => void;
 }
 
-export default function WalletConnect({ className }: WalletConnectProps) {
+export default function WalletConnect({ className, onWalletConnected, onWalletDisconnected }: WalletConnectProps) {
   const [isConnected, setIsConnected] = useState(false);
   const [address, setAddress] = useState<string>('');
   const [showModal, setShowModal] = useState(false);
@@ -46,11 +48,12 @@ export default function WalletConnect({ className }: WalletConnectProps) {
         const accounts = await window.ethereum.request({ 
           method: 'eth_requestAccounts' 
         });
-        if (accounts.length > 0) {
-          setIsConnected(true);
-          setAddress(accounts[0]);
-          setShowModal(false);
-        }
+            if (accounts.length > 0) {
+              setIsConnected(true);
+              setAddress(accounts[0]);
+              setShowModal(false);
+              onWalletConnected?.(accounts[0]);
+            }
       } catch (error) {
         console.error('Failed to connect wallet:', error);
       }
@@ -60,6 +63,7 @@ export default function WalletConnect({ className }: WalletConnectProps) {
   const handleDisconnect = () => {
     setIsConnected(false);
     setAddress('');
+    onWalletDisconnected?.();
   };
 
   if (!isClient) {

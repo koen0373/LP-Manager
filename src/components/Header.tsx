@@ -12,6 +12,8 @@ interface HeaderProps {
   inactiveCount: number;
   onTabChange: (tab: 'active' | 'inactive') => void;
   activeTab: 'active' | 'inactive';
+  onWalletConnected?: (address: string) => void;
+  onWalletDisconnected?: () => void;
 }
 
 export default function Header({
@@ -23,6 +25,8 @@ export default function Header({
   inactiveCount,
   onTabChange,
   activeTab,
+  onWalletConnected,
+  onWalletDisconnected,
 }: HeaderProps) {
   return (
     <div className="w-full max-w-[1200px] mx-auto pt-8 pb-4">
@@ -32,7 +36,10 @@ export default function Header({
           <h2 className="text-white text-2xl font-bold mt-1">LP Manager</h2>
         </div>
         <div className="flex items-center gap-3">
-          <WalletConnect />
+          <WalletConnect 
+            onWalletConnected={onWalletConnected}
+            onWalletDisconnected={onWalletDisconnected}
+          />
         </div>
       </div>
       

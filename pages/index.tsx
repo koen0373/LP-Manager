@@ -5,108 +5,61 @@ import Head from 'next/head';
 import Header from '../src/components/Header';
 import PositionsTable from '../src/components/PositionsTable';
 import type { PositionRow } from '../src/types/positions';
+import { getWalletPositions } from '../src/services/flarescanService';
 
 export default function LPManagerPage() {
   const [tab, setTab] = React.useState<'active' | 'inactive'>('active');
+  const [walletAddress, setWalletAddress] = React.useState<string>('');
+  const [positions, setPositions] = React.useState<PositionRow[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string>('');
   const rflrSpotUsd = 0.01758; // actuele koers
 
-  // Statische data om hydration mismatches te voorkomen
-  const tableRows: PositionRow[] = [
-    {
-      id: '21790',
-      pairLabel: 'WFLR - USDTO',
-      feeTierBps: 30,
-      tickLowerLabel: '0.01695',
-      tickUpperLabel: '0.02005',
-      tvlUsd: 0,
-      rewardsUsd: 0,
-      rflrAmount: 0,
-      rflrUsd: 0,
-      rflrPriceUsd: rflrSpotUsd,
-      inRange: true,
-      status: 'Active' as const,
-      token0: { symbol: 'WFLR', address: '0x1d80c49BbBCd1C0911346656B529DF9E5c2F783d', name: 'Wrapped Flare', decimals: 18 },
-      token1: { symbol: 'USDTO', address: '0x1D80C49BbBCd1C0911346656B529DF9E5c2F783d', name: 'Tether USD', decimals: 6 },
-    },
-    {
-      id: '21798',
-      pairLabel: 'FXRP - USDTO',
-      feeTierBps: 30,
-      tickLowerLabel: '2.30241',
-      tickUpperLabel: '2.61157',
-      tvlUsd: 0,
-      rewardsUsd: 0,
-      rflrAmount: 0,
-      rflrUsd: 0,
-      rflrPriceUsd: rflrSpotUsd,
-      inRange: true,
-      status: 'Active' as const,
-      token0: { symbol: 'FXRP', address: '0x1D80C49BbBCd1C0911346656B529DF9E5c2F783d', name: 'Flare XRP', decimals: 6 },
-      token1: { symbol: 'USDTO', address: '0x1D80C49BbBCd1C0911346656B529DF9E5c2F783d', name: 'Tether USD', decimals: 6 },
-    },
-    {
-      id: '21806',
-      pairLabel: 'FXRP - USDTO',
-      feeTierBps: 30,
-      tickLowerLabel: '2.20772',
-      tickUpperLabel: '2.51923',
-      tvlUsd: 0,
-      rewardsUsd: 0,
-      rflrAmount: 0,
-      rflrUsd: 0,
-      rflrPriceUsd: rflrSpotUsd,
-      inRange: true,
-      status: 'Active' as const,
-      token0: { symbol: 'FXRP', address: '0x1D80C49BbBCd1C0911346656B529DF9E5c2F783d', name: 'Flare XRP', decimals: 6 },
-      token1: { symbol: 'USDTO', address: '0x1D80C49BbBCd1C0911346656B529DF9E5c2F783d', name: 'Tether USD', decimals: 6 },
-    },
-    {
-      id: '21807',
-      pairLabel: 'WFLR - USDTO',
-      feeTierBps: 30,
-      tickLowerLabel: '0.01559',
-      tickUpperLabel: '0.02079',
-      tvlUsd: 0,
-      rewardsUsd: 0,
-      rflrAmount: 0,
-      rflrUsd: 0,
-      rflrPriceUsd: rflrSpotUsd,
-      inRange: true,
-      status: 'Active' as const,
-      token0: { symbol: 'WFLR', address: '0x1d80c49BbBCd1C0911346656B529DF9E5c2F783d', name: 'Wrapped Flare', decimals: 18 },
-      token1: { symbol: 'USDTO', address: '0x1D80C49BbBCd1C0911346656B529DF9E5c2F783d', name: 'Tether USD', decimals: 6 },
-    },
-    {
-      id: '22003',
-      pairLabel: 'WFLR - USDTO',
-      feeTierBps: 30,
-      tickLowerLabel: '0.01616',
-      tickUpperLabel: '0.01900',
-      tvlUsd: 3.01,
-      rewardsUsd: 0,
-      rflrAmount: 0,
-      rflrUsd: 0,
-      rflrPriceUsd: rflrSpotUsd,
-      inRange: true,
-      status: 'Active' as const,
-      token0: { symbol: 'WFLR', address: '0x1d80c49BbBCd1C0911346656B529DF9E5c2F783d', name: 'Wrapped Flare', decimals: 18 },
-      token1: { symbol: 'USDTO', address: '0x1D80C49BbBCd1C0911346656B529DF9E5c2F783d', name: 'Tether USD', decimals: 6 },
-    },
-  ];
+  // Fetch positions when wallet connects
+  const fetchPositions = async (address: string) => {
+    setLoading(true);
+    setError('');
+    try {
+      const walletPositions = await getWalletPositions(address);
+      setPositions(walletPositions);
+    } catch (err) {
+      setError('Failed to fetch positions');
+      console.error('Error fetching positions:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const headerNote = `Data from: On-chain Wallet Positions | ${tableRows.length} pools | Updated: ${new Date().toLocaleTimeString()}`;
+  // Handle wallet connection
+  const handleWalletConnected = (address: string) => {
+    setWalletAddress(address);
+    fetchPositions(address);
+  };
+
+  // Handle wallet disconnection
+  const handleWalletDisconnected = () => {
+    setWalletAddress('');
+    setPositions([]);
+    setError('');
+  };
+
+  const headerNote = walletAddress 
+    ? `Data from: On-chain Wallet Positions | ${positions.length} pools | Updated: ${new Date().toLocaleTimeString()}`
+    : 'Connect your wallet to view LP positions';
 
   const handleTest = () => {
     console.log('Testing blockchain connection...');
   };
 
   const handleRefresh = () => {
-    console.log('Refreshing data...');
+    if (walletAddress) {
+      fetchPositions(walletAddress);
+    }
   };
 
-  // Calculate counts for active/inactive positions - exact match met voorbeeld
-  const activeCount = 5; // Exact match met voorbeeld
-  const inactiveCount = 4; // Exact match met voorbeeld
+  // Calculate counts for active/inactive positions
+  const activeCount = positions.filter(p => p.status === 'Active').length;
+  const inactiveCount = positions.filter(p => p.status === 'Inactive').length;
 
   return (
     <>
@@ -116,21 +69,50 @@ export default function LPManagerPage() {
       </Head>
       <main className="pb-20">
         <Header 
-          address="0x1234...5678"
-          balance="1.234 FLR"
+          address={walletAddress}
+          balance=""
           onRefresh={handleRefresh}
           onTest={handleTest}
           activeCount={activeCount}
           inactiveCount={inactiveCount}
           onTabChange={setTab}
           activeTab={tab}
+          onWalletConnected={handleWalletConnected}
+          onWalletDisconnected={handleWalletDisconnected}
         />
-        <PositionsTable 
-          positions={tableRows} 
-          headerNote={headerNote} 
-          globalRflrPriceUsd={rflrSpotUsd} 
-          showTotalsRow={false}
-        />
+        
+        {!walletAddress ? (
+          <div className="w-full max-w-[1200px] mx-auto text-center py-20">
+            <div className="text-enosys-subtext text-lg">
+              Connect your wallet to view your LP positions
+            </div>
+          </div>
+        ) : loading ? (
+          <div className="w-full max-w-[1200px] mx-auto text-center py-20">
+            <div className="text-enosys-subtext text-lg">
+              Loading positions...
+            </div>
+          </div>
+        ) : error ? (
+          <div className="w-full max-w-[1200px] mx-auto text-center py-20">
+            <div className="text-red-400 text-lg">
+              {error}
+            </div>
+          </div>
+        ) : positions.length === 0 ? (
+          <div className="w-full max-w-[1200px] mx-auto text-center py-20">
+            <div className="text-enosys-subtext text-lg">
+              No active LP positions found for this wallet
+            </div>
+          </div>
+        ) : (
+          <PositionsTable 
+            positions={positions} 
+            headerNote={headerNote} 
+            globalRflrPriceUsd={rflrSpotUsd} 
+            showTotalsRow={false}
+          />
+        )}
       </main>
     </>
   );

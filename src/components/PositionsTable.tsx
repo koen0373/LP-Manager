@@ -2,7 +2,7 @@ import React from 'react';
 import { TokenIcon } from './TokenIcon';
 import { StatusPill } from './StatusPill';
 import { FeeBadge } from './FeeBadge';
-import { fmtUsd, fmtAmt } from '../lib/format';
+import { fmtUsd, fmtAmt, formatUsd, formatPrice } from '../lib/format';
 import type { PositionRow } from '../types/positions';
 
 interface PositionsTableProps {
@@ -51,24 +51,34 @@ export default function PositionsTable({
                 <TokenIcon symbol={position.token0.symbol} size={28} />
                 <TokenIcon symbol={position.token1.symbol} size={28} />
               </div>
-              <div>
-                <div className="text-white font-medium whitespace-nowrap">{position.pairLabel}</div>
-                <div className="text-enosys-subtext text-xs">
-                  {position.tickLowerLabel}-{position.tickUpperLabel}
-                </div>
-              </div>
+                  <div>
+                    <div className="text-white font-medium whitespace-nowrap">{position.pairLabel}</div>
+                    <div className="text-enosys-subtext text-xs">
+                      Range: {formatPrice(position.lowerPrice || 0)} - {formatPrice(position.upperPrice || 0)}
+                    </div>
+                  </div>
               <FeeBadge feeBps={position.feeTierBps} />
             </div>
 
-            {/* TVL */}
-            <div className="text-center">
-              <div className="text-white font-medium">${fmtUsd(position.tvlUsd || 0)}</div>
-            </div>
+                {/* TVL */}
+                <div className="text-center">
+                  <div className="text-white font-medium">${formatUsd(position.tvlUsd || 0)}</div>
+                  {position.amount0 > 0n && position.amount1 > 0n && (
+                    <div className="text-enosys-subtext text-xs">
+                      {position.amount0.toString()} {position.token0.symbol} + {position.amount1.toString()} {position.token1.symbol}
+                    </div>
+                  )}
+                </div>
 
-            {/* Pool Rewards */}
-            <div className="text-center">
-              <div className="text-white font-medium">${fmtUsd(position.rewardsUsd || 0)}</div>
-            </div>
+                {/* Pool Rewards */}
+                <div className="text-center">
+                  <div className="text-white font-medium">${formatUsd(position.rewardsUsd || 0)}</div>
+                  {position.rewardsUsd > 0 && (
+                    <div className="text-enosys-subtext text-xs">
+                      Unclaimed fees
+                    </div>
+                  )}
+                </div>
 
             {/* RFLR Rewards */}
             <div className="text-center">
@@ -82,10 +92,15 @@ export default function PositionsTable({
               )}
             </div>
 
-            {/* Range Status */}
-            <div className="text-center">
-              <StatusPill inRange={position.inRange} />
-            </div>
+                {/* Range Status */}
+                <div className="text-center">
+                  <StatusPill inRange={position.isInRange !== undefined ? position.isInRange : position.inRange} />
+                  {position.isInRange !== undefined && (
+                    <div className="text-enosys-subtext text-xs mt-1">
+                      {position.isInRange ? 'In Range' : 'Out of Range'}
+                    </div>
+                  )}
+                </div>
           </div>
         ))}
 

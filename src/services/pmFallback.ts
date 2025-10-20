@@ -2,6 +2,8 @@ import { createPublicClient, fallback, http } from 'viem';
 import { flare } from '../lib/chainFlare';
 import PositionManagerABI from '../abis/NonfungiblePositionManager.json';
 import type { PositionRow } from '../types/positions';
+import { getPoolAddress, tickToPrice, calcAmountsForPosition, isInRange, formatPrice } from '../utils/positions';
+import { getTokenPrice, calculateUsdValue } from './tokenPrices';
 
 const pm = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657' as `0x${string}`;
 
@@ -31,6 +33,17 @@ const publicClient = createPublicClient({
 
 // Token metadata cache
 const tokenCache = new Map<string, { symbol: string; name: string; decimals: number }>();
+
+// Pool state cache
+const poolCache = new Map<string, { 
+  sqrtPriceX96: bigint; 
+  tick: number; 
+  timestamp: number 
+}>();
+const POOL_CACHE_TTL = 30000; // 30 seconds
+
+// Uniswap V3 Factory address (standard address)
+const UNISWAP_V3_FACTORY = '0x1F98431c8aD98523631AE4a59f267346ea31F984' as `0x${string}`;
 
 // Get token metadata using Viem
 async function getTokenMetadata(address: `0x${string}`): Promise<{ symbol: string; name: string; decimals: number }> {
@@ -92,9 +105,53 @@ async function getTokenMetadata(address: `0x${string}`): Promise<{ symbol: strin
   }
 }
 
-// Convert tick to price (simplified)
-function tickToPrice(tick: number): number {
-  return Math.pow(1.0001, tick);
+// Get pool state (slot0)
+async function getPoolState(poolAddress: `0x${string}`): Promise<{ sqrtPriceX96: bigint; tick: number }> {
+  const cacheKey = poolAddress.toLowerCase();
+  const cached = poolCache.get(cacheKey);
+  
+  if (cached && Date.now() - cached.timestamp < POOL_CACHE_TTL) {
+    return { sqrtPriceX96: cached.sqrtPriceX96, tick: cached.tick };
+  }
+  
+  try {
+    const slot0 = await publicClient.readContract({
+      address: poolAddress,
+      abi: [
+        {
+          name: 'slot0',
+          type: 'function',
+          stateMutability: 'view',
+          inputs: [],
+          outputs: [
+            { name: 'sqrtPriceX96', type: 'uint160' },
+            { name: 'tick', type: 'int24' },
+            { name: 'observationIndex', type: 'uint16' },
+            { name: 'observationCardinality', type: 'uint16' },
+            { name: 'observationCardinalityNext', type: 'uint16' },
+            { name: 'feeProtocol', type: 'uint8' },
+            { name: 'unlocked', type: 'bool' }
+          ]
+        }
+      ],
+      functionName: 'slot0',
+    });
+    
+    const [sqrtPriceX96, tick] = slot0 as [bigint, number, number, number, number, number, boolean];
+    
+    // Cache the result
+    poolCache.set(cacheKey, {
+      sqrtPriceX96,
+      tick,
+      timestamp: Date.now()
+    });
+    
+    return { sqrtPriceX96, tick };
+  } catch (error) {
+    console.error(`Failed to get pool state for ${poolAddress}:`, error);
+    // Return default values
+    return { sqrtPriceX96: 0n, tick: 0 };
+  }
 }
 
 // Parse position data from Viem result
@@ -120,7 +177,7 @@ async function parsePositionData(
   try {
     const values = Array.isArray(positionData) ? positionData : Object.values(positionData);
     const tuple = values as RawPositionTuple;
-    const [, , token0, token1, feeRaw, tickLowerRaw, tickUpperRaw] = tuple;
+    const [, , token0, token1, feeRaw, tickLowerRaw, tickUpperRaw, liquidity, , , tokensOwed0, tokensOwed1] = tuple;
 
     // Get token metadata
     const [token0Meta, token1Meta] = await Promise.all([
@@ -128,23 +185,56 @@ async function parsePositionData(
       getTokenMetadata(token1),
     ]);
 
-    // Convert ticks to prices
-    const tickLowerPrice = tickToPrice(Number(tickLowerRaw));
-    const tickUpperPrice = tickToPrice(Number(tickUpperRaw));
+    // Calculate pool address
+    const poolAddress = getPoolAddress(UNISWAP_V3_FACTORY, token0, token1, Number(feeRaw));
+    
+    // Get pool state
+    const { sqrtPriceX96, tick: currentTick } = await getPoolState(poolAddress);
+    
+    // Calculate prices from ticks
+    const lowerPrice = tickToPrice(Number(tickLowerRaw), token0Meta.decimals, token1Meta.decimals);
+    const upperPrice = tickToPrice(Number(tickUpperRaw), token0Meta.decimals, token1Meta.decimals);
+    
+    // Calculate amounts
+    const { amount0, amount1 } = calcAmountsForPosition(
+      liquidity,
+      sqrtPriceX96,
+      Number(tickLowerRaw),
+      Number(tickUpperRaw),
+      token0Meta.decimals,
+      token1Meta.decimals
+    );
+    
+    // Check if in range
+    const inRange = isInRange(currentTick, Number(tickLowerRaw), Number(tickUpperRaw));
+    
+    // Get token prices
+    const [token0Price, token1Price] = await Promise.all([
+      getTokenPrice(token0Meta.symbol),
+      getTokenPrice(token1Meta.symbol),
+    ]);
+    
+    // Calculate TVL
+    const tvlUsd = calculateUsdValue(amount0, token0Meta.decimals, token0Price) + 
+                   calculateUsdValue(amount1, token1Meta.decimals, token1Price);
+    
+    // Calculate rewards (unclaimed fees)
+    const rewardsUsd = calculateUsdValue(tokensOwed0, token0Meta.decimals, token0Price) + 
+                       calculateUsdValue(tokensOwed1, token1Meta.decimals, token1Price);
 
     // Create position row
     return {
       id: tokenId.toString(),
       pairLabel: `${token0Meta.symbol} - ${token1Meta.symbol}`,
       feeTierBps: Number(feeRaw),
-      tickLowerLabel: tickLowerPrice.toFixed(5),
-      tickUpperLabel: tickUpperPrice.toFixed(5),
-      tvlUsd: 0, // TODO: Calculate from liquidity and current prices
-      rewardsUsd: 0, // TODO: Calculate unclaimed fees
+      tickLowerLabel: formatPrice(lowerPrice),
+      tickUpperLabel: formatPrice(upperPrice),
+      tvlUsd,
+      rewardsUsd,
       rflrAmount: 0,
       rflrUsd: 0,
       rflrPriceUsd: 0.01758,
-      inRange: true, // TODO: Check if current price is within range
+      inRange,
       status: 'Active' as const,
       token0: {
         symbol: token0Meta.symbol,
@@ -158,6 +248,13 @@ async function parsePositionData(
         name: token1Meta.name,
         decimals: token1Meta.decimals
       },
+      // New fields
+      amount0,
+      amount1,
+      lowerPrice,
+      upperPrice,
+      isInRange: inRange,
+      poolAddress,
     };
   } catch (error) {
     console.error('Failed to parse position data:', error);

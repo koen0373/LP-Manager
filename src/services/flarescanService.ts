@@ -18,38 +18,56 @@ const SELECTORS = {
 // Token metadata cache
 const tokenCache = new Map<string, { symbol: string; name: string; decimals: number }>();
 
-// Helper function to call FlareScan API via local proxy
-async function callFlareScan(method: string, params: unknown[] = []): Promise<unknown> {
-  try {
-    console.log(`Calling FlareScan API: ${method}`, params);
-    
-    const response = await fetch(FLARESCAN_API, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        method,
-        params,
-      }),
-    });
+// Helper function to call FlareScan API via local proxy with retry logic
+async function callFlareScan(method: string, params: unknown[] = [], retries = 3): Promise<unknown> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`Calling FlareScan API (attempt ${attempt}/${retries}): ${method}`, params);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`FlareScan API error: ${response.status} - ${errorText}`);
+      const response = await fetch(FLARESCAN_API, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          method,
+          params,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        
+        if (response.status === 429 && attempt < retries) {
+          // Rate limited, wait and retry
+          const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff
+          console.log(`Rate limited, waiting ${waitTime}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue;
+        }
+        
+        throw new Error(`FlareScan API error: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(`FlareScan API error: ${data.error}`);
+      }
+
+      console.log(`FlareScan API response for ${method}:`, data);
+      return data;
+    } catch (error) {
+      console.error(`FlareScan API call failed (attempt ${attempt}/${retries}):`, error);
+      
+      if (attempt === retries) {
+        throw error;
+      }
+      
+      // Wait before retry
+      const waitTime = Math.pow(2, attempt) * 1000;
+      await new Promise(resolve => setTimeout(resolve, waitTime));
     }
-
-    const data = await response.json();
-    
-    if (data.error) {
-      throw new Error(`FlareScan API error: ${data.error}`);
-    }
-
-    console.log(`FlareScan API response for ${method}:`, data);
-    return data;
-  } catch (error) {
-    console.error('FlareScan API call failed:', error);
-    throw error;
   }
 }
 
@@ -123,7 +141,7 @@ function decodeString(hex: string): string {
   }
 }
 
-// Get wallet's LP positions
+// Get wallet's LP positions with optimized batch processing
 export async function getWalletPositions(walletAddress: string): Promise<PositionRow[]> {
   try {
     console.log(`Fetching positions for wallet: ${walletAddress}`);
@@ -146,37 +164,33 @@ export async function getWalletPositions(walletAddress: string): Promise<Positio
 
     const positions: PositionRow[] = [];
 
-    // Get each position
-    for (let i = 0; i < balance; i++) {
+    // Process positions in smaller batches to avoid rate limiting
+    const batchSize = 3; // Process 3 positions at a time
+    for (let batchStart = 0; batchStart < balance; batchStart += batchSize) {
+      const batchEnd = Math.min(batchStart + batchSize, balance);
+      console.log(`Processing batch ${batchStart + 1}-${batchEnd} of ${balance}`);
+
+      // Process batch in parallel
+      const batchPromises = [];
+      for (let i = batchStart; i < batchEnd; i++) {
+        batchPromises.push(processPosition(walletAddress, i));
+      }
+
       try {
-        // Get token ID at index i
-        const tokenIdData = await callFlareScan('eth_call', [
-          {
-            to: ENOSYS_POSITION_MANAGER,
-            data: `${SELECTORS.tokenOfOwnerByIndex}${walletAddress.slice(2).padStart(64, '0')}${i.toString(16).padStart(64, '0')}`,
-          },
-          'latest',
-        ]);
-
-        const tokenId = parseInt(tokenIdData as string, 16);
-        console.log(`Processing position ${tokenId}`);
-
-        // Get position data
-        const positionData = await callFlareScan('eth_call', [
-          {
-            to: ENOSYS_POSITION_MANAGER,
-            data: `${SELECTORS.positions}${tokenId.toString(16).padStart(64, '0')}`,
-          },
-          'latest',
-        ]);
-
-        // Parse position data
-        const position = await parsePositionData(tokenId, positionData as string);
-        if (position) {
-          positions.push(position);
+        const batchResults = await Promise.allSettled(batchPromises);
+        
+        for (const result of batchResults) {
+          if (result.status === 'fulfilled' && result.value) {
+            positions.push(result.value);
+          }
         }
       } catch (error) {
-        console.error(`Failed to process position ${i}:`, error);
+        console.error(`Failed to process batch ${batchStart + 1}-${batchEnd}:`, error);
+      }
+
+      // Add delay between batches to respect rate limits
+      if (batchEnd < balance) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
 
@@ -184,6 +198,38 @@ export async function getWalletPositions(walletAddress: string): Promise<Positio
   } catch (error) {
     console.error('Failed to fetch wallet positions:', error);
     return [];
+  }
+}
+
+// Helper function to process a single position
+async function processPosition(walletAddress: string, index: number): Promise<PositionRow | null> {
+  try {
+    // Get token ID at index i
+    const tokenIdData = await callFlareScan('eth_call', [
+      {
+        to: ENOSYS_POSITION_MANAGER,
+        data: `${SELECTORS.tokenOfOwnerByIndex}${walletAddress.slice(2).padStart(64, '0')}${index.toString(16).padStart(64, '0')}`,
+      },
+      'latest',
+    ]);
+
+    const tokenId = parseInt(tokenIdData as string, 16);
+    console.log(`Processing position ${tokenId}`);
+
+    // Get position data
+    const positionData = await callFlareScan('eth_call', [
+      {
+        to: ENOSYS_POSITION_MANAGER,
+        data: `${SELECTORS.positions}${tokenId.toString(16).padStart(64, '0')}`,
+      },
+      'latest',
+    ]);
+
+    // Parse position data
+    return await parsePositionData(tokenId, positionData as string);
+  } catch (error) {
+    console.error(`Failed to process position ${index}:`, error);
+    return null;
   }
 }
 

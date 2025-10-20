@@ -98,10 +98,12 @@ export async function getFactoryAddress(positionManager: `0x${string}`): Promise
   const cached = factoryCache.get(cacheKey);
   
   if (cached && Date.now() - cached.timestamp < FACTORY_CACHE_TTL) {
+    console.log(`[DEBUG] Using cached factory address: ${cached.factory}`);
     return cached.factory;
   }
   
   try {
+    console.log(`[DEBUG] Fetching factory address from PositionManager: ${positionManager}`);
     const factory = await publicClient.readContract({
       address: positionManager,
       abi: POSITION_MANAGER_ABI,
@@ -109,6 +111,13 @@ export async function getFactoryAddress(positionManager: `0x${string}`): Promise
     });
     
     const factoryAddress = factory as `0x${string}`;
+    console.log(`[DEBUG] Factory address returned: ${factoryAddress}`);
+    
+    if (!factoryAddress || factoryAddress === '0x0000000000000000000000000000000000000000') {
+      console.error(`[ERROR] Invalid factory address: ${factoryAddress}`);
+      throw new Error(`Invalid factory address: ${factoryAddress}`);
+    }
+    
     factoryCache.set(cacheKey, { factory: factoryAddress, timestamp: Date.now() });
     return factoryAddress;
   } catch (error) {
@@ -125,6 +134,9 @@ export async function getPoolAddress(
   fee: number
 ): Promise<`0x${string}`> {
   try {
+    console.log(`[DEBUG] Getting pool address from factory: ${factory}`);
+    console.log(`[DEBUG] Token0: ${token0}, Token1: ${token1}, Fee: ${fee}`);
+    
     const poolAddress = await publicClient.readContract({
       address: factory,
       abi: FACTORY_ABI,
@@ -132,7 +144,16 @@ export async function getPoolAddress(
       args: [token0, token1, fee],
     });
     
-    return poolAddress as `0x${string}`;
+    const poolAddr = poolAddress as `0x${string}`;
+    console.log(`[DEBUG] Pool address returned: ${poolAddr}`);
+    
+    if (!poolAddr || poolAddr === '0x0000000000000000000000000000000000000000') {
+      console.error(`[ERROR] Invalid pool address: ${poolAddr}`);
+      console.log(`[DEBUG] This means the pool doesn't exist for this token pair and fee`);
+      throw new Error(`Pool does not exist: ${poolAddr}`);
+    }
+    
+    return poolAddr;
   } catch (error) {
     console.error('Failed to get pool address from factory:', error);
     throw error;
@@ -145,10 +166,12 @@ export async function getPoolState(poolAddress: `0x${string}`): Promise<{ sqrtPr
   const cached = poolCache.get(cacheKey);
   
   if (cached && Date.now() - cached.timestamp < POOL_CACHE_TTL) {
+    console.log(`[DEBUG] Using cached pool state for ${poolAddress}: tick=${cached.tick}`);
     return { sqrtPriceX96: cached.sqrtPriceX96, tick: cached.tick };
   }
   
   try {
+    console.log(`[DEBUG] Fetching slot0 for pool: ${poolAddress}`);
     const slot0 = await publicClient.readContract({
       address: poolAddress,
       abi: POOL_ABI,
@@ -156,6 +179,7 @@ export async function getPoolState(poolAddress: `0x${string}`): Promise<{ sqrtPr
     });
     
     const [sqrtPriceX96, tick] = slot0 as [bigint, number, number, number, number, number, boolean];
+    console.log(`[DEBUG] Slot0 result: sqrtPriceX96=${sqrtPriceX96.toString()}, tick=${tick}`);
     
     // Cache the result
     poolCache.set(cacheKey, {
@@ -167,7 +191,12 @@ export async function getPoolState(poolAddress: `0x${string}`): Promise<{ sqrtPr
     
     return { sqrtPriceX96, tick };
   } catch (error) {
-    console.error(`Failed to get pool state for ${poolAddress}:`, error);
+    console.error(`[ERROR] Failed to get pool state for ${poolAddress}:`, error);
+    console.log(`[DEBUG] This could mean:`);
+    console.log(`[DEBUG] 1. Pool address is invalid (0x0000...)`);
+    console.log(`[DEBUG] 2. Pool contract doesn't exist`);
+    console.log(`[DEBUG] 3. Pool doesn't have slot0 function`);
+    console.log(`[DEBUG] 4. RPC connection issue`);
     throw error;
   }
 }

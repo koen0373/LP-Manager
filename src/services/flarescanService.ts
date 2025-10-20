@@ -328,6 +328,9 @@ async function processPosition(walletAddress: string, index: number): Promise<Po
 // Parse position data using shared helpers
 async function parsePositionData(tokenId: number, positionData: string): Promise<PositionRow | null> {
   try {
+    console.log(`[DEBUG] Parsing position data for tokenId: ${tokenId}`);
+    console.log(`[DEBUG] Position data length: ${positionData.length}`);
+    
     // Use shared ABI decoding
     const {
       token0: token0Address,
@@ -339,6 +342,11 @@ async function parsePositionData(tokenId: number, positionData: string): Promise
       tokensOwed0,
       tokensOwed1,
     } = decodePositionData(positionData);
+    
+    console.log(`[DEBUG] Decoded position data:`);
+    console.log(`[DEBUG] Token0: ${token0Address}, Token1: ${token1Address}`);
+    console.log(`[DEBUG] Fee: ${fee}, TickLower: ${tickLower}, TickUpper: ${tickUpper}`);
+    console.log(`[DEBUG] Liquidity: ${liquidity.toString()}`);
     
     // Get token metadata
     const [token0Meta, token1Meta] = await Promise.all([

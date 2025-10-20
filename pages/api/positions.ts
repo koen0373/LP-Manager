@@ -5,10 +5,17 @@ import { getWalletPositionsViaFlareScan } from '../../src/services/flarescanServ
 import type { PositionRow } from '../../src/types/positions';
 
 // Helper to serialize PositionRow for JSON response
-function serializePositionRow(position: PositionRow): PositionRow {
+function serializePositionRow(position: any): PositionRow {
   return {
     ...position,
-    // All fields are already serializable (numbers/strings)
+    // Convert any remaining BigInt values to strings
+    amount0: position.amount0?.toString() || '0',
+    amount1: position.amount1?.toString() || '0',
+    // Ensure all numeric fields are properly serialized
+    tvlUsd: Number(position.tvlUsd) || 0,
+    rewardsUsd: Number(position.rewardsUsd) || 0,
+    lowerPrice: Number(position.lowerPrice) || 0,
+    upperPrice: Number(position.upperPrice) || 0,
   };
 }
 

@@ -174,9 +174,15 @@ async function parsePositionData(
   positionData: readonly unknown[] | Record<string, unknown>
 ): Promise<PositionRow | null> {
   try {
+    console.log(`[DEBUG] Parsing Viem position data for tokenId: ${tokenId.toString()}`);
     const values = Array.isArray(positionData) ? positionData : Object.values(positionData);
     const tuple = values as RawPositionTuple;
     const [, , token0, token1, feeRaw, tickLowerRaw, tickUpperRaw, liquidity, , , tokensOwed0, tokensOwed1] = tuple;
+    
+    console.log(`[DEBUG] Viem position tuple:`);
+    console.log(`[DEBUG] Token0: ${token0}, Token1: ${token1}`);
+    console.log(`[DEBUG] Fee: ${feeRaw}, TickLower: ${tickLowerRaw}, TickUpper: ${tickUpperRaw}`);
+    console.log(`[DEBUG] Liquidity: ${liquidity.toString()}`);
 
     // Get token metadata
     const [token0Meta, token1Meta] = await Promise.all([

@@ -1,4 +1,5 @@
 import type { PositionRow } from '../types/positions';
+import { getLpPositionsOnChain } from './pmFallback';
 // import { POSITION_MANAGER_ABI, ERC20_ABI } from '../abi/positionManager';
 
 // FlareScan API endpoints - using local proxy to avoid CORS
@@ -141,11 +142,35 @@ function decodeString(hex: string): string {
   }
 }
 
-// Get wallet's LP positions with optimized batch processing
+// Get wallet's LP positions with Viem fallback
 export async function getWalletPositions(walletAddress: string): Promise<PositionRow[]> {
   try {
     console.log(`Fetching positions for wallet: ${walletAddress}`);
 
+    // Try Viem first (more reliable)
+    try {
+      console.log('Attempting to fetch positions using Viem...');
+      const viemPositions = await getLpPositionsOnChain(walletAddress as `0x${string}`);
+      if (viemPositions.length > 0) {
+        console.log(`Successfully fetched ${viemPositions.length} positions using Viem`);
+        return viemPositions;
+      }
+    } catch (viemError) {
+      console.warn('Viem fetch failed, falling back to FlareScan API:', viemError);
+    }
+
+    // Fallback to FlareScan API
+    console.log('Falling back to FlareScan API...');
+    return await getWalletPositionsFlareScan(walletAddress);
+  } catch (error) {
+    console.error('Failed to fetch wallet positions:', error);
+    return [];
+  }
+}
+
+// FlareScan API implementation (fallback)
+async function getWalletPositionsFlareScan(walletAddress: string): Promise<PositionRow[]> {
+  try {
     // Get balance of NFTs (number of positions)
     const balanceData = await callFlareScan('eth_call', [
       {
@@ -156,7 +181,7 @@ export async function getWalletPositions(walletAddress: string): Promise<Positio
     ]);
 
     const balance = parseInt(balanceData as string, 16);
-    console.log(`Found ${balance} positions`);
+    console.log(`Found ${balance} positions via FlareScan`);
 
     if (balance === 0) {
       return [];
@@ -196,7 +221,7 @@ export async function getWalletPositions(walletAddress: string): Promise<Positio
 
     return positions;
   } catch (error) {
-    console.error('Failed to fetch wallet positions:', error);
+    console.error('Failed to fetch wallet positions via FlareScan:', error);
     return [];
   }
 }

@@ -51,7 +51,7 @@ export default function PositionsTable({
                 <TokenIcon symbol={position.token0.symbol} size={28} />
                 <TokenIcon symbol={position.token1.symbol} size={28} />
               </div>
-              <div>
+              <div className="flex items-center space-x-2">
                 <div className="text-white font-medium">{position.pairLabel}</div>
                 <div className="text-enosys-subtext text-xs">
                   {position.tickLowerLabel} - {position.tickUpperLabel}

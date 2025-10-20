@@ -65,7 +65,7 @@ export default function WalletConnect({ className }: WalletConnectProps) {
   if (!isClient) {
     return (
       <button
-        className={`px-6 py-3 bg-enosys-blue hover:bg-enosys-blueHover rounded-lg text-lg font-medium transition-colors ${className || ''}`}
+        className={`px-4 py-2 bg-enosys-subcard hover:bg-enosys-border rounded-lg text-sm font-medium transition-colors ${className || ''}`}
         disabled
       >
         Connect Wallet
@@ -94,7 +94,7 @@ export default function WalletConnect({ className }: WalletConnectProps) {
     <>
       <button
         onClick={() => setShowModal(true)}
-        className={`px-6 py-3 bg-enosys-blue hover:bg-enosys-blueHover rounded-lg text-lg font-medium transition-colors ${className || ''}`}
+        className={`px-4 py-2 bg-enosys-subcard hover:bg-enosys-border rounded-lg text-sm font-medium transition-colors ${className || ''}`}
       >
         Connect Wallet
       </button>

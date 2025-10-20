@@ -32,20 +32,6 @@ export default function Header({
           <h2 className="text-white text-2xl font-bold mt-1">LP Manager</h2>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={onRefresh}
-              className="px-6 py-3 bg-enosys-blue hover:bg-enosys-blueHover rounded-lg text-lg font-medium transition-colors"
-            >
-              Refresh
-            </button>
-            <button
-              onClick={onTest}
-              className="px-6 py-3 bg-enosys-subcard hover:bg-enosys-border rounded-lg text-lg font-medium transition-colors"
-            >
-              Test
-            </button>
-          </div>
           <WalletConnect />
         </div>
       </div>
@@ -54,20 +40,20 @@ export default function Header({
         <div className="flex space-x-1">
           <button
             onClick={() => onTabChange('active')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg transition-colors ${
               activeTab === 'active'
-                ? 'bg-enosys-primary text-white'
-                : 'text-enosys-subtext hover:text-enosys-text'
+                ? 'text-white font-bold'
+                : 'text-enosys-subtext hover:text-enosys-text font-medium'
             }`}
           >
             Active ({activeCount})
           </button>
           <button
             onClick={() => onTabChange('inactive')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg transition-colors ${
               activeTab === 'inactive'
-                ? 'bg-enosys-primary text-white'
-                : 'text-enosys-subtext hover:text-enosys-text'
+                ? 'text-white font-bold'
+                : 'text-enosys-subtext hover:text-enosys-text font-medium'
             }`}
           >
             Inactive ({inactiveCount})

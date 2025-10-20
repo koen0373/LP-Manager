@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Geen remotePatterns meer nodig - we gebruiken alleen lokale iconen
 };
 
 export default nextConfig;

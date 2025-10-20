@@ -45,12 +45,15 @@ export default async function handler(
     });
 
     if (!response.ok) {
-      throw new Error(`FlareScan API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('FlareScan API error:', response.status, errorText);
+      throw new Error(`FlareScan API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
     
     if (data.error) {
+      console.error('FlareScan API returned error:', data.error);
       throw new Error(`FlareScan API error: ${data.error.message}`);
     }
 

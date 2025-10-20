@@ -1,4 +1,5 @@
 import React from 'react';
+import Head from 'next/head';
 import Header from '../src/components/Header';
 import PositionsTable from '../src/components/PositionsTable';
 import type { PositionRow } from '../src/types/positions';
@@ -106,23 +107,29 @@ export default function LPManagerPage() {
   const inactiveCount = 4; // Exact match met voorbeeld
 
   return (
-    <main className="pb-20">
-      <Header 
-        address="0x1234...5678"
-        balance="1.234 FLR"
-        onRefresh={handleRefresh}
-        onTest={handleTest}
-        activeCount={activeCount}
-        inactiveCount={inactiveCount}
-        onTabChange={setTab}
-        activeTab={tab}
-      />
-      <PositionsTable 
-        positions={tableRows} 
-        headerNote={headerNote} 
-        globalRflrPriceUsd={rflrSpotUsd} 
-        showTotalsRow={false}
-      />
-    </main>
+    <>
+      <Head>
+        <title>Enosys LP Manager</title>
+        <meta name="description" content="Manage your Enosys V3 liquidity positions on Flare Network" />
+      </Head>
+      <main className="pb-20">
+        <Header 
+          address="0x1234...5678"
+          balance="1.234 FLR"
+          onRefresh={handleRefresh}
+          onTest={handleTest}
+          activeCount={activeCount}
+          inactiveCount={inactiveCount}
+          onTabChange={setTab}
+          activeTab={tab}
+        />
+        <PositionsTable 
+          positions={tableRows} 
+          headerNote={headerNote} 
+          globalRflrPriceUsd={rflrSpotUsd} 
+          showTotalsRow={false}
+        />
+      </main>
+    </>
   );
 }

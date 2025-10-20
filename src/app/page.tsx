@@ -170,4 +170,4 @@ export default function LPManagerPage() {
       )}
     </main>
   );
-}
+}// Trigger deployment Mon Oct 20 13:39:17 CEST 2025

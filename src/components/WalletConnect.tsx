@@ -32,11 +32,12 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
           if (accounts.length > 0) {
             setIsConnected(true);
             setAddress(accounts[0]);
+            onWalletConnected?.(accounts[0]);
           }
         })
         .catch(console.error);
     }
-  }, []);
+  }, [onWalletConnected]);
 
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;

@@ -17,10 +17,10 @@ interface HeaderProps {
 }
 
 export default function Header({
-  address,
-  balance,
-  onRefresh,
-  onTest,
+  address: _address,
+  balance: _balance,
+  onRefresh: _onRefresh,
+  onTest: _onTest,
   activeCount,
   inactiveCount,
   onTabChange,

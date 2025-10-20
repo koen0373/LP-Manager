@@ -13,7 +13,13 @@ export default function LPManagerPage() {
   const [positions, setPositions] = React.useState<PositionRow[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string>('');
+  const [isClient, setIsClient] = React.useState(false);
   const rflrSpotUsd = 0.01758; // actuele koers
+
+  // Ensure client-side rendering
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Fetch positions when wallet connects
   const fetchPositions = async (address: string) => {
@@ -43,7 +49,7 @@ export default function LPManagerPage() {
     setError('');
   };
 
-  const headerNote = walletAddress 
+  const headerNote = isClient && walletAddress 
     ? `Data from: On-chain Wallet Positions | ${positions.length} pools | Updated: ${new Date().toLocaleTimeString()}`
     : 'Connect your wallet to view LP positions';
 
@@ -81,7 +87,13 @@ export default function LPManagerPage() {
           onWalletDisconnected={handleWalletDisconnected}
         />
         
-        {!walletAddress ? (
+        {!isClient ? (
+          <div className="w-full max-w-[1200px] mx-auto text-center py-20">
+            <div className="text-enosys-subtext text-lg">
+              Loading...
+            </div>
+          </div>
+        ) : !walletAddress ? (
           <div className="w-full max-w-[1200px] mx-auto text-center py-20">
             <div className="text-enosys-subtext text-lg">
               Connect your wallet to view your LP positions

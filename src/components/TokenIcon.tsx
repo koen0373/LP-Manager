@@ -51,11 +51,11 @@ export const TokenIcon: React.FC<TokenIconProps> = ({
   address,
   size = 28,
   className,
-  alt,
-  priority,
+  alt: _alt,
+  priority: _priority,
 }) => {
   const iconSrc = getTokenIcon(symbol);
-  const label = alt || symbol || (address ? address.slice(0, 6) + "…" : "token");
+  const label = _alt || symbol || (address ? address.slice(0, 6) + "…" : "token");
 
   return (
     <img

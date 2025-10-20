@@ -15,7 +15,7 @@ interface PositionsTableProps {
 export default function PositionsTable({
   positions,
   headerNote,
-  globalRflrPriceUsd,
+  globalRflrPriceUsd: _globalRflrPriceUsd,
   showTotalsRow,
 }: PositionsTableProps) {
   const totals = positions.reduce(
@@ -42,7 +42,7 @@ export default function PositionsTable({
         </div>
 
         {/* Rows */}
-        {positions.map((position, index) => (
+            {positions.map((position) => (
           <div key={position.id} className="grid grid-cols-5 gap-4 px-6 py-4">
             {/* Position Specifics */}
             <div className="flex items-center space-x-3">

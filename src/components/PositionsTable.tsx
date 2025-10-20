@@ -46,18 +46,18 @@ export default function PositionsTable({
           <div key={position.id} className="grid grid-cols-5 gap-4 px-6 py-4">
             {/* Position Specifics */}
             <div className="flex items-center space-x-3">
-              <div className="flex -space-x-2">
-                <TokenIcon symbol={position.token0.symbol} size={28} />
-                <TokenIcon symbol={position.token1.symbol} size={28} />
-              </div>
               <div>
-                <div className="text-white font-medium">{position.pairLabel}</div>
-                <div className="flex items-center space-x-2 text-enosys-subtext text-sm">
-                  <span>#{position.id}</span>
-                  <FeeBadge feeBps={position.feeTierBps} />
+                <div className="text-enosys-subtext text-sm mb-1">#{position.id}</div>
+                <div className="flex -space-x-2 mb-2">
+                  <TokenIcon symbol={position.token0.symbol} size={28} />
+                  <TokenIcon symbol={position.token1.symbol} size={28} />
                 </div>
+                <div className="text-white font-medium">{position.pairLabel}</div>
                 <div className="text-enosys-subtext text-xs">
                   {position.tickLowerLabel} - {position.tickUpperLabel}
+                </div>
+                <div className="mt-1">
+                  <FeeBadge feeBps={position.feeTierBps} />
                 </div>
               </div>
             </div>

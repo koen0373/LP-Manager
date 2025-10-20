@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import WalletConnect from './WalletConnect';
 
 interface HeaderProps {
   address?: string;
@@ -43,6 +46,7 @@ export default function Header({
               Test
             </button>
           </div>
+          <WalletConnect />
         </div>
       </div>
       

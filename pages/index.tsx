@@ -26,7 +26,9 @@ export default function LPManagerPage() {
     setLoading(true);
     setError('');
     try {
+      console.log('Fetching positions for address:', address);
       const walletPositions = await getWalletPositions(address);
+      console.log('Received positions:', walletPositions);
       setPositions(walletPositions);
     } catch (err) {
       setError('Failed to fetch positions');

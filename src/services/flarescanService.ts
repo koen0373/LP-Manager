@@ -134,17 +134,50 @@ export async function getWalletPositions(walletAddress: string): Promise<Positio
       'latest',
     ]);
 
-    const balance = parseInt(balanceData, 16);
+    const balance = parseInt(balanceData as string, 16);
     console.log(`Found ${balance} positions`);
 
     if (balance === 0) {
       return [];
     }
 
-    // For now, return empty array to prevent errors
-    // TODO: Implement full position parsing when API is stable
-    console.log('Position parsing temporarily disabled for stability');
-    return [];
+    const positions: PositionRow[] = [];
+
+    // Get each position
+    for (let i = 0; i < balance; i++) {
+      try {
+        // Get token ID at index i
+        const tokenIdData = await callFlareScan('eth_call', [
+          {
+            to: ENOSYS_POSITION_MANAGER,
+            data: `${SELECTORS.tokenOfOwnerByIndex}${walletAddress.slice(2).padStart(64, '0')}${i.toString(16).padStart(64, '0')}`,
+          },
+          'latest',
+        ]);
+
+        const tokenId = parseInt(tokenIdData as string, 16);
+        console.log(`Processing position ${tokenId}`);
+
+        // Get position data
+        const positionData = await callFlareScan('eth_call', [
+          {
+            to: ENOSYS_POSITION_MANAGER,
+            data: `${SELECTORS.positions}${tokenId.toString(16).padStart(64, '0')}`,
+          },
+          'latest',
+        ]);
+
+        // Parse position data
+        const position = await parsePositionData(tokenId, positionData as string);
+        if (position) {
+          positions.push(position);
+        }
+      } catch (error) {
+        console.error(`Failed to process position ${i}:`, error);
+      }
+    }
+
+    return positions;
   } catch (error) {
     console.error('Failed to fetch wallet positions:', error);
     return [];

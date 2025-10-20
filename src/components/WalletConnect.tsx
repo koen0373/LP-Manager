@@ -46,18 +46,25 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
   const handleConnect = async () => {
     if (typeof window !== 'undefined' && window.ethereum) {
       try {
+        console.log('Requesting wallet connection...');
         const accounts = await window.ethereum.request({ 
           method: 'eth_requestAccounts' 
         });
-            if (accounts.length > 0) {
-              setIsConnected(true);
-              setAddress(accounts[0]);
-              setShowModal(false);
-              onWalletConnected?.(accounts[0]);
-            }
+        console.log('Received accounts:', accounts);
+        
+        if (accounts && accounts.length > 0) {
+          setIsConnected(true);
+          setAddress(accounts[0]);
+          setShowModal(false);
+          console.log('Wallet connected:', accounts[0]);
+          onWalletConnected?.(accounts[0]);
+        }
       } catch (error) {
         console.error('Failed to connect wallet:', error);
+        alert('Failed to connect wallet. Please make sure MetaMask is installed and unlocked.');
       }
+    } else {
+      alert('MetaMask is not installed. Please install MetaMask to connect your wallet.');
     }
   };
 

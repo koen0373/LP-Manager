@@ -129,4 +129,4 @@ export default function LPManagerPage() {
     </>
   );
 }
-// Force deployment Mon Oct 20 15:30:00 CEST 2025 - FlareScan integration
+// Force deployment Mon Oct 20 15:45:00 CEST 2025 - Fixed React errors

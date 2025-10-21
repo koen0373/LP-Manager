@@ -22,21 +22,37 @@ export default function LPManagerPage() {
   }, []);
 
   // Fetch positions when wallet connects
-  const fetchPositions = async (address: string) => {
-    setLoading(true);
-    setError('');
-    try {
-      console.log('Fetching positions for address:', address);
-      const walletPositions = await getWalletPositions(address);
-      console.log('Received positions:', walletPositions);
-      setPositions(walletPositions);
-    } catch (err) {
-      setError('Failed to fetch positions');
-      console.error('Error fetching positions:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const TVL_ACTIVE_THRESHOLD = 0.01; // USD
+
+  const fetchPositions = React.useCallback(
+    async (address: string) => {
+      setLoading(true);
+      setError('');
+      try {
+        console.log('Fetching positions for address:', address);
+        const walletPositions = await getWalletPositions(address);
+        console.log('Received positions:', walletPositions);
+        const normalizedPositions = walletPositions.map((position) => {
+          const tvlUsd = Number(position.tvlUsd ?? 0);
+          const rewardsUsd = Number(position.rewardsUsd ?? 0);
+          const status = tvlUsd > TVL_ACTIVE_THRESHOLD ? 'Active' : 'Inactive';
+          return {
+            ...position,
+            tvlUsd,
+            rewardsUsd,
+            status: status as 'Active' | 'Inactive',
+          };
+        });
+        setPositions(normalizedPositions);
+      } catch (err) {
+        setError('Failed to fetch positions');
+        console.error('Error fetching positions:', err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   // Handle wallet connection
   const handleWalletConnected = (address: string) => {
@@ -51,9 +67,14 @@ export default function LPManagerPage() {
     setError('');
   };
 
-  const headerNote = isClient && walletAddress 
-    ? `Data from: On-chain Wallet Positions | ${positions.length} pools | Updated: ${new Date().toLocaleTimeString()}`
-    : 'Connect your wallet to view LP positions';
+  const [lastUpdated, setLastUpdated] = React.useState<string>('');
+
+  // Update timestamp when positions change
+  React.useEffect(() => {
+    if (positions.length > 0) {
+      setLastUpdated(new Date().toLocaleTimeString());
+    }
+  }, [positions.length]);
 
   const handleTest = () => {
     console.log('Testing blockchain connection...');
@@ -66,8 +87,19 @@ export default function LPManagerPage() {
   };
 
   // Calculate counts for active/inactive positions
-  const activeCount = positions.filter(p => p.status === 'Active').length;
-  const inactiveCount = positions.filter(p => p.status === 'Inactive').length;
+  const activePositions = positions.filter((p) => p.status === 'Active');
+  const inactivePositions = positions.filter((p) => p.status === 'Inactive');
+
+  const activeCount = activePositions.length;
+  const inactiveCount = inactivePositions.length;
+
+  const activeHeaderNote =
+    isClient && walletAddress
+      ? `Data from: On-chain Wallet Positions | ${activePositions.length} active pools | Updated: ${lastUpdated}`
+      : 'Connect your wallet to view LP positions';
+
+  const inactiveHeaderNote = 'Inactive positions (TVL ≈ 0)';
+
 
   return (
     <>
@@ -116,16 +148,33 @@ export default function LPManagerPage() {
         ) : positions.length === 0 ? (
           <div className="w-full max-w-[1200px] mx-auto text-center py-20">
             <div className="text-enosys-subtext text-lg">
-              No active LP positions found for this wallet
+              No LP positions found for this wallet
             </div>
           </div>
         ) : (
-          <PositionsTable 
-            positions={positions} 
-            headerNote={headerNote} 
-            globalRflrPriceUsd={rflrSpotUsd} 
-            showTotalsRow={false}
-          />
+          <div className="w-full max-w-[1200px] mx-auto space-y-12">
+            {activePositions.length > 0 ? (
+              <PositionsTable 
+                positions={activePositions} 
+                headerNote={activeHeaderNote} 
+                globalRflrPriceUsd={rflrSpotUsd} 
+                showTotalsRow={false}
+              />
+            ) : (
+              <div className="rounded-lg border border-enosys-border bg-enosys-card px-6 py-10 text-center text-enosys-subtext">
+                <p className="text-lg">No active LP positions with TVL &gt; $0.01</p>
+              </div>
+            )}
+
+            {inactivePositions.length > 0 && (
+              <PositionsTable 
+                positions={inactivePositions} 
+                headerNote={inactiveHeaderNote} 
+                globalRflrPriceUsd={rflrSpotUsd} 
+                showTotalsRow={false}
+              />
+            )}
+          </div>
         )}
       </main>
     </>

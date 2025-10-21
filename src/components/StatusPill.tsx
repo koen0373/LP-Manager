@@ -7,12 +7,15 @@ interface StatusPillProps {
 export function StatusPill({ inRange }: StatusPillProps) {
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+      className={`inline-flex items-center text-xs font-medium ${
         inRange
-          ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-          : 'bg-red-500/20 text-red-400 border border-red-500/30'
+          ? 'text-green-400'
+          : 'text-red-400'
       }`}
     >
+      {inRange && (
+        <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+      )}
       {inRange ? 'In Range' : 'Out of Range'}
     </span>
   );

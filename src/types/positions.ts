@@ -5,7 +5,7 @@ export interface TokenInfo {
   address?: string;
 }
 
-export interface PositionData {
+export interface RawPositionData {
   nonce: number;
   operator: `0x${string}`;
   token0: `0x${string}`;
@@ -36,15 +36,15 @@ export interface PositionRow {
   token0: TokenInfo;
   token1: TokenInfo;
   // New fields for detailed data
-  amount0: string;
-  amount1: string;
+  amount0: number;
+  amount1: number;
   lowerPrice: number;
   upperPrice: number;
   isInRange: boolean;
   poolAddress: `0x${string}`;
 }
 
-export interface PositionData {
+export interface PositionState {
   positions: PositionRow[];
   loading: boolean;
   error?: string;

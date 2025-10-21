@@ -1,14 +1,17 @@
 import type { PositionRow } from '../types/positions';
-import { 
-  getFactoryAddress, 
-  getPoolAddress, 
-  getPoolState, 
+import {
+  getFactoryAddress,
+  getPoolAddress,
+  getPoolState,
   decodePositionData,
-  tickToPrice, 
-  calcAmountsForPosition, 
-  isInRange, 
+  calcAmountsForPosition,
+  isInRange,
   formatPrice,
-  calculatePositionValue
+  calculatePositionValue,
+  normalizeAddress,
+  toSignedInt24,
+  computePriceRange,
+  calculateAccruedFees,
 } from '../utils/poolHelpers';
 // FlareScan API endpoints - using local proxy to avoid CORS
 const FLARESCAN_API = process.env.FLARESCAN_PROXY_URL || 'http://localhost:3000/api/flarescan';
@@ -28,13 +31,6 @@ const SELECTORS = {
 const tokenCache = new Map<string, { symbol: string; name: string; decimals: number }>();
 const positionsCache = new Map<string, { expires: number; data: PositionRow[] }>();
 const CACHE_TTL_MS = 30_000; // 30 seconds cache to avoid spamming the API
-
-function normaliseAddress(address: string): `0x${string}` {
-  if (!address) {
-    throw new Error('Wallet address is required');
-  }
-  return (address.startsWith('0x') ? address : `0x${address}`).toLowerCase() as `0x${string}`;
-}
 
 function getCachedPositions(address: `0x${string}`): PositionRow[] | null {
   const cached = positionsCache.get(address);
@@ -99,11 +95,16 @@ async function callFlareScan(method: string, params: unknown[] = [], retries = 3
       const data = await response.json();
 
       if (data.error) {
-        throw new Error(`FlareScan API error: ${data.error}`);
+        throw new Error(`FlareScan API error: ${JSON.stringify(data.error)}`);
       }
 
-      console.log(`FlareScan API response for ${method}:`, data);
-      return data;
+      if (data.result === undefined) {
+        console.warn(`FlareScan API response missing result for ${method}`, data);
+        return data;
+      }
+
+      console.log(`FlareScan API response for ${method}:`, data.result);
+      return data.result;
     } catch (error) {
       console.error(`FlareScan API call failed (attempt ${attempt}/${retries}):`, error);
       
@@ -120,15 +121,17 @@ async function callFlareScan(method: string, params: unknown[] = [], retries = 3
 
 // Get token metadata
 async function getTokenMetadata(address: string): Promise<{ symbol: string; name: string; decimals: number }> {
-  if (tokenCache.has(address)) {
-    return tokenCache.get(address)!;
+  const normalized = normalizeAddress(address);
+
+  if (tokenCache.has(normalized)) {
+    return tokenCache.get(normalized)!;
   }
 
   try {
     // Get symbol
     const symbolData = await callFlareScan('eth_call', [
       {
-        to: address,
+        to: normalized,
         data: SELECTORS.symbol,
       },
       'latest',
@@ -137,7 +140,7 @@ async function getTokenMetadata(address: string): Promise<{ symbol: string; name
     // Get name
     const nameData = await callFlareScan('eth_call', [
       {
-        to: address,
+        to: normalized,
         data: SELECTORS.name,
       },
       'latest',
@@ -146,19 +149,19 @@ async function getTokenMetadata(address: string): Promise<{ symbol: string; name
     // Get decimals
     const decimalsData = await callFlareScan('eth_call', [
       {
-        to: address,
+        to: normalized,
         data: SELECTORS.decimals,
       },
       'latest',
     ]);
 
     // Decode results
-    const symbol = decodeString(symbolData);
-    const name = decodeString(nameData);
-    const decimals = parseInt(decimalsData, 16);
+    const symbol = decodeString(symbolData as string);
+    const name = decodeString(nameData as string);
+    const decimals = parseInt(decimalsData as string, 16);
 
     const metadata = { symbol, name, decimals };
-    tokenCache.set(address, metadata);
+    tokenCache.set(normalized, metadata);
     return metadata;
   } catch (error) {
     console.error(`Failed to get token metadata for ${address}:`, error);
@@ -191,7 +194,7 @@ function decodeString(hex: string): string {
 // Get wallet's LP positions with Viem fallback
 export async function getWalletPositions(walletAddress: string): Promise<PositionRow[]> {
   try {
-    const normalizedAddress = normaliseAddress(walletAddress);
+    const normalizedAddress = normalizeAddress(walletAddress);
     const cached = getCachedPositions(normalizedAddress);
     if (cached) {
       return cached;
@@ -237,7 +240,8 @@ export async function getWalletPositions(walletAddress: string): Promise<Positio
 // FlareScan API implementation (fallback)
 export async function getWalletPositionsViaFlareScan(walletAddress: string): Promise<PositionRow[]> {
   try {
-    const normalised = normaliseAddress(walletAddress);
+    const normalised = normalizeAddress(walletAddress);
+    const factory = await getFactoryAddress(ENOSYS_POSITION_MANAGER as `0x${string}`);
     // Get balance of NFTs (number of positions)
     const balanceData = await callFlareScan('eth_call', [
       {
@@ -265,7 +269,7 @@ export async function getWalletPositionsViaFlareScan(walletAddress: string): Pro
       // Process batch in parallel
       const batchPromises = [];
       for (let i = batchStart; i < batchEnd; i++) {
-        batchPromises.push(processPosition(normalised, i));
+        batchPromises.push(processPosition(normalised, i, factory));
       }
 
       try {
@@ -294,7 +298,7 @@ export async function getWalletPositionsViaFlareScan(walletAddress: string): Pro
 }
 
 // Helper function to process a single position
-async function processPosition(walletAddress: string, index: number): Promise<PositionRow | null> {
+async function processPosition(walletAddress: `0x${string}`, index: number, factory: `0x${string}`): Promise<PositionRow | null> {
   try {
     // Get token ID at index i
     const tokenIdData = await callFlareScan('eth_call', [
@@ -318,7 +322,7 @@ async function processPosition(walletAddress: string, index: number): Promise<Po
     ]);
 
     // Parse position data
-    return await parsePositionData(tokenId, positionData as string);
+    return await parsePositionData(tokenId, positionData as string, factory);
   } catch (error) {
     console.error(`Failed to process position ${index}:`, error);
     return null;
@@ -326,47 +330,52 @@ async function processPosition(walletAddress: string, index: number): Promise<Po
 }
 
 // Parse position data using shared helpers
-async function parsePositionData(tokenId: number, positionData: string): Promise<PositionRow | null> {
+async function parsePositionData(tokenId: number, positionData: string, factory: `0x${string}`): Promise<PositionRow | null> {
   try {
     console.log(`[DEBUG] Parsing position data for tokenId: ${tokenId}`);
     console.log(`[DEBUG] Position data length: ${positionData.length}`);
     
     // Use shared ABI decoding
-    const {
-      token0: token0Address,
-      token1: token1Address,
-      fee,
-      tickLower,
-      tickUpper,
-      liquidity,
-      tokensOwed0,
-      tokensOwed1,
-    } = decodePositionData(positionData);
+    const decoded = decodePositionData(positionData);
+
+    const token0 = normalizeAddress(decoded.token0);
+    const token1 = normalizeAddress(decoded.token1);
+    const fee = Number(decoded.fee);
+    const tickLower = toSignedInt24(decoded.tickLower);
+    const tickUpper = toSignedInt24(decoded.tickUpper);
+    const liquidity = decoded.liquidity;
+    const tokensOwed0 = decoded.tokensOwed0;
+    const tokensOwed1 = decoded.tokensOwed1;
     
     console.log(`[DEBUG] Decoded position data:`);
-    console.log(`[DEBUG] Token0: ${token0Address}, Token1: ${token1Address}`);
+    console.log(`[DEBUG] Token0: ${token0}, Token1: ${token1}`);
     console.log(`[DEBUG] Fee: ${fee}, TickLower: ${tickLower}, TickUpper: ${tickUpper}`);
     console.log(`[DEBUG] Liquidity: ${liquidity.toString()}`);
     
-    // Get token metadata
+    // Normalize token addresses
     const [token0Meta, token1Meta] = await Promise.all([
-      getTokenMetadata(token0Address),
-      getTokenMetadata(token1Address),
+      getTokenMetadata(token0),
+      getTokenMetadata(token1),
     ]);
+    console.log('[METADATA][flarescan]', {
+      token0: token0Meta,
+      token1: token1Meta,
+    });
     
-    // Calculate prices from ticks
-    const lowerPrice = tickToPrice(tickLower, token0Meta.decimals, token1Meta.decimals);
-    const upperPrice = tickToPrice(tickUpper, token0Meta.decimals, token1Meta.decimals);
+    const { lowerPrice, upperPrice } = computePriceRange(
+      tickLower,
+      tickUpper,
+      token0Meta.decimals,
+      token1Meta.decimals
+    );
     
-    // Get factory address and pool address
-    const factory = await getFactoryAddress(ENOSYS_POSITION_MANAGER as `0x${string}`);
-    const poolAddress = await getPoolAddress(factory, token0Address, token1Address, fee);
+    const poolAddress = await getPoolAddress(factory, token0, token1, fee);
     
     // Get pool state
     const { sqrtPriceX96, tick: currentTick } = await getPoolState(poolAddress);
     
     // Calculate amounts using proper Uniswap V3 math
-    const { amount0, amount1 } = calcAmountsForPosition(
+    const { amount0Wei, amount1Wei } = calcAmountsForPosition(
       liquidity,
       sqrtPriceX96,
       tickLower,
@@ -375,20 +384,48 @@ async function parsePositionData(tokenId: number, positionData: string): Promise
       token1Meta.decimals
     );
     
+    const { fee0Wei, fee1Wei } = await calculateAccruedFees({
+      poolAddress,
+      liquidity,
+      tickLower,
+      tickUpper,
+      currentTick,
+      feeGrowthInside0LastX128: decoded.feeGrowthInside0LastX128,
+      feeGrowthInside1LastX128: decoded.feeGrowthInside1LastX128,
+      tokensOwed0,
+      tokensOwed1,
+    });
+    
     // Check if in range
     const inRange = isInRange(currentTick, tickLower, tickUpper);
     
     // Calculate TVL and rewards
-    const { tvlUsd, rewardsUsd } = await calculatePositionValue(
+    const {
       amount0,
       amount1,
-      tokensOwed0,
-      tokensOwed1,
-      token0Meta.symbol,
-      token1Meta.symbol,
-      token0Meta.decimals,
-      token1Meta.decimals
-    );
+      fee0,
+      fee1,
+      price0Usd,
+      price1Usd,
+      tvlUsd,
+      rewardsUsd,
+    } = await calculatePositionValue({
+      token0Symbol: token0Meta.symbol,
+      token1Symbol: token1Meta.symbol,
+      token0Decimals: token0Meta.decimals,
+      token1Decimals: token1Meta.decimals,
+      amount0Wei,
+      amount1Wei,
+      fee0Wei,
+      fee1Wei,
+    });
+    
+    console.log('[VALUE][flarescan]', {
+      fee0Tokens: fee0,
+      fee1Tokens: fee1,
+      fee0Usd: fee0 * price0Usd,
+      fee1Usd: fee1 * price1Usd,
+    });
     
     // Create position row with real data
     return {
@@ -406,19 +443,19 @@ async function parsePositionData(tokenId: number, positionData: string): Promise
       status: 'Active' as const,
       token0: {
         symbol: token0Meta.symbol,
-        address: token0Address,
+        address: token0,
         name: token0Meta.name,
         decimals: token0Meta.decimals
       },
       token1: {
         symbol: token1Meta.symbol,
-        address: token1Address,
+        address: token1,
         name: token1Meta.name,
         decimals: token1Meta.decimals
       },
       // New fields with real calculated values
-      amount0: amount0.toString(),
-      amount1: amount1.toString(),
+      amount0,
+      amount1,
       lowerPrice,
       upperPrice,
       isInRange: inRange,
@@ -429,4 +466,3 @@ async function parsePositionData(tokenId: number, positionData: string): Promise
     return null;
   }
 }
-

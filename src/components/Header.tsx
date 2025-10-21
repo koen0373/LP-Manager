@@ -36,6 +36,26 @@ export default function Header({
           <h2 className="text-white text-2xl font-bold mt-1">LP Manager</h2>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={_onRefresh}
+            className="flex items-center gap-2 px-3 py-2 text-enosys-subtext hover:text-white hover:font-bold rounded-lg transition-all duration-200"
+            title="Refresh data"
+          >
+            <svg 
+              width="16" 
+              height="16" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg"
+              className="transition-colors duration-200"
+            >
+              <path 
+                d="M4 12a8 8 0 0 1 8-8V2l4 4-4 4V6a6 6 0 1 0 6 6h2a8 8 0 0 1-16 0z" 
+                fill="currentColor"
+              />
+            </svg>
+            <span className="text-sm font-medium transition-all duration-200">Refresh</span>
+          </button>
           <WalletConnect 
             onWalletConnected={onWalletConnected}
             onWalletDisconnected={onWalletDisconnected}
@@ -47,7 +67,7 @@ export default function Header({
         <div className="flex space-x-1">
           <button
             onClick={() => onTabChange('active')}
-            className={`px-4 py-2 rounded-lg transition-colors ${
+            className={`px-4 py-2 rounded-lg transition-colors hover:font-bold ${
               activeTab === 'active'
                 ? 'text-white font-bold'
                 : 'text-enosys-subtext hover:text-enosys-text font-medium'
@@ -57,7 +77,7 @@ export default function Header({
           </button>
           <button
             onClick={() => onTabChange('inactive')}
-            className={`px-4 py-2 rounded-lg transition-colors ${
+            className={`px-4 py-2 rounded-lg transition-colors hover:font-bold ${
               activeTab === 'inactive'
                 ? 'text-white font-bold'
                 : 'text-enosys-subtext hover:text-enosys-text font-medium'

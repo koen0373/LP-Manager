@@ -8,7 +8,8 @@ const TOKEN_PRICES: Record<string, number> = {
   'SFLR': 0.01758, // Songbird Flare
   
   // Stablecoins
-  'USDT0': 1.0,    // USD₮0
+  'USD0': 1.0,     // USD₮0 (normalized from USD₮0)
+  'USDT0': 1.0,    // USD₮0 (alternative symbol)
   'USDTO': 1.0,    // USD₮0 (alternative symbol)
   'USDT': 1.0,     // Tether
   'USDC': 1.0,     // USD Coin
@@ -32,20 +33,29 @@ const priceCache = new Map<string, { price: number; timestamp: number }>();
 const CACHE_TTL = 30000; // 30 seconds
 
 export async function getTokenPrice(symbol: string): Promise<number> {
-  const normalizedSymbol = symbol.toUpperCase();
+  const normalizedSymbol = symbol
+    .normalize("NFKD")
+    .replace(/[^A-Z0-9]/gi, "")
+    .toUpperCase();
+  
+  console.log(`[PRICE] Getting price for symbol: "${symbol}" -> normalized: "${normalizedSymbol}"`);
   
   // Check cache first
   const cached = priceCache.get(normalizedSymbol);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    console.log(`[PRICE] Cache hit for ${normalizedSymbol}: $${cached.price}`);
     return cached.price;
   }
   
   // Check hardcoded prices
   if (TOKEN_PRICES[normalizedSymbol]) {
     const price = TOKEN_PRICES[normalizedSymbol];
+    console.log(`[PRICE] Found hardcoded price for ${normalizedSymbol}: $${price}`);
     priceCache.set(normalizedSymbol, { price, timestamp: Date.now() });
     return price;
   }
+  
+  console.log(`[PRICE] No hardcoded price found for ${normalizedSymbol}`);
   
   // Try to fetch from CoinGecko (optional)
   try {

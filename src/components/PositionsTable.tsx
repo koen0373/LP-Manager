@@ -43,7 +43,7 @@ export default function PositionsTable({
 
         {/* Rows */}
             {positions.map((position) => (
-          <div key={position.id} className="grid grid-cols-5 gap-4 px-6 py-4">
+          <div key={position.id} className="grid grid-cols-5 gap-4 px-6 py-4 hover:bg-white/5 transition-colors">
             {/* Position Specifics */}
             <div className="flex items-center space-x-3">
               <div className="text-enosys-subtext text-sm">#{position.id}</div>
@@ -54,7 +54,7 @@ export default function PositionsTable({
                   <div>
                     <div className="text-white font-medium whitespace-nowrap">{position.pairLabel}</div>
                     <div className="text-enosys-subtext text-xs">
-                      Range: {formatPrice(position.lowerPrice || 0)} - {formatPrice(position.upperPrice || 0)}
+                      {formatPrice(position.lowerPrice || 0)} - {formatPrice(position.upperPrice || 0)}
                     </div>
                   </div>
               <FeeBadge feeBps={position.feeTierBps} />
@@ -63,11 +63,6 @@ export default function PositionsTable({
                 {/* TVL */}
                 <div className="text-center">
                   <div className="text-white font-medium">${formatUsd(position.tvlUsd || 0)}</div>
-                  {position.amount0 !== '0' && position.amount1 !== '0' && (
-                    <div className="text-enosys-subtext text-xs">
-                      {position.amount0} {position.token0.symbol} + {position.amount1} {position.token1.symbol}
-                    </div>
-                  )}
                 </div>
 
                 {/* Pool Rewards */}
@@ -95,11 +90,6 @@ export default function PositionsTable({
                 {/* Range Status */}
                 <div className="text-center">
                   <StatusPill inRange={position.isInRange !== undefined ? position.isInRange : position.inRange} />
-                  {position.isInRange !== undefined && (
-                    <div className="text-enosys-subtext text-xs mt-1">
-                      {position.isInRange ? 'In Range' : 'Out of Range'}
-                    </div>
-                  )}
                 </div>
           </div>
         ))}

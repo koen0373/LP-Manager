@@ -2,15 +2,18 @@ import { createPublicClient, fallback, http } from 'viem';
 import { flare } from '../lib/chainFlare';
 import PositionManagerABI from '../abis/NonfungiblePositionManager.json';
 import type { PositionRow } from '../types/positions';
-import { 
-  getFactoryAddress, 
-  getPoolAddress, 
-  getPoolState, 
-  tickToPrice, 
-  calcAmountsForPosition, 
-  isInRange, 
+import {
+  getFactoryAddress,
+  getPoolAddress,
+  getPoolState,
+  calcAmountsForPosition,
+  isInRange,
   formatPrice,
-  calculatePositionValue
+  calculatePositionValue,
+  normalizeAddress,
+  toSignedInt24,
+  computePriceRange,
+  calculateAccruedFees,
 } from '../utils/poolHelpers';
 
 const pm = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657' as `0x${string}`;
@@ -46,14 +49,16 @@ const tokenCache = new Map<string, { symbol: string; name: string; decimals: num
 
 // Get token metadata using Viem
 async function getTokenMetadata(address: `0x${string}`): Promise<{ symbol: string; name: string; decimals: number }> {
-  if (tokenCache.has(address)) {
-    return tokenCache.get(address)!;
+  const normalized = normalizeAddress(address);
+
+  if (tokenCache.has(normalized)) {
+    return tokenCache.get(normalized)!;
   }
 
   try {
     const [symbol, name, decimals] = await Promise.all([
       publicClient.readContract({
-        address,
+        address: normalized,
         abi: [
           {
             name: 'symbol',
@@ -81,7 +86,7 @@ async function getTokenMetadata(address: `0x${string}`): Promise<{ symbol: strin
       }).catch(() => 'Unknown Token'),
       
       publicClient.readContract({
-        address,
+        address: normalized,
         abi: [
           {
             name: 'decimals',
@@ -96,7 +101,7 @@ async function getTokenMetadata(address: `0x${string}`): Promise<{ symbol: strin
     ]);
 
     const metadata = { symbol, name, decimals };
-    tokenCache.set(address, metadata);
+    tokenCache.set(normalized, metadata);
     return metadata;
   } catch (error) {
     console.error(`Failed to get token metadata for ${address}:`, error);
@@ -104,54 +109,6 @@ async function getTokenMetadata(address: `0x${string}`): Promise<{ symbol: strin
   }
 }
 
-// Get pool state (slot0)
-async function getPoolState(poolAddress: `0x${string}`): Promise<{ sqrtPriceX96: bigint; tick: number }> {
-  const cacheKey = poolAddress.toLowerCase();
-  const cached = poolCache.get(cacheKey);
-  
-  if (cached && Date.now() - cached.timestamp < POOL_CACHE_TTL) {
-    return { sqrtPriceX96: cached.sqrtPriceX96, tick: cached.tick };
-  }
-  
-  try {
-    const slot0 = await publicClient.readContract({
-      address: poolAddress,
-      abi: [
-        {
-          name: 'slot0',
-          type: 'function',
-          stateMutability: 'view',
-          inputs: [],
-          outputs: [
-            { name: 'sqrtPriceX96', type: 'uint160' },
-            { name: 'tick', type: 'int24' },
-            { name: 'observationIndex', type: 'uint16' },
-            { name: 'observationCardinality', type: 'uint16' },
-            { name: 'observationCardinalityNext', type: 'uint16' },
-            { name: 'feeProtocol', type: 'uint8' },
-            { name: 'unlocked', type: 'bool' }
-          ]
-        }
-      ],
-      functionName: 'slot0',
-    });
-    
-    const [sqrtPriceX96, tick] = slot0 as [bigint, number, number, number, number, number, boolean];
-    
-    // Cache the result
-    poolCache.set(cacheKey, {
-      sqrtPriceX96,
-      tick,
-      timestamp: Date.now()
-    });
-    
-    return { sqrtPriceX96, tick };
-  } catch (error) {
-    console.error(`Failed to get pool state for ${poolAddress}:`, error);
-    // Return default values
-    return { sqrtPriceX96: 0n, tick: 0 };
-  }
-}
 
 // Parse position data from Viem result
 type RawPositionTuple = [
@@ -177,11 +134,31 @@ async function parsePositionData(
     console.log(`[DEBUG] Parsing Viem position data for tokenId: ${tokenId.toString()}`);
     const values = Array.isArray(positionData) ? positionData : Object.values(positionData);
     const tuple = values as RawPositionTuple;
-    const [, , token0, token1, feeRaw, tickLowerRaw, tickUpperRaw, liquidity, , , tokensOwed0, tokensOwed1] = tuple;
+    const [
+      ,
+      ,
+      token0Raw,
+      token1Raw,
+      feeRaw,
+      tickLowerRaw,
+      tickUpperRaw,
+      liquidity,
+      feeGrowthInside0LastX128,
+      feeGrowthInside1LastX128,
+      tokensOwed0,
+      tokensOwed1,
+    ] = tuple;
+
+    // Normalize token addresses & ticks
+    const token0 = normalizeAddress(token0Raw);
+    const token1 = normalizeAddress(token1Raw);
+    const fee = Number(feeRaw);
+    const tickLower = toSignedInt24(tickLowerRaw);
+    const tickUpper = toSignedInt24(tickUpperRaw);
     
     console.log(`[DEBUG] Viem position tuple:`);
     console.log(`[DEBUG] Token0: ${token0}, Token1: ${token1}`);
-    console.log(`[DEBUG] Fee: ${feeRaw}, TickLower: ${tickLowerRaw}, TickUpper: ${tickUpperRaw}`);
+    console.log(`[DEBUG] Fee: ${fee}, TickLower: ${tickLower}, TickUpper: ${tickUpper}`);
     console.log(`[DEBUG] Liquidity: ${liquidity.toString()}`);
 
     // Get token metadata
@@ -189,48 +166,89 @@ async function parsePositionData(
       getTokenMetadata(token0),
       getTokenMetadata(token1),
     ]);
+    console.log('[METADATA][viem]', {
+      token0: token0Meta,
+      token1: token1Meta,
+    });
 
-    // Calculate prices from ticks
-    const lowerPrice = tickToPrice(Number(tickLowerRaw), token0Meta.decimals, token1Meta.decimals);
-    const upperPrice = tickToPrice(Number(tickUpperRaw), token0Meta.decimals, token1Meta.decimals);
+    const { lowerPrice, upperPrice } = computePriceRange(
+      tickLower,
+      tickUpper,
+      token0Meta.decimals,
+      token1Meta.decimals
+    );
     
     // Get factory address and pool address
     const factory = await getFactoryAddress(pm);
-    const poolAddress = await getPoolAddress(factory, token0, token1, Number(feeRaw));
+    const poolAddress = await getPoolAddress(factory, token0, token1, fee);
     
     // Get pool state
     const { sqrtPriceX96, tick: currentTick } = await getPoolState(poolAddress);
     
     // Calculate amounts using proper Uniswap V3 math
-    const { amount0, amount1 } = calcAmountsForPosition(
+    console.log(`[PMFALLBACK] Calculating amounts for tokenId ${tokenId}, liquidity: ${liquidity.toString()}`);
+    const { amount0Wei, amount1Wei } = calcAmountsForPosition(
       liquidity,
       sqrtPriceX96,
-      Number(tickLowerRaw),
-      Number(tickUpperRaw),
+      tickLower,
+      tickUpper,
       token0Meta.decimals,
       token1Meta.decimals
     );
+    console.log(`[PMFALLBACK] Calculated amounts: amount0Wei=${amount0Wei.toString()}, amount1Wei=${amount1Wei.toString()}`);
     
     // Check if in range
-    const inRange = isInRange(currentTick, Number(tickLowerRaw), Number(tickUpperRaw));
+    const inRange = isInRange(currentTick, tickLower, tickUpper);
+    console.log(`[PMFALLBACK] Position in range: ${inRange} (currentTick: ${currentTick}, range: ${tickLower}-${tickUpper})`);
     
-    // Calculate TVL and rewards
-    const { tvlUsd, rewardsUsd } = await calculatePositionValue(
-      amount0,
-      amount1,
+    const { fee0Wei, fee1Wei } = await calculateAccruedFees({
+      poolAddress,
+      liquidity,
+      tickLower,
+      tickUpper,
+      currentTick,
+      feeGrowthInside0LastX128,
+      feeGrowthInside1LastX128,
       tokensOwed0,
       tokensOwed1,
-      token0Meta.symbol,
-      token1Meta.symbol,
-      token0Meta.decimals,
-      token1Meta.decimals
-    );
+    });
+    
+    // Calculate TVL and rewards
+    console.log(`[PMFALLBACK] Calculating TVL and rewards for ${token0Meta.symbol}/${token1Meta.symbol}`);
+    const {
+      amount0,
+      amount1,
+      fee0,
+      fee1,
+      price0Usd,
+      price1Usd,
+      tvlUsd,
+      rewardsUsd,
+    } = await calculatePositionValue({
+      token0Symbol: token0Meta.symbol,
+      token1Symbol: token1Meta.symbol,
+      token0Decimals: token0Meta.decimals,
+      token1Decimals: token1Meta.decimals,
+      amount0Wei,
+      amount1Wei,
+      fee0Wei,
+      fee1Wei,
+    });
+    console.log(`[PMFALLBACK] Final TVL: $${tvlUsd}, Rewards: $${rewardsUsd}`);
+    console.log('[PMFALLBACK][VALUE]', {
+      amount0,
+      amount1,
+      fee0,
+      fee1,
+      price0Usd,
+      price1Usd,
+    });
 
     // Create position row
     return {
       id: tokenId.toString(),
       pairLabel: `${token0Meta.symbol} - ${token1Meta.symbol}`,
-      feeTierBps: Number(feeRaw),
+      feeTierBps: fee,
       tickLowerLabel: formatPrice(lowerPrice),
       tickUpperLabel: formatPrice(upperPrice),
       tvlUsd,
@@ -253,8 +271,8 @@ async function parsePositionData(
         decimals: token1Meta.decimals
       },
       // New fields
-      amount0: amount0.toString(),
-      amount1: amount1.toString(),
+      amount0,
+      amount1,
       lowerPrice,
       upperPrice,
       isInRange: inRange,

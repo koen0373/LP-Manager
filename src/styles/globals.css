@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for the Enosys LP Manager */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #0a0a0a;
+  color: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Enosys theme colors */
+:root {
+  --enosys-bg: #0a0a0a;
+  --enosys-card: #1a1a1a;
+  --enosys-subcard: #2a2a2a;
+  --enosys-border: #3a3a3a;
+  --enosys-text: #ffffff;
+  --enosys-subtext: #888888;
+  --enosys-hover: #333333;
+}

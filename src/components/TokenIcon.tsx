@@ -13,6 +13,12 @@ type TokenIconProps = {
 // Robuuste icon mapping - alleen lokale WEBP bestanden
 const getTokenIcon = (symbol?: string): string => {
   const sym = (symbol || "").trim();
+  
+  // Special handling for USD₮0 (Unicode T symbol)
+  if (sym.includes('₮') || sym.includes('USD₮')) {
+    return '/icons/usd0.webp';
+  }
+  
   // Normalize Unicode characters (NFKD) and remove all non-alphanumeric
   const normalized = sym.normalize('NFKD').replace(/[^A-Z0-9]/g, '').toUpperCase();
   
@@ -80,6 +86,12 @@ export const TokenIcon: React.FC<TokenIconProps> = ({
         display: "block",
       }}
       priority={priority}
+      onError={(e) => {
+        console.warn(`Failed to load token icon for symbol "${symbol}":`, iconSrc);
+        // Fallback to default icon on error
+        const target = e.target as HTMLImageElement;
+        target.src = '/icons/default-token.webp';
+      }}
     />
   );
 };

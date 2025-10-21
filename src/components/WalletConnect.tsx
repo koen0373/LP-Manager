@@ -17,40 +17,15 @@ type NetworkOption = {
   blockExplorer: string;
 };
 
-const NETWORKS: NetworkOption[] = [
-  {
-    name: 'Flare',
-    chainId: '0xe',
-    iconSrc: '/icons/flr.network.webp',
-    iconAlt: 'Flare',
-    rpcUrl: 'https://flare-api.flare.network/ext/C/rpc',
-    blockExplorer: 'https://flare.space',
-  },
-  {
-    name: 'Songbird',
-    chainId: '0x13',
-    iconSrc: '/icons/sgb.network.webp',
-    iconAlt: 'Songbird',
-    rpcUrl: 'https://songbird-api.flare.network/ext/C/rpc',
-    blockExplorer: 'https://songbird-explorer.flare.network',
-  },
-  {
-    name: 'Coston',
-    chainId: '0x10',
-    iconSrc: '/icons/cflr.network.webp',
-    iconAlt: 'Coston',
-    rpcUrl: 'https://coston-api.flare.network/ext/C/rpc',
-    blockExplorer: 'https://coston-explorer.flare.network',
-  },
-  {
-    name: 'Coston 2',
-    chainId: '0x11',
-    iconSrc: '/icons/cflr2.network.webp',
-    iconAlt: 'Coston 2',
-    rpcUrl: 'https://coston2-api.flare.network/ext/C/rpc',
-    blockExplorer: 'https://coston2-explorer.flare.network',
-  },
-];
+// Flare network only
+const FLARE_NETWORK: NetworkOption = {
+  name: 'Flare',
+  chainId: '0xe',
+  iconSrc: '/icons/flr.network.webp',
+  iconAlt: 'Flare',
+  rpcUrl: 'https://flare-api.flare.network/ext/C/rpc',
+  blockExplorer: 'https://flare.space',
+};
 
 function isRpcError(error: unknown): error is RpcError {
   return typeof error === 'object' && error !== null && 'code' in error;
@@ -87,8 +62,6 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
   const [showModal, setShowModal] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
-  const [showNetworkDropdown, setShowNetworkDropdown] = useState(false);
-  const [currentNetwork, setCurrentNetwork] = useState<NetworkOption['name']>(NETWORKS[0].name);
   
   // Use refs to store stable references to callbacks
   const onWalletConnectedRef = useRef(onWalletConnected);
@@ -132,13 +105,11 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
           connectWallet(accountsResult[0]);
         }
         
-        // Check current chain and set network
+        // Check if we're on Flare network
         const chainIdResult = await window.ethereum!.request({ method: 'eth_chainId' });
-        if (isHexChainId(chainIdResult)) {
-          const network = NETWORKS.find((n) => n.chainId === chainIdResult);
-          if (network) {
-            setCurrentNetwork(network.name);
-          }
+        if (isHexChainId(chainIdResult) && chainIdResult !== FLARE_NETWORK.chainId) {
+          console.log('Not on Flare network, switching...');
+          await switchToFlareNetwork();
         }
       } catch (error) {
         console.error('Error checking wallet connection:', error);
@@ -171,16 +142,16 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
       }
 
       console.log('Chain changed to:', chainIdValue);
-      const network = NETWORKS.find((n) => n.chainId === chainIdValue);
-      if (network) {
-        setCurrentNetwork(network.name);
-        console.log(`Connected to ${network.name} network`);
+      // If not on Flare network, switch to it
+      if (chainIdValue !== FLARE_NETWORK.chainId) {
+        console.log('Not on Flare network, switching...');
+        switchToFlareNetwork();
+      } else {
+        console.log('Connected to Flare network');
         // If we have a connected address, trigger re-fetch
         if (isConnected && address) {
           onWalletConnectedRef.current?.(address);
         }
-      } else {
-        console.log('Connected to unknown network');
       }
     };
 
@@ -197,22 +168,6 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
     };
   }, [connectWallet, disconnectWallet, isConnected, address]);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showNetworkDropdown) {
-        const target = event.target as Element;
-        if (!target.closest('.network-selector')) {
-          setShowNetworkDropdown(false);
-        }
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showNetworkDropdown]);
 
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -228,36 +183,32 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
     />
   );
 
-  const switchNetwork = async (network: NetworkOption) => {
+  const switchToFlareNetwork = async () => {
     if (typeof window !== 'undefined' && window.ethereum) {
       try {
-        console.log(`Switching to ${network.name} network...`);
+        console.log('Switching to Flare network...');
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
-          params: [{ chainId: network.chainId }],
+          params: [{ chainId: FLARE_NETWORK.chainId }],
         });
-        setCurrentNetwork(network.name);
-        setShowNetworkDropdown(false);
       } catch (switchError) {
         // If the chain doesn't exist, add it
         if (isRpcError(switchError) && switchError.code === 4902) {
-          console.log(`Adding ${network.name} network...`);
+          console.log('Adding Flare network...');
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [{
-              chainId: network.chainId,
-              chainName: network.name,
+              chainId: FLARE_NETWORK.chainId,
+              chainName: FLARE_NETWORK.name,
               nativeCurrency: {
-                name: network.name === 'Flare' ? 'Flare' : network.name,
-                symbol: network.name === 'Flare' ? 'FLR' : network.name.substring(0, 3).toUpperCase(),
+                name: 'Flare',
+                symbol: 'FLR',
                 decimals: 18,
               },
-              rpcUrls: [network.rpcUrl],
-              blockExplorerUrls: [network.blockExplorer],
+              rpcUrls: [FLARE_NETWORK.rpcUrl],
+              blockExplorerUrls: [FLARE_NETWORK.blockExplorer],
             }],
           });
-          setCurrentNetwork(network.name);
-          setShowNetworkDropdown(false);
         } else {
           throw switchError;
         }
@@ -290,8 +241,7 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
         console.log('Current chain ID:', chainIdResult);
         
         // Flare mainnet chain ID is 0xe (14 in decimal)
-        const flareNetwork = NETWORKS.find((network) => network.name === 'Flare');
-        const flareChainId: `0x${string}` = flareNetwork?.chainId ?? '0xe';
+        const flareChainId: `0x${string}` = FLARE_NETWORK.chainId;
         
         if (!isHexChainId(chainIdResult) || chainIdResult !== flareChainId) {
           try {
@@ -304,8 +254,6 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
             // If the chain doesn't exist, add it
             if (isRpcError(switchError) && switchError.code === 4902) {
               console.log('Adding Flare network...');
-              const rpcUrls = flareNetwork ? [flareNetwork.rpcUrl] : ['https://flare-api.flare.network/ext/C/rpc'];
-              const explorerUrls = flareNetwork ? [flareNetwork.blockExplorer] : ['https://flare.space'];
               await window.ethereum.request({
                 method: 'wallet_addEthereumChain',
                 params: [{
@@ -316,8 +264,8 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
                     symbol: 'FLR',
                     decimals: 18,
                   },
-                  rpcUrls,
-                  blockExplorerUrls: explorerUrls,
+                  rpcUrls: [FLARE_NETWORK.rpcUrl],
+                  blockExplorerUrls: [FLARE_NETWORK.blockExplorer],
                 }],
               });
             } else {
@@ -419,76 +367,14 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
   }
 
   if (isConnected && address) {
-    const currentNetworkData =
-      NETWORKS.find((network) => network.name === currentNetwork) ?? NETWORKS[0];
-    
     return (
       <div className={`flex items-center space-x-3 ${className || ''}`}>
-        {/* Network Selector */}
-        <div className="relative network-selector">
-          <div 
-            className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-enosys-hover/20 transition-colors cursor-pointer hover:font-bold"
-            onClick={() => setShowNetworkDropdown(!showNetworkDropdown)}
-          >
-            <div className="w-6 h-6 flex items-center justify-center">
-              {renderNetworkIcon(currentNetworkData, 24)}
-            </div>
-            <span className="text-white text-sm font-medium">{currentNetwork}</span>
-            <svg 
-              width="12" 
-              height="12" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              xmlns="http://www.w3.org/2000/svg"
-              className={`text-enosys-subtext transition-transform ${showNetworkDropdown ? 'rotate-180' : ''}`}
-            >
-              <path 
-                d="M6 9l6 6 6-6" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              />
-            </svg>
+        {/* Flare Network Indicator */}
+        <div className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-enosys-subcard">
+          <div className="w-6 h-6 flex items-center justify-center">
+            {renderNetworkIcon(FLARE_NETWORK, 24)}
           </div>
-
-          {/* Network Dropdown */}
-          {showNetworkDropdown && (
-            <div className="absolute top-full left-0 mt-2 w-48 bg-enosys-card border border-enosys-border rounded-lg shadow-lg z-50">
-              {NETWORKS.map((network) => (
-                <button
-                  key={network.name}
-                  onClick={() => switchNetwork(network)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-enosys-hover/20 transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                    network.name === currentNetwork ? 'bg-enosys-hover/10' : ''
-                  }`}
-                >
-                  <div className="w-6 h-6 flex items-center justify-center">
-                    {renderNetworkIcon(network, 24)}
-                  </div>
-                  <span className="text-white text-sm font-medium">{network.name}</span>
-                  {network.name === currentNetwork && (
-                    <svg 
-                      width="16" 
-                      height="16" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="text-green-400 ml-auto"
-                    >
-                      <path 
-                        d="M20 6L9 17l-5-5" 
-                        stroke="currentColor" 
-                        strokeWidth="2" 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
+          <span className="text-white text-sm font-medium">Flare</span>
         </div>
 
         {/* Separator */}

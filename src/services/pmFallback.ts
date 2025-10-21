@@ -289,12 +289,12 @@ export async function getLpPositionsOnChain(owner: `0x${string}`): Promise<Posit
     console.log(`Fetching positions for wallet using Viem: ${owner}`);
 
     // Get balance of NFTs (number of positions)
-    const bal: bigint = await publicClient.readContract({
+    const bal = await publicClient.readContract({
       address: pm,
       abi: PositionManagerABI,
       functionName: 'balanceOf',
       args: [owner],
-    });
+    }) as bigint;
 
     const count = Number(bal);
     console.log(`Found ${count} positions using Viem`);
@@ -311,7 +311,7 @@ export async function getLpPositionsOnChain(owner: `0x${string}`): Promise<Posit
           abi: PositionManagerABI,
           functionName: 'tokenOfOwnerByIndex',
           args: [owner, BigInt(i)],
-        });
+        }) as bigint;
         tokenIds.push(tokenId);
       } catch (tokenErr) {
         console.error(`Failed to fetch tokenOfOwnerByIndex(${i})`, tokenErr);
@@ -331,7 +331,7 @@ export async function getLpPositionsOnChain(owner: `0x${string}`): Promise<Posit
           abi: PositionManagerABI,
           functionName: 'positions',
           args: [tokenId],
-        });
+        }) as Record<string, unknown>;
 
         const parsed = await parsePositionData(tokenId, positionData);
         if (parsed) {

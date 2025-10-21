@@ -30,7 +30,7 @@ function serializePositionRow(position: PositionRow): PositionRow {
   const sanitized = sanitizeBigInts(position) as Record<string, unknown>;
 
   return {
-    ...(sanitized as PositionRow),
+    ...(sanitized as unknown as PositionRow),
     // Ensure all numeric fields are properly serialized
     amount0: Number(sanitized.amount0 ?? 0),
     amount1: Number(sanitized.amount1 ?? 0),

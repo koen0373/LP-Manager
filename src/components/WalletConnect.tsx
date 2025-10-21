@@ -1,14 +1,76 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import Image from 'next/image';
+
+type RpcError = {
+  code?: number;
+  message?: string;
+};
+
+type NetworkOption = {
+  name: string;
+  chainId: `0x${string}`;
+  iconSrc: string;
+  iconAlt: string;
+  rpcUrl: string;
+  blockExplorer: string;
+};
+
+const NETWORKS: NetworkOption[] = [
+  {
+    name: 'Flare',
+    chainId: '0xe',
+    iconSrc: '/icons/flr.network.webp',
+    iconAlt: 'Flare',
+    rpcUrl: 'https://flare-api.flare.network/ext/C/rpc',
+    blockExplorer: 'https://flare.space',
+  },
+  {
+    name: 'Songbird',
+    chainId: '0x13',
+    iconSrc: '/icons/sgb.network.webp',
+    iconAlt: 'Songbird',
+    rpcUrl: 'https://songbird-api.flare.network/ext/C/rpc',
+    blockExplorer: 'https://songbird-explorer.flare.network',
+  },
+  {
+    name: 'Coston',
+    chainId: '0x10',
+    iconSrc: '/icons/cflr.network.webp',
+    iconAlt: 'Coston',
+    rpcUrl: 'https://coston-api.flare.network/ext/C/rpc',
+    blockExplorer: 'https://coston-explorer.flare.network',
+  },
+  {
+    name: 'Coston 2',
+    chainId: '0x11',
+    iconSrc: '/icons/cflr2.network.webp',
+    iconAlt: 'Coston 2',
+    rpcUrl: 'https://coston2-api.flare.network/ext/C/rpc',
+    blockExplorer: 'https://coston2-explorer.flare.network',
+  },
+];
+
+function isRpcError(error: unknown): error is RpcError {
+  return typeof error === 'object' && error !== null && 'code' in error;
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((entry) => typeof entry === 'string');
+}
+
+function isHexChainId(value: unknown): value is `0x${string}` {
+  return typeof value === 'string' && value.startsWith('0x');
+}
 
 // Extend Window interface for ethereum
 declare global {
   interface Window {
     ethereum?: {
-      request: (args: { method: string; params?: any[] }) => Promise<any>;
-      on: (event: string, callback: (accounts: string[]) => void) => void;
-      removeListener: (event: string, callback: (accounts: string[]) => void) => void;
+      request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+      on: (event: string, callback: (...args: unknown[]) => void) => void;
+      removeListener: (event: string, callback: (...args: unknown[]) => void) => void;
     };
   }
 }
@@ -26,7 +88,7 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
   const [isClient, setIsClient] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [showNetworkDropdown, setShowNetworkDropdown] = useState(false);
-  const [currentNetwork, setCurrentNetwork] = useState('Flare');
+  const [currentNetwork, setCurrentNetwork] = useState<NetworkOption['name']>(NETWORKS[0].name);
   
   // Use refs to store stable references to callbacks
   const onWalletConnectedRef = useRef(onWalletConnected);
@@ -65,16 +127,18 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
     // Check if wallet is already connected
     const checkConnection = async () => {
       try {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (accounts && accounts.length > 0) {
-          connectWallet(accounts[0]);
+        const accountsResult = await window.ethereum!.request({ method: 'eth_accounts' });
+        if (isStringArray(accountsResult) && accountsResult.length > 0) {
+          connectWallet(accountsResult[0]);
         }
         
         // Check current chain and set network
-        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-        const network = networks.find(n => n.chainId === chainId);
-        if (network) {
-          setCurrentNetwork(network.name);
+        const chainIdResult = await window.ethereum!.request({ method: 'eth_chainId' });
+        if (isHexChainId(chainIdResult)) {
+          const network = NETWORKS.find((n) => n.chainId === chainIdResult);
+          if (network) {
+            setCurrentNetwork(network.name);
+          }
         }
       } catch (error) {
         console.error('Error checking wallet connection:', error);
@@ -96,7 +160,7 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
 
     const handleChainChanged = (chainId: string) => {
       console.log('Chain changed to:', chainId);
-      const network = networks.find(n => n.chainId === chainId);
+      const network = NETWORKS.find((n) => n.chainId === chainId);
       if (network) {
         setCurrentNetwork(network.name);
         console.log(`Connected to ${network.name} network`);
@@ -143,74 +207,17 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
-  const networks = [
-    {
-      name: 'Flare',
-      chainId: '0xe',
-      icon: (
-        <img 
-          src="/icons/flr.network.webp" 
-          alt="Flare" 
-          width="16" 
-          height="16" 
-          className="rounded-full"
-        />
-      ),
-      color: 'from-pink-500 to-red-500',
-      rpcUrl: 'https://flare-api.flare.network/ext/C/rpc',
-      blockExplorer: 'https://flare.space'
-    },
-    {
-      name: 'Songbird',
-      chainId: '0x13',
-      icon: (
-        <img 
-          src="/icons/sgb.network.webp" 
-          alt="Songbird" 
-          width="16" 
-          height="16" 
-          className="rounded-full"
-        />
-      ),
-      color: 'from-black to-gray-800',
-      rpcUrl: 'https://songbird-api.flare.network/ext/C/rpc',
-      blockExplorer: 'https://songbird-explorer.flare.network'
-    },
-    {
-      name: 'Coston',
-      chainId: '0x10',
-      icon: (
-        <img 
-          src="/icons/cflr.network.webp" 
-          alt="Coston" 
-          width="16" 
-          height="16" 
-          className="rounded-full"
-        />
-      ),
-      color: 'from-orange-500 to-orange-600',
-      rpcUrl: 'https://coston-api.flare.network/ext/C/rpc',
-      blockExplorer: 'https://coston-explorer.flare.network'
-    },
-    {
-      name: 'Coston 2',
-      chainId: '0x11',
-      icon: (
-        <img 
-          src="/icons/cflr2.network.webp" 
-          alt="Coston 2" 
-          width="16" 
-          height="16" 
-          className="rounded-full"
-        />
-      ),
-      color: 'from-orange-500 to-orange-600',
-      rpcUrl: 'https://coston2-api.flare.network/ext/C/rpc',
-      blockExplorer: 'https://coston2-explorer.flare.network'
-    }
-  ];
+  const renderNetworkIcon = (network: NetworkOption, size = 16) => (
+    <Image
+      src={network.iconSrc}
+      alt={network.iconAlt}
+      width={size}
+      height={size}
+      className="rounded-full"
+    />
+  );
 
-  const switchNetwork = async (network: typeof networks[0]) => {
+  const switchNetwork = async (network: NetworkOption) => {
     if (typeof window !== 'undefined' && window.ethereum) {
       try {
         console.log(`Switching to ${network.name} network...`);
@@ -220,9 +227,9 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
         });
         setCurrentNetwork(network.name);
         setShowNetworkDropdown(false);
-      } catch (switchError: any) {
+      } catch (switchError) {
         // If the chain doesn't exist, add it
-        if (switchError.code === 4902) {
+        if (isRpcError(switchError) && switchError.code === 4902) {
           console.log(`Adding ${network.name} network...`);
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
@@ -253,63 +260,71 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
         console.log('Requesting wallet connection...');
         
         // First, request accounts
-        const accounts = await window.ethereum.request({ 
-          method: 'eth_requestAccounts' 
+        const accountsResult = await window.ethereum.request({
+          method: 'eth_requestAccounts',
         });
-        console.log('Received accounts:', accounts);
+        console.log('Received accounts:', accountsResult);
         
-        if (accounts && accounts.length > 0) {
-          // Check current chain ID
-          const chainId = await window.ethereum.request({ 
-            method: 'eth_chainId' 
-          });
-          console.log('Current chain ID:', chainId);
-          
-          // Flare mainnet chain ID is 0xe (14 in decimal)
-          const flareChainId = '0xe';
-          
-          if (chainId !== flareChainId) {
-            try {
-              console.log('Switching to Flare network...');
+        if (!isStringArray(accountsResult) || accountsResult.length === 0) {
+          console.warn('No accounts returned from wallet.');
+          return;
+        }
+        
+        const selectedAccount = accountsResult[0];
+        
+        // Check current chain ID
+        const chainIdResult = await window.ethereum.request({
+          method: 'eth_chainId',
+        });
+        console.log('Current chain ID:', chainIdResult);
+        
+        // Flare mainnet chain ID is 0xe (14 in decimal)
+        const flareNetwork = NETWORKS.find((network) => network.name === 'Flare');
+        const flareChainId: `0x${string}` = flareNetwork?.chainId ?? '0xe';
+        
+        if (!isHexChainId(chainIdResult) || chainIdResult !== flareChainId) {
+          try {
+            console.log('Switching to Flare network...');
+            await window.ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: flareChainId }],
+            });
+          } catch (switchError) {
+            // If the chain doesn't exist, add it
+            if (isRpcError(switchError) && switchError.code === 4902) {
+              console.log('Adding Flare network...');
+              const rpcUrls = flareNetwork ? [flareNetwork.rpcUrl] : ['https://flare-api.flare.network/ext/C/rpc'];
+              const explorerUrls = flareNetwork ? [flareNetwork.blockExplorer] : ['https://flare.space'];
               await window.ethereum.request({
-                method: 'wallet_switchEthereumChain',
-                params: [{ chainId: flareChainId }],
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: flareChainId,
+                  chainName: 'Flare',
+                  nativeCurrency: {
+                    name: 'Flare',
+                    symbol: 'FLR',
+                    decimals: 18,
+                  },
+                  rpcUrls,
+                  blockExplorerUrls: explorerUrls,
+                }],
               });
-            } catch (switchError: any) {
-              // If the chain doesn't exist, add it
-              if (switchError.code === 4902) {
-                console.log('Adding Flare network...');
-                await window.ethereum.request({
-                  method: 'wallet_addEthereumChain',
-                  params: [{
-                    chainId: flareChainId,
-                    chainName: 'Flare',
-                    nativeCurrency: {
-                      name: 'Flare',
-                      symbol: 'FLR',
-                      decimals: 18,
-                    },
-                    rpcUrls: ['https://flare-api.flare.network/ext/C/rpc'],
-                    blockExplorerUrls: ['https://flare.space'],
-                  }],
-                });
-              } else {
-                throw switchError;
-              }
+            } else {
+              throw switchError;
             }
           }
-          
-          // Use the stable connect function
-          connectWallet(accounts[0]);
-          setShowModal(false);
-          console.log('Wallet connected to Flare:', accounts[0]);
         }
-      } catch (error: any) {
+        
+        // Use the stable connect function
+        connectWallet(selectedAccount);
+        setShowModal(false);
+        console.log('Wallet connected to Flare:', selectedAccount);
+      } catch (error) {
         console.error('Failed to connect wallet:', error);
         
-        if (error.code === 4001) {
+        if (isRpcError(error) && error.code === 4001) {
           alert('Connection rejected by user.');
-        } else if (error.code === -32002) {
+        } else if (isRpcError(error) && error.code === -32002) {
           alert('Connection request already pending. Please check your wallet.');
         } else {
           alert('Failed to connect wallet. Please make sure MetaMask is installed and unlocked.');
@@ -331,12 +346,12 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
           // Some wallets support wallet_revokePermissions
           await window.ethereum.request({
             method: 'wallet_revokePermissions',
-            params: [{ eth_accounts: {} }]
+            params: [{ eth_accounts: {} }],
           });
           console.log('Successfully revoked wallet permissions');
-        } catch (revokeError: any) {
+        } catch (revokeError) {
           // This is expected for many wallets that don't support revokePermissions
-          console.log('Wallet does not support revokePermissions, continuing with local disconnect');
+          console.log('Wallet does not support revokePermissions, continuing with local disconnect', revokeError);
         }
         
         // Force clear any cached state by checking accounts
@@ -393,7 +408,8 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
   }
 
   if (isConnected && address) {
-    const currentNetworkData = networks.find(n => n.name === currentNetwork) || networks[0];
+    const currentNetworkData =
+      NETWORKS.find((network) => network.name === currentNetwork) ?? NETWORKS[0];
     
     return (
       <div className={`flex items-center space-x-3 ${className || ''}`}>
@@ -404,7 +420,7 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
             onClick={() => setShowNetworkDropdown(!showNetworkDropdown)}
           >
             <div className="w-6 h-6 flex items-center justify-center">
-              {currentNetworkData.icon}
+              {renderNetworkIcon(currentNetworkData, 24)}
             </div>
             <span className="text-white text-sm font-medium">{currentNetwork}</span>
             <svg 
@@ -428,7 +444,7 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
           {/* Network Dropdown */}
           {showNetworkDropdown && (
             <div className="absolute top-full left-0 mt-2 w-48 bg-enosys-card border border-enosys-border rounded-lg shadow-lg z-50">
-              {networks.map((network) => (
+              {NETWORKS.map((network) => (
                 <button
                   key={network.name}
                   onClick={() => switchNetwork(network)}
@@ -437,7 +453,7 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
                   }`}
                 >
                   <div className="w-6 h-6 flex items-center justify-center">
-                    {network.icon}
+                    {renderNetworkIcon(network, 24)}
                   </div>
                   <span className="text-white text-sm font-medium">{network.name}</span>
                   {network.name === currentNetwork && (

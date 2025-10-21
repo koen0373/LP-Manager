@@ -4,10 +4,7 @@ import React from 'react';
 import WalletConnect from './WalletConnect';
 
 interface HeaderProps {
-  address?: string;
-  balance?: string;
   onRefresh: () => void;
-  onTest: () => void;
   activeCount: number;
   inactiveCount: number;
   onTabChange: (tab: 'active' | 'inactive') => void;
@@ -17,10 +14,7 @@ interface HeaderProps {
 }
 
 export default function Header({
-  address: _address,
-  balance: _balance,
   onRefresh: _onRefresh,
-  onTest: _onTest,
   activeCount,
   inactiveCount,
   onTabChange,

@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 
 type TokenIconProps = {
   symbol?: string;
@@ -53,14 +54,14 @@ export const TokenIcon: React.FC<TokenIconProps> = ({
   address,
   size = 28,
   className,
-  alt: _alt,
-  priority: _priority,
+  alt: altLabel,
+  priority,
 }) => {
   const iconSrc = getTokenIcon(symbol);
-  const label = _alt || symbol || (address ? address.slice(0, 6) + "…" : "token");
+  const label = altLabel || symbol || (address ? `${address.slice(0, 6)}…` : "token");
 
   return (
-    <img
+    <Image
       src={iconSrc}
       alt={label}
       width={size}
@@ -76,11 +77,9 @@ export const TokenIcon: React.FC<TokenIconProps> = ({
         minHeight: size,
         maxWidth: size,
         maxHeight: size,
-        display: 'block', // Ensure it behaves like a block element
-        imageRendering: 'auto', // Optimize image rendering
+        display: "block",
       }}
-      loading="eager" // Load image immediately
-      decoding="sync" // Decode image synchronously
+      priority={priority}
     />
   );
 };

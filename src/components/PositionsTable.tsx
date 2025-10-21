@@ -8,14 +8,12 @@ import type { PositionRow } from '../types/positions';
 interface PositionsTableProps {
   positions: PositionRow[];
   headerNote: string;
-  globalRflrPriceUsd: number;
   showTotalsRow: boolean;
 }
 
 export default function PositionsTable({
   positions,
   headerNote,
-  globalRflrPriceUsd: _globalRflrPriceUsd,
   showTotalsRow,
 }: PositionsTableProps) {
   const totals = positions.reduce(

@@ -14,7 +14,6 @@ export default function LPManagerPage() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string>('');
   const [isClient, setIsClient] = React.useState(false);
-  const rflrSpotUsd = 0.01758; // actuele koers
 
   // Ensure client-side rendering
   React.useEffect(() => {
@@ -76,10 +75,6 @@ export default function LPManagerPage() {
     }
   }, [positions.length]);
 
-  const handleTest = () => {
-    console.log('Testing blockchain connection...');
-  };
-
   const handleRefresh = () => {
     if (walletAddress) {
       fetchPositions(walletAddress);
@@ -109,10 +104,7 @@ export default function LPManagerPage() {
       </Head>
       <main className="pb-20">
         <Header 
-          address={walletAddress}
-          balance=""
           onRefresh={handleRefresh}
-          onTest={handleTest}
           activeCount={activeCount}
           inactiveCount={inactiveCount}
           onTabChange={setTab}
@@ -157,7 +149,6 @@ export default function LPManagerPage() {
               <PositionsTable 
                 positions={activePositions} 
                 headerNote={activeHeaderNote} 
-                globalRflrPriceUsd={rflrSpotUsd} 
                 showTotalsRow={false}
               />
             ) : (
@@ -170,7 +161,6 @@ export default function LPManagerPage() {
               <PositionsTable 
                 positions={inactivePositions} 
                 headerNote={inactiveHeaderNote} 
-                globalRflrPriceUsd={rflrSpotUsd} 
                 showTotalsRow={false}
               />
             )}

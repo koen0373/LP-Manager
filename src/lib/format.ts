@@ -39,7 +39,7 @@ export function formatAmount(amount: bigint, decimals: number = 4): string {
   const whole = amount / divisor;
   const fraction = amount % divisor;
   
-  if (fraction === 0n) {
+  if (fraction === BigInt(0)) {
     return whole.toString();
   }
   

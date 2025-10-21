@@ -193,9 +193,9 @@ const POOL_ABI = [
   }
 ] as const;
 
-const Q96 = 1n << 96n;
-const Q128 = 1n << 128n;
-const UINT256_MOD = 1n << 256n;
+const Q96 = BigInt(1) << BigInt(96);
+const Q128 = BigInt(1) << BigInt(128);
+const UINT256_MOD = BigInt(1) << BigInt(256);
 
 function mulDiv(a: bigint, b: bigint, denominator: bigint): bigint {
   return (a * b) / denominator;
@@ -203,9 +203,9 @@ function mulDiv(a: bigint, b: bigint, denominator: bigint): bigint {
 
 export function toSignedInt24(value: bigint | number): number {
   const big = typeof value === 'number' ? BigInt(value) : value;
-  const mod = 1n << 24n;
+  const mod = BigInt(1) << BigInt(24);
   let signed = big % mod;
-  if (signed >= (1n << 23n)) {
+  if (signed >= (BigInt(1) << BigInt(23))) {
     signed -= mod;
   }
   return Number(signed);
@@ -222,7 +222,7 @@ function getAmount0Delta(
     [sqrtA, sqrtB] = [sqrtB, sqrtA];
   }
 
-  const numerator1 = liquidity << 96n;
+  const numerator1 = liquidity << BigInt(96);
   const numerator2 = sqrtB - sqrtA;
   const denominator = sqrtB * sqrtA;
   return mulDiv(numerator1, numerator2, denominator);

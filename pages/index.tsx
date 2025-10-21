@@ -166,6 +166,20 @@ export default function LPManagerPage() {
             )}
           </div>
         )}
+        
+        {/* Disclaimer */}
+        <div className="w-full max-w-[1200px] mx-auto px-4 py-8">
+          <div className="p-6">
+            <h3 className="text-enosys-text font-semibold mb-3">Disclaimer</h3>
+            <p className="text-enosys-subtext text-sm leading-relaxed">
+              The information displayed on this application is provided for informational purposes only and may not be accurate or up-to-date. 
+              Data may vary from actual on-chain values due to network conditions, caching, or other technical factors. 
+              This application is not financial advice and should not be used as the sole basis for making investment decisions. 
+              Users are responsible for verifying all information independently and no rights can be derived from the data presented herein. 
+              Always conduct your own research and consult with qualified professionals before making any financial decisions.
+            </p>
+          </div>
+        </div>
       </main>
     </>
   );

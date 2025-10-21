@@ -6,6 +6,7 @@ const TOKEN_PRICES: Record<string, number> = {
   'WFLR': 0.01758, // Wrapped Flare
   'FLR': 0.01758,  // Flare
   'SFLR': 0.01758, // Songbird Flare
+  'DFLR': 0.01758, // Delegated Flare
   
   // Stablecoins
   'USD0': 1.0,     // USD₮0 (normalized from USD₮0)
@@ -22,10 +23,12 @@ const TOKEN_PRICES: Record<string, number> = {
   'EUSDT': 1.0,    // Ethereum USDT
   'HLN': 0.25,     // Holon
   'APS': 0.05,     // Apollo
+  'BNZ': 0.12,     // Binance
   'USDX': 1.0,     // USDX
   'XRP': 0.52,     // XRP
   'BTC': 65000.0,  // Bitcoin
   'ETH': 3500.0,   // Ethereum
+  'RFLR': 0.01758, // Reward FLR (assumed parity with FLR spot)
 };
 
 // Cache for API prices

@@ -5,7 +5,7 @@ interface FeeBadgeProps {
 }
 
 export function FeeBadge({ feeBps }: FeeBadgeProps) {
-  const feePercentage = (feeBps / 10000) * 100;
+  const feePercentage = feeBps / 10000;
   
   // Format percentage with appropriate decimal places
   const formatFeePercentage = (percentage: number): string => {
@@ -17,7 +17,7 @@ export function FeeBadge({ feeBps }: FeeBadgeProps) {
   };
   
   return (
-    <span className="inline-flex items-center px-2 py-1 rounded text-xs font-mono bg-enosys-subcard text-enosys-subtext border border-enosys-border">
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-enosys-subcard text-enosys-subtext border border-enosys-border">
       {formatFeePercentage(feePercentage)}
     </span>
   );

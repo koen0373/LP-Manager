@@ -3,6 +3,7 @@ import { isAddress } from 'viem';
 import { getLpPositionsOnChain } from '../../src/services/pmFallback';
 import { getWalletPositionsViaFlareScan } from '../../src/services/flarescanService';
 import { clearCaches } from '../../src/utils/poolHelpers';
+import { clearRflrRewardCache } from '../../src/services/rflrRewards';
 import type { PositionRow } from '../../src/types/positions';
 
 function sanitizeBigInts(value: unknown): unknown {
@@ -55,6 +56,7 @@ const cache = new Map<string, { expires: number; data: PositionRow[] }>();
 console.log(`[DEBUG] [API] Clearing all caches for fresh data`);
 cache.clear();
 clearCaches();
+clearRflrRewardCache();
 
 function getCached(address: string): PositionRow[] | null {
   const entry = cache.get(address);

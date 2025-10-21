@@ -42,6 +42,8 @@ export interface PositionRow {
   upperPrice: number;
   isInRange: boolean;
   poolAddress: `0x${string}`;
+  price0Usd: number;
+  price1Usd: number;
 }
 
 export interface PositionState {

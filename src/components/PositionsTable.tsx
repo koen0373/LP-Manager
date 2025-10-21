@@ -11,11 +11,85 @@ interface PositionsTableProps {
   showTotalsRow: boolean;
 }
 
+const STABLE_SYMBOLS = new Set([
+  'USDT',
+  'USDT0',
+  'USDTO',
+  'USDC',
+  'USDCG',
+  'USD0',
+  'USDX',
+  'DAI',
+  'DAI0',
+  'USD₮0',
+  'EUSDT',
+]);
+
+const normalizeSymbol = (symbol: string): string =>
+  symbol.normalize('NFKD').replace(/[^A-Z0-9]/gi, '').toUpperCase();
+
+const isStable = (symbol: string): boolean => STABLE_SYMBOLS.has(normalizeSymbol(symbol));
+
+const getNonStableTokenPrice = (position: PositionRow): { symbol: string; price: number } | null => {
+  const token0Stable = isStable(position.token0.symbol);
+  const token1Stable = isStable(position.token1.symbol);
+
+  if (token0Stable && !token1Stable) {
+    return { symbol: position.token1.symbol, price: position.price1Usd };
+  }
+
+  if (!token0Stable && token1Stable) {
+    return { symbol: position.token0.symbol, price: position.price0Usd };
+  }
+
+  if (!token0Stable && !token1Stable) {
+    // Default to token0 when both are volatile
+    return { symbol: position.token0.symbol, price: position.price0Usd };
+  }
+
+  return null;
+};
+
+const formatRflrDelta = (delta: number): string => {
+  const abs = Math.abs(delta);
+  if (abs === 0) return '0';
+  if (abs < 0.00001) return '<0.00001';
+  if (abs < 0.001) return abs.toFixed(5);
+  if (abs < 1) return abs.toFixed(4);
+  if (abs < 1000) return abs.toFixed(0);
+  if (abs < 1000000) return `${(abs / 1000).toFixed(1)}K`;
+  return `${(abs / 1000000).toFixed(1)}M`;
+};
+
 export default function PositionsTable({
   positions,
   headerNote,
   showTotalsRow,
 }: PositionsTableProps) {
+  const previousRflrRef = React.useRef<Map<string, number>>(new Map());
+  const [rflrDeltas, setRflrDeltas] = React.useState<Record<string, number>>({});
+
+  React.useEffect(() => {
+    const nextDeltas: Record<string, number> = {};
+    const seen = new Set<string>();
+
+    for (const position of positions) {
+      const previous = previousRflrRef.current.get(position.id);
+      const delta = previous !== undefined ? position.rflrAmount - previous : 0;
+      nextDeltas[position.id] = delta;
+      previousRflrRef.current.set(position.id, position.rflrAmount);
+      seen.add(position.id);
+    }
+
+    for (const key of Array.from(previousRflrRef.current.keys())) {
+      if (!seen.has(key)) {
+        previousRflrRef.current.delete(key);
+      }
+    }
+
+    setRflrDeltas(nextDeltas);
+  }, [positions]);
+
   const totals = positions.reduce(
     (acc, pos) => ({
       tvl: acc.tvl + (pos.tvlUsd || 0),
@@ -31,23 +105,28 @@ export default function PositionsTable({
       
       <div className="bg-enosys-card rounded-lg border border-enosys-border overflow-hidden">
         {/* Header */}
-        <div className="grid grid-cols-5 gap-4 px-6 py-4 border-b border-enosys-border bg-enosys-subcard">
-          <div className="text-enosys-subtext text-sm font-medium">Position Specifics</div>
-          <div className="text-enosys-subtext text-sm font-medium text-center">TVL</div>
-          <div className="text-enosys-subtext text-sm font-medium text-center">Pool Rewards</div>
-          <div className="text-enosys-subtext text-sm font-medium text-center">RFLR Rewards</div>
-          <div className="text-enosys-subtext text-sm font-medium text-center">Range Status</div>
+        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-enosys-border bg-enosys-subcard">
+          <div className="text-enosys-subtext text-sm font-medium text-left">Position Specifics</div>
+          <div className="text-enosys-subtext text-sm font-medium text-left">TVL</div>
+          <div className="text-enosys-subtext text-sm font-medium text-left">Pool Rewards</div>
+          <div className="text-enosys-subtext text-sm font-medium text-left">RFLR Rewards</div>
+          <div className="text-enosys-subtext text-sm font-medium text-left">Range Status</div>
         </div>
 
         {/* Rows */}
-            {positions.map((position) => (
-          <div key={position.id} className="grid grid-cols-5 gap-4 px-6 py-4 hover:bg-white/5 transition-colors">
+            {positions.map((position) => {
+          const nonStablePrice = getNonStableTokenPrice(position);
+          const rflrDelta = rflrDeltas[position.id] ?? 0;
+          const showRflrDelta = Math.abs(rflrDelta) >= 0.00001;
+          
+          return (
+          <div key={position.id} className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 hover:bg-white/5 transition-colors">
             {/* Position Specifics */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center justify-start space-x-3">
               <div className="text-enosys-subtext text-sm">#{position.id}</div>
               <div className="flex -space-x-2">
-                <TokenIcon symbol={position.token0.symbol} size={28} />
-                <TokenIcon symbol={position.token1.symbol} size={28} />
+                <TokenIcon symbol={position.token0.symbol} size={21} />
+                <TokenIcon symbol={position.token1.symbol} size={21} />
               </div>
                   <div>
                     <div className="text-white font-medium whitespace-nowrap">{position.pairLabel}</div>
@@ -59,50 +138,63 @@ export default function PositionsTable({
             </div>
 
                 {/* TVL */}
-                <div className="text-center">
+                <div className="text-left">
                   <div className="text-white font-medium">${formatUsd(position.tvlUsd || 0)}</div>
                 </div>
 
                 {/* Pool Rewards */}
-                <div className="text-center">
+                <div className="text-left">
                   <div className="text-white font-medium">${formatUsd(position.rewardsUsd || 0)}</div>
                   {position.rewardsUsd > 0 && (
-                    <div className="text-enosys-subtext text-xs">
+                    <div className="text-enosys-subtext text-xs text-left">
                       Unclaimed fees
                     </div>
                   )}
                 </div>
 
             {/* RFLR Rewards */}
-            <div className="text-center">
+            <div className="text-left">
               {position.rflrUsd > 0 ? (
                 <div>
                   <div className="text-white font-medium">${fmtUsd(position.rflrUsd)}</div>
-                  <div className="text-enosys-subtext text-xs">{fmtAmt(position.rflrAmount)} RFLR</div>
+                  <div className="text-enosys-subtext text-xs text-left">{fmtAmt(position.rflrAmount)} RFLR</div>
+                  {showRflrDelta ? (
+                    <div className="text-enosys-subtext text-[11px] text-left">
+                      ({rflrDelta > 0 ? '+' : '-'} {formatRflrDelta(rflrDelta)})
+                    </div>
+                  ) : null}
                 </div>
               ) : (
-                <div className="text-enosys-subtext">-</div>
+                <div className="text-enosys-subtext text-left">-</div>
               )}
             </div>
 
                 {/* Range Status */}
-                <div className="text-center">
-                  <StatusPill inRange={position.isInRange !== undefined ? position.isInRange : position.inRange} />
+                <div className="text-left">
+                  <div className="flex items-center justify-start mb-1">
+                    <StatusPill inRange={position.isInRange !== undefined ? position.isInRange : position.inRange} />
+                  </div>
+                  {nonStablePrice && nonStablePrice.price > 0 && (
+                    <div className="text-enosys-subtext text-xs text-left">
+                      {formatPrice(nonStablePrice.price, nonStablePrice.price < 1 ? 5 : 3)}
+                    </div>
+                  )}
                 </div>
           </div>
-        ))}
+        );
+        })}
 
         {/* Totals Row */}
         {showTotalsRow && (
-          <div className="grid grid-cols-5 gap-4 px-6 py-4 border-t border-enosys-border bg-enosys-subcard">
-            <div className="text-enosys-subtext text-sm font-medium">Total</div>
-            <div className="text-center">
+          <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-t border-enosys-border bg-enosys-subcard">
+            <div className="text-enosys-subtext text-sm font-medium text-left">Total</div>
+            <div className="text-left">
               <div className="text-white font-medium">${fmtUsd(totals.tvl)}</div>
             </div>
-            <div className="text-center">
+            <div className="text-left">
               <div className="text-white font-medium">${fmtUsd(totals.rewards)}</div>
             </div>
-            <div className="text-center">
+            <div className="text-left">
               <div className="text-white font-medium">${fmtUsd(totals.rflr)}</div>
             </div>
             <div></div>

@@ -17,13 +17,13 @@ type NetworkOption = {
   blockExplorer: string;
 };
 
-// Flare network only
+// Flare network only - using Enosys reference configuration
 const FLARE_NETWORK: NetworkOption = {
   name: 'Flare',
   chainId: '0xe',
   iconSrc: '/icons/flr.network.webp',
   iconAlt: 'Flare',
-  rpcUrl: 'https://flare-api.flare.network/ext/C/rpc',
+  rpcUrl: 'https://flare.flr.finance/ext/bc/C/rpc',
   blockExplorer: 'https://flare.space',
 };
 
@@ -370,7 +370,7 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
     return (
       <div className={`flex items-center space-x-3 ${className || ''}`}>
         {/* Flare Network Indicator */}
-        <div className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-enosys-subcard">
+        <div className="flex items-center space-x-2 px-3 py-2 rounded-lg">
           <div className="w-6 h-6 flex items-center justify-center">
             {renderNetworkIcon(FLARE_NETWORK, 24)}
           </div>

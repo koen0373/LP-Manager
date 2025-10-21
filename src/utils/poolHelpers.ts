@@ -766,6 +766,28 @@ export async function calculateAccruedFees(params: {
 }
 
 // Calculate TVL and rewards
+const STABLE_SYMBOLS = new Set([
+  'USDT',
+  'USDT0',
+  'USDTO',
+  'USDC',
+  'USDCG',
+  'USD0',
+  'USDX',
+  'DAI',
+  'DAI0',
+  'USD₮0',
+  'EUSDT', // Ethereum USDT
+]);
+
+function normaliseSymbol(symbol: string): string {
+  return symbol.normalize('NFKD').replace(/[^A-Z0-9]/gi, '').toUpperCase();
+}
+
+export function isStableSymbol(symbol: string): boolean {
+  return STABLE_SYMBOLS.has(normaliseSymbol(symbol));
+}
+
 export async function calculatePositionValue(params: {
   token0Symbol: string;
   token1Symbol: string;
@@ -775,6 +797,7 @@ export async function calculatePositionValue(params: {
   amount1Wei: bigint;
   fee0Wei: bigint;
   fee1Wei: bigint;
+  sqrtPriceX96: bigint;
 }): Promise<{
   amount0: number;
   amount1: number;
@@ -794,14 +817,38 @@ export async function calculatePositionValue(params: {
     amount1Wei,
     fee0Wei,
     fee1Wei,
+    sqrtPriceX96,
   } = params;
 
   console.log(`[VALUE] Calculating position value for ${token0Symbol}/${token1Symbol}`);
 
-  const [price0Usd, price1Usd] = await Promise.all([
-    getTokenPrice(token0Symbol),
-    getTokenPrice(token1Symbol),
-  ]);
+  const poolPrice = sqrtRatioToPrice(sqrtPriceX96, token0Decimals, token1Decimals);
+  let price0Usd: number | undefined;
+  let price1Usd: number | undefined;
+
+  if (poolPrice > 0) {
+    if (isStableSymbol(token1Symbol)) {
+      price1Usd = 1;
+      price0Usd = poolPrice;
+    } else if (isStableSymbol(token0Symbol)) {
+      price0Usd = 1;
+      price1Usd = poolPrice > 0 ? 1 / poolPrice : 0;
+    }
+  }
+
+  if (price0Usd === undefined || !Number.isFinite(price0Usd)) {
+    price0Usd = await getTokenPrice(token0Symbol);
+  }
+  if (price1Usd === undefined || !Number.isFinite(price1Usd)) {
+    price1Usd = await getTokenPrice(token1Symbol);
+  }
+
+  if ((price0Usd === 0 || !Number.isFinite(price0Usd)) && price1Usd > 0 && poolPrice > 0) {
+    price0Usd = price1Usd / poolPrice;
+  }
+  if ((price1Usd === 0 || !Number.isFinite(price1Usd)) && price0Usd > 0 && poolPrice > 0) {
+    price1Usd = price0Usd * poolPrice;
+  }
 
   const amount0 = bigIntToDecimal(amount0Wei, token0Decimals);
   const amount1 = bigIntToDecimal(amount1Wei, token1Decimals);

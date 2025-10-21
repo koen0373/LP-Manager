@@ -2,6 +2,8 @@ import { createPublicClient, fallback, http } from 'viem';
 import { flare } from '../lib/chainFlare';
 import PositionManagerABI from '../abis/NonfungiblePositionManager.json';
 import type { PositionRow } from '../types/positions';
+import { getRflrRewardForPosition } from './rflrRewards';
+import { getTokenPrice } from './tokenPrices';
 import {
   getFactoryAddress,
   getPoolAddress,
@@ -233,6 +235,7 @@ async function parsePositionData(
       amount1Wei,
       fee0Wei,
       fee1Wei,
+      sqrtPriceX96,
     });
     console.log(`[PMFALLBACK] Final TVL: $${tvlUsd}, Rewards: $${rewardsUsd}`);
     console.log('[PMFALLBACK][VALUE]', {
@@ -244,6 +247,14 @@ async function parsePositionData(
       price1Usd,
     });
 
+    const [rflrAmountRaw, rflrPriceUsd] = await Promise.all([
+      getRflrRewardForPosition(tokenId.toString()),
+      getTokenPrice('RFLR'),
+    ]);
+
+    const rflrAmount = rflrAmountRaw ?? 0;
+    const rflrUsd = rflrAmount * rflrPriceUsd;
+
     // Create position row
     return {
       id: tokenId.toString(),
@@ -253,9 +264,9 @@ async function parsePositionData(
       tickUpperLabel: formatPrice(upperPrice),
       tvlUsd,
       rewardsUsd,
-      rflrAmount: 0,
-      rflrUsd: 0,
-      rflrPriceUsd: 0.01758,
+      rflrAmount,
+      rflrUsd,
+      rflrPriceUsd,
       inRange,
       status: 'Active' as const,
       token0: {
@@ -277,6 +288,8 @@ async function parsePositionData(
       upperPrice,
       isInRange: inRange,
       poolAddress,
+      price0Usd,
+      price1Usd,
     };
   } catch (error) {
     console.error('Failed to parse position data:', error);

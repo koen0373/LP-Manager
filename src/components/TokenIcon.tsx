@@ -74,7 +74,7 @@ export const TokenIcon: React.FC<TokenIconProps> = ({
       height={size}
       className={
         className ??
-        "rounded-full bg-[#121212] p-[2px] ring-1 ring-black/20 object-contain"
+        "rounded-full object-contain"
       }
       style={{
         width: size,

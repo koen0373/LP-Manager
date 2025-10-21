@@ -243,10 +243,10 @@ function getAmount1Delta(
 }
 
 export function bigIntToDecimal(amount: bigint, decimals: number): number {
-  if (amount === 0n) return 0;
-  const negative = amount < 0n;
+  if (amount === BigInt(0)) return 0;
+  const negative = amount < BigInt(0);
   const abs = negative ? -amount : amount;
-  const divisor = 10n ** BigInt(decimals);
+  const divisor = BigInt(10) ** BigInt(decimals);
   const whole = abs / divisor;
   const fraction = abs % divisor;
   const fractionStr = fraction
@@ -356,7 +356,7 @@ export async function getPoolState(poolAddress: `0x${string}`): Promise<{ sqrtPr
     console.log(`[DEBUG] Slot0 result: sqrtPriceX96=${sqrtPriceX96.toString()}, tick=${tick}`);
     
     // Only cache valid results
-    if (sqrtPriceX96 && sqrtPriceX96 > 0n) {
+    if (sqrtPriceX96 && sqrtPriceX96 > BigInt(0)) {
       poolCache.set(cacheKey, {
         poolAddress,
         sqrtPriceX96,
@@ -406,7 +406,7 @@ type TickContractResult = [
 
 function toUint256(value: bigint): bigint {
   const mod = value % UINT256_MOD;
-  return mod >= 0n ? mod : mod + UINT256_MOD;
+  return mod >= BigInt(0) ? mod : mod + UINT256_MOD;
 }
 
 function subtractUint256(a: bigint, b: bigint): bigint {
@@ -466,8 +466,8 @@ async function getTickData(poolAddress: `0x${string}`, tick: number): Promise<Ti
     address: poolAddress,
     abi: POOL_ABI,
     functionName: 'ticks',
-    args: [BigInt(tick)],
-  }) as TickContractResult;
+    args: [tick],
+  }) as unknown as TickContractResult;
 
   const [, , feeGrowthOutside0X128, feeGrowthOutside1X128] = tickData;
   const result = {

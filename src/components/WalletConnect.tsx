@@ -148,19 +148,30 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
     checkConnection();
 
     // Event handlers with stable references
-    const handleAccountsChanged = (accounts: string[]) => {
-      console.log('Accounts changed:', accounts);
-      if (!accounts || accounts.length === 0) {
+    const handleAccountsChanged = (payload: unknown) => {
+      if (!isStringArray(payload)) {
+        console.warn('Received unexpected accounts payload:', payload);
+        disconnectWallet();
+        return;
+      }
+
+      console.log('Accounts changed:', payload);
+      if (payload.length === 0) {
         // Use the simple disconnect for account changes
         disconnectWallet();
       } else {
-        connectWallet(accounts[0]);
+        connectWallet(payload[0]);
       }
     };
 
-    const handleChainChanged = (chainId: string) => {
-      console.log('Chain changed to:', chainId);
-      const network = NETWORKS.find((n) => n.chainId === chainId);
+    const handleChainChanged = (chainIdValue: unknown) => {
+      if (typeof chainIdValue !== 'string') {
+        console.warn('Received unexpected chain payload:', chainIdValue);
+        return;
+      }
+
+      console.log('Chain changed to:', chainIdValue);
+      const network = NETWORKS.find((n) => n.chainId === chainIdValue);
       if (network) {
         setCurrentNetwork(network.name);
         console.log(`Connected to ${network.name} network`);

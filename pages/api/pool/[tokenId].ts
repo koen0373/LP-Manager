@@ -13,7 +13,7 @@ import { decodeEventLog, Hex } from 'viem';
 import { UNISWAP_V3_POOL_ABI } from '@/abis/UniswapV3Pool';
 import { fetchLatestBlockNumber } from '@/lib/adapters/rpcLogs';
 import { clearCache } from '@/lib/util/memo';
-import { syncPositionLedger } from '@/services/positionLedger';
+import { syncPositionLedger } from '@/lib/sync/syncPositionLedger';
 import { PositionEventType } from '@prisma/client';
 import { buildPriceHistory, buildPriceHistoryFromSwaps } from '@/lib/data/priceHistory';
 
@@ -70,16 +70,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.warn(`[API] Failed to fetch latest block number for token ${tokenId}:`, error);
         latestBlock = Math.max(fromBlock, 0);
       }
-      const syncResult = await syncPositionLedger({
-        tokenId,
-        poolAddress: position.poolAddress,
+      const syncResult = await syncPositionLedger(tokenId, {
         fromBlock,
         toBlock: latestBlock,
-        refresh: forceRefresh,
-        seedTransfers: transfers,
+        verbose: true,
       });
-      ledgerEvents = syncResult.events;
-      ledgerTransfers = syncResult.transfers;
+      if (syncResult.success) {
+        ledgerEvents = syncResult.events;
+        ledgerTransfers = syncResult.transfers;
+      } else {
+        console.error(`[API] Sync failed for token ${tokenId}:`, syncResult.error);
+      }
     } else {
       // Use database cache - much faster!
       // Wrap in try-catch for production (Vercel) where database might not be available
@@ -105,17 +106,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             console.warn(`[API] Failed to fetch latest block number for token ${tokenId}:`, error);
             latestBlock = Math.max(fromBlock, 0);
           }
-          const syncResult = await syncPositionLedger({
-            tokenId,
-            poolAddress: position.poolAddress,
+          const syncResult = await syncPositionLedger(tokenId, {
             fromBlock,
             toBlock: latestBlock,
-            refresh: false,
-            seedTransfers: transfers,
+            verbose: true,
           });
-          ledgerEvents = syncResult.events;
-          ledgerTransfers = syncResult.transfers;
-          console.log(`[API] Synced ${ledgerEvents.length} events and ${ledgerTransfers.length} transfers for token ${tokenId}`);
+          if (syncResult.success) {
+            ledgerEvents = syncResult.events;
+            ledgerTransfers = syncResult.transfers;
+            console.log(`[API] Synced ${ledgerEvents.length} events and ${ledgerTransfers.length} transfers for token ${tokenId}`);
+          } else {
+            console.error(`[API] Sync failed for token ${tokenId}:`, syncResult.error);
+          }
         }
       } catch (dbError) {
         console.error(`[API] Database error for token ${tokenId}:`, dbError);
@@ -129,17 +131,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           latestBlock = Math.max(fromBlock, 0);
         }
         try {
-          const syncResult = await syncPositionLedger({
-            tokenId,
-            poolAddress: position.poolAddress,
+          const syncResult = await syncPositionLedger(tokenId, {
             fromBlock,
             toBlock: latestBlock,
-            refresh: false,
-            seedTransfers: transfers,
+            verbose: true,
           });
-          ledgerEvents = syncResult.events;
-          ledgerTransfers = syncResult.transfers;
-          console.log(`[API] Synced ${ledgerEvents.length} events and ${ledgerTransfers.length} transfers for token ${tokenId} after DB error`);
+          if (syncResult.success) {
+            ledgerEvents = syncResult.events;
+            ledgerTransfers = syncResult.transfers;
+            console.log(`[API] Synced ${ledgerEvents.length} events and ${ledgerTransfers.length} transfers for token ${tokenId} after DB error`);
+          } else {
+            console.error(`[API] Sync failed for token ${tokenId}:`, syncResult.error);
+            ledgerEvents = [];
+            ledgerTransfers = [];
+          }
         } catch (syncError) {
           console.error(`[API] Failed to sync from blockchain for token ${tokenId}:`, syncError);
           ledgerEvents = [];

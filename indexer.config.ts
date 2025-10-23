@@ -9,7 +9,7 @@ export const indexerConfig = {
   // RPC Settings
   rpc: {
     url: process.env.FLARE_RPC_URL || 'https://flare-api.flare.network/ext/bc/C/rpc',
-    batchSize: 5000, // Blocks per getLogs call
+    batchSize: 25, // Blocks per getLogs call (Flare RPC limit is 30)
     maxConcurrency: 4, // Parallel RPC requests
     minConcurrency: 1, // Minimum when throttled
     requestTimeout: 30000, // 30s timeout per RPC call

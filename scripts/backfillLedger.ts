@@ -14,6 +14,7 @@
  */
 
 import { backfillPositions } from '../src/lib/backfill/worker';
+import { getLpPositionsOnChain } from '../src/services/pmFallback';
 
 // Parse CLI arguments
 const args = process.argv.slice(2);
@@ -23,9 +24,12 @@ const fullMode = args.includes('--full');
 const sinceBlockArg = args.find(a => a.startsWith('--since='));
 const sinceBlock = sinceBlockArg ? parseInt(sinceBlockArg.split('=')[1]) : undefined;
 
+// Check for wallet address (starts with 0x)
+const walletAddress = args.find(arg => arg.startsWith('0x'));
+
 // Extract tokenIds (numeric arguments)
-const tokenIds = args
-  .filter(arg => !arg.startsWith('--'))
+let tokenIds = args
+  .filter(arg => !arg.startsWith('--') && !arg.startsWith('0x'))
   .map(arg => parseInt(arg, 10))
   .filter(id => !isNaN(id));
 
@@ -38,12 +42,26 @@ async function main() {
 ╚═══════════════════════════════════════════════════════════╝
   `);
 
+  // If wallet address provided, fetch all tokenIds
+  if (walletAddress) {
+    console.log(`🔍 Fetching all positions for wallet: ${walletAddress}\n`);
+    try {
+      const positions = await getLpPositionsOnChain(walletAddress as `0x${string}`);
+      tokenIds = positions.map(p => parseInt(p.id.toString(), 10)).filter(id => !isNaN(id));
+      console.log(`✅ Found ${tokenIds.length} positions: ${tokenIds.join(', ')}\n`);
+    } catch (error: any) {
+      console.error(`❌ Failed to fetch positions for wallet: ${error.message}`);
+      process.exit(1);
+    }
+  }
+
   if (tokenIds.length === 0) {
-    console.error('❌ No tokenIds provided');
+    console.error('❌ No tokenIds provided or found');
     console.log('\nUsage:');
-    console.log('  node --loader tsx ./scripts/backfillLedger.ts 22003 22326 20445 21866');
-    console.log('  node --loader tsx ./scripts/backfillLedger.ts 22003 --full');
-    console.log('  node --loader tsx ./scripts/backfillLedger.ts 22003 --since=1000000');
+    console.log('  node ./dist/scripts/backfillLedger.js 22003 22326 20445 21866');
+    console.log('  node ./dist/scripts/backfillLedger.js 0xYourWalletAddress');
+    console.log('  node ./dist/scripts/backfillLedger.js 22003 --full');
+    console.log('  node ./dist/scripts/backfillLedger.js 0xYourWallet --full');
     process.exit(1);
   }
 

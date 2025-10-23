@@ -48,11 +48,12 @@ export default async function handler(
         cursor: deletedCursor.count,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     console.error('[DEBUG] Error clearing cache:', error);
     return res.status(500).json({ 
       error: 'Failed to clear cache', 
-      details: error.message 
+      details: err.message 
     });
   }
 }

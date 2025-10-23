@@ -67,9 +67,10 @@ export default async function handler(
         stale: status.filter(s => !s.isFresh).length,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     console.error('[STATUS] Error:', error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: err.message });
   }
 }
 

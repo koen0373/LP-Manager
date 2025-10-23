@@ -79,9 +79,10 @@ export default async function handler(
       syncing_ids: needSync,
       fresh_ids: tokenIds.filter(id => !needSync.includes(id)),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     console.error('[AUTO-SYNC] Error:', error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: err.message });
   }
 }
 

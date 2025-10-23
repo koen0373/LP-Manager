@@ -9,8 +9,6 @@ import { useWalletSummary } from '@/hooks/useWalletSummary';
 import { formatUsd, formatPercent } from '@/utils/format';
 import { Address } from 'viem';
 
-import { GetServerSideProps } from 'next';
-
 // API position type from wallet/summary endpoint
 interface ApiPosition {
   tokenId: string;

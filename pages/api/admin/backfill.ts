@@ -90,13 +90,14 @@ export default async function handler(
       },
       results: summary.results,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     const elapsedMs = Date.now() - startTime;
     console.error(`[BACKFILL API] ❌ Failed after ${elapsedMs}ms:`, error);
     
     return res.status(500).json({ 
       error: 'Backfill failed', 
-      message: error.message,
+      message: err.message,
       elapsedMs,
     });
   }

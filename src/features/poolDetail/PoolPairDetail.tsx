@@ -82,10 +82,10 @@ export function PoolPairDetail({
   error,
   onRefresh,
   onClaimFees,
-  activeCount = 0,
-  inactiveCount = 0,
-  onTabChange = () => {},
-  activeTab = 'active' as const,
+  activeCount = 0, // eslint-disable-line @typescript-eslint/no-unused-vars
+  inactiveCount = 0, // eslint-disable-line @typescript-eslint/no-unused-vars
+  onTabChange = () => {}, // eslint-disable-line @typescript-eslint/no-unused-vars
+  activeTab = 'active' as const, // eslint-disable-line @typescript-eslint/no-unused-vars
   onWalletConnected,
   onWalletDisconnected,
 }: PoolPairDetailProps) {

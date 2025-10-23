@@ -35,8 +35,9 @@ export type RewardTotals = {
   feesUsd: number; 
   rflr: number; 
   rflrUsd: number; 
-  aps: number; 
-  apsUsd: number; 
+  // APS removed for Phase 3
+  // aps: number; 
+  // apsUsd: number; 
   reinvestedUsd: number; 
   claimedUsd: number; 
   totalUsd: number;

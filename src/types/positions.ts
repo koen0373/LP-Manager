@@ -31,9 +31,6 @@ export interface PositionRow {
   rflrAmount: number;
   rflrUsd: number;
   rflrPriceUsd: number;
-  apsAmount: number;
-  apsUsd: number;
-  apsPriceUsd: number;
   inRange: boolean;
   status: 'Active' | 'Inactive';
   token0: TokenInfo;
@@ -53,6 +50,8 @@ export interface PositionRow {
   fee1: number;
   walletAddress?: string; // Wallet address that owns this position
   currentTick?: number; // Current tick of the pool
+  createdAt?: string; // ISO timestamp of position creation
+  lastUpdated?: string; // ISO timestamp of last update
 }
 
 export interface PositionState {

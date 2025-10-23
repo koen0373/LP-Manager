@@ -7,4 +7,6 @@ export * from './types';
 export * from './findPositions';
 export * from './enrichPosition';
 export * from './discoverWallet';
+export * from './normalize';
+export * from './getCreationDate';
 

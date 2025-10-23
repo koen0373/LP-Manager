@@ -184,8 +184,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       getApsRewardForPosition(tokenId),
       getTokenPriceForRewards('APS'),
     ]);
-    const apsAmount = apsData?.amount || 0;
-    const apsRewards = apsAmount * currentApsPriceUsd;
+    // APS removed for Phase 3 - will add back later
+    // const apsAmount = apsData?.amount || 0;
+    // const apsRewards = apsAmount * currentApsPriceUsd;
 
     const blockTimestampCache = new Map<number, number>();
     const resolveTimestamp = async (blockNumber: number, fallback?: number) => {
@@ -333,7 +334,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const valueHistory: Array<{ t: string; v: number }> = [];
 
-    const totalRewardsUsd = totalClaimedFees + poolRewards + rflrRewards + apsRewards;
+    const totalRewardsUsd = totalClaimedFees + poolRewards + rflrRewards; // + apsRewards (removed for Phase 3)
 
     const shortAddress = (address: string | undefined) =>
       address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '—';
@@ -524,8 +525,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         feesUsd: poolRewards,
         rflr: position.rflrAmount || 0,
         rflrUsd: rflrRewards,
-        aps: apsAmount || 0,
-        apsUsd: apsRewards,
+        // APS removed for Phase 3 - will add back later
         reinvestedUsd: 0, // TODO: Calculate reinvested amount
         claimedUsd: totalClaimedFees,
         totalUsd: totalRewardsUsd,

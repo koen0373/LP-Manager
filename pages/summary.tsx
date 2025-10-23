@@ -171,9 +171,6 @@ export default function SummaryPage() {
       rflrAmount: pos.rflrAmount || 0,
       rflrUsd: pos.rflrUsd || 0,
       rflrPriceUsd: (pos.rflrAmount || 0) > 0 ? (pos.rflrUsd || 0) / (pos.rflrAmount || 1) : 0,
-      apsAmount: 0,
-      apsUsd: 0,
-      apsPriceUsd: 0,
       status: isActive ? 'Active' : 'Inactive',
       inRange: isActive,
       isInRange: isActive,
@@ -241,7 +238,7 @@ export default function SummaryPage() {
               {formatUsd(totals.rewardsUsd)}
             </div>
             <div className="text-enosys-subtext text-xs">
-              RFLR & APS rewards
+              RFLR rewards
             </div>
           </div>
 

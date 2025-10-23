@@ -19,7 +19,6 @@ export function normalizePosition(enriched: EnrichedPosition): PositionRow {
     currentTick,
     tickLower,
     tickUpper,
-    liquidity,
     amount0,
     amount1,
     tokensOwed0,
@@ -80,15 +79,13 @@ export function normalizePosition(enriched: EnrichedPosition): PositionRow {
     rflrUsd,
     rflrPriceUsd: rflrRewards > 0 ? rflrUsd / rflrRewards : 0,
     
-    // APS rewards (placeholder - Phase 3 will add real APS data)
-    apsAmount: 0,
-    apsUsd: 0,
-    apsPriceUsd: 0,
-    
     inRange,
     isInRange: inRange,
     
     status: tvlUsd > 1 ? 'Active' : 'Inactive',
+    
+    createdAt: enriched.createdAt?.toISOString(),
+    lastUpdated: enriched.lastUpdated.toISOString(),
   };
 
   return normalized;

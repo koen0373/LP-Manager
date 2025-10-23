@@ -96,15 +96,14 @@ export default function PositionsTable({
     setRflrDeltas(nextDeltas);
   }, [positions]);
 
-  const totals = positions.reduce(
-    (acc, pos) => ({
-      tvl: acc.tvl + (pos.tvlUsd || 0),
-      rewards: acc.rewards + (pos.rewardsUsd || 0),
-      rflr: acc.rflr + (pos.rflrUsd || 0),
-      aps: acc.aps + (pos.apsUsd || 0),
-    }),
-    { tvl: 0, rewards: 0, rflr: 0, aps: 0 }
-  );
+  const totals = positions    .reduce(
+      (acc, pos) => ({
+        tvl: acc.tvl + (pos.tvlUsd || 0),
+        rewards: acc.rewards + (pos.rewardsUsd || 0),
+        rflr: acc.rflr + (pos.rflrUsd || 0),
+      }),
+      { tvl: 0, rewards: 0, rflr: 0 }
+    );
 
   return (
     <div className="w-full max-w-[1200px] mx-auto">
@@ -181,17 +180,10 @@ export default function PositionsTable({
               )}
             </div>
 
-            {/* APS Rewards */}
-            <div className="text-left">
-              {position.apsUsd > 0 ? (
-                <div>
-                  <div className="text-white font-normal">${fmtUsd(position.apsUsd)}</div>
-                  <div className="text-enosys-subtext text-xs text-left">{fmtAmt(position.apsAmount)} APS</div>
-                </div>
-              ) : (
-                <div className="text-enosys-subtext text-left">-</div>
-              )}
-            </div>
+            {/* APS Rewards - Removed for Phase 3 */}
+            {/* <div className="text-left">
+              <div className="text-enosys-subtext text-left">-</div>
+            </div> */}
 
                 {/* Range Status */}
                 <div className="text-left">
@@ -221,9 +213,10 @@ export default function PositionsTable({
             <div className="text-left">
               <div className="text-white font-normal">${fmtUsd(totals.rflr)}</div>
             </div>
-            <div className="text-left">
-              <div className="text-white font-normal">${fmtUsd(totals.aps)}</div>
-            </div>
+            {/* APS total - Removed for Phase 3 */}
+            {/* <div className="text-left">
+              <div className="text-white font-normal">-</div>
+            </div> */}
             <div></div>
           </div>
         )}

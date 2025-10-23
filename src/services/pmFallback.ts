@@ -255,9 +255,7 @@ async function parsePositionData(
       rflrAmount,
       rflrUsd,
       rflrPriceUsd,
-      apsAmount: 0,
-      apsUsd: 0,
-      apsPriceUsd: 0,
+      // APS removed for Phase 3
       inRange,
       status: 'Active' as const,
       token0: {

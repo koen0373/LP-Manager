@@ -6,7 +6,10 @@
 import { type Address } from 'viem';
 import { readPositionData, readTokenMetadata, readPoolAddress, readPoolSlot0 } from '../onchain/readers';
 import { getPositionOwner } from './findPositions';
+import { getPositionCreationDate } from './getCreationDate';
 import { tickToPrice } from '../../utils/poolHelpers';
+import { getTokenPriceByAddress } from '../../services/tokenPrices';
+import { getRflrRewardForPosition } from '../../services/rflrRewards';
 import type { EnrichedPosition } from './types';
 
 /**
@@ -78,22 +81,63 @@ export async function enrichPosition(
     // Step 7: Check if in range
     const inRange = slot0.tick >= positionData.tickLower && slot0.tick <= positionData.tickUpper;
 
-    // Step 8: Calculate amounts (simplified - will be improved in Phase 3)
-    // For now, use liquidity + price to approximate
-    const amount0 = positionData.liquidity; // Placeholder
-    const amount1 = positionData.liquidity; // Placeholder
+    // Step 8: Get token prices (parallel fetch for performance)
+    const [token0Price, token1Price, rflrPriceResult] = await Promise.allSettled([
+      getTokenPriceByAddress(positionData.token0),
+      getTokenPriceByAddress(positionData.token1),
+      getTokenPriceByAddress('0x0000000000000000000000000000000000000000' as Address), // RFLR placeholder
+    ]);
 
-    // Step 9: Get token prices (placeholder - will integrate with tokenPrices service)
-    const token0Price = 0; // TODO: Integrate getTokenPrice
-    const token1Price = 0; // TODO: Integrate getTokenPrice
+    const token0PriceUsd = token0Price.status === 'fulfilled' ? token0Price.value : 0;
+    const token1PriceUsd = token1Price.status === 'fulfilled' ? token1Price.value : 0;
+    const rflrPriceUsd = rflrPriceResult.status === 'fulfilled' ? rflrPriceResult.value : 0;
+
+    // Step 9: Calculate amounts from liquidity using Uniswap V3 math
+    const { calcAmountsForPosition } = await import('../../utils/poolHelpers');
+    
+    const { amount0Wei, amount1Wei } = calcAmountsForPosition(
+      positionData.liquidity,
+      slot0.sqrtPriceX96,
+      positionData.tickLower,
+      positionData.tickUpper,
+      token0Meta.decimals,
+      token1Meta.decimals
+    );
+
+    const amount0 = amount0Wei;
+    const amount1 = amount1Wei;
 
     // Step 10: Calculate USD values
-    const tvlUsd = 0; // TODO: Calculate from amounts * prices
-    const feesUsd = 0; // TODO: Calculate from tokensOwed * prices
+    const amount0Decimal = Number(amount0Wei) / Math.pow(10, token0Meta.decimals);
+    const amount1Decimal = Number(amount1Wei) / Math.pow(10, token1Meta.decimals);
+    const tokensOwed0Decimal = Number(positionData.tokensOwed0) / Math.pow(10, token0Meta.decimals);
+    const tokensOwed1Decimal = Number(positionData.tokensOwed1) / Math.pow(10, token1Meta.decimals);
 
-    // Step 11: Get RFLR rewards (placeholder - will integrate with rflrRewards service)
-    const rflrRewards = 0; // TODO: Integrate getRflrRewardForPosition
-    const rflrUsd = 0; // TODO: Calculate from rflrRewards * price
+    const tvlUsd = amount0Decimal * token0PriceUsd + amount1Decimal * token1PriceUsd;
+    const feesUsd = tokensOwed0Decimal * token0PriceUsd + tokensOwed1Decimal * token1PriceUsd;
+
+    // Step 11: Get RFLR rewards
+    let rflrRewards = 0;
+    let rflrUsd = 0;
+    
+    try {
+      const rflrResult = await getRflrRewardForPosition(tokenId.toString());
+      rflrRewards = rflrResult || 0;
+      rflrUsd = rflrRewards * rflrPriceUsd;
+    } catch (error) {
+      console.warn(`[ENRICHMENT] Failed to get RFLR rewards for position ${tokenId}:`, error);
+    }
+
+    // Step 12: Get creation date (non-blocking)
+    let createdAt: Date | undefined;
+    try {
+      const creationDate = await getPositionCreationDate(tokenId);
+      if (creationDate) {
+        createdAt = creationDate;
+      }
+    } catch (error) {
+      console.warn(`[ENRICHMENT] Failed to get creation date for position ${tokenId}:`, error);
+    }
 
     const enriched: EnrichedPosition = {
       tokenId: tokenId.toString(),
@@ -105,14 +149,14 @@ export async function enrichPosition(
         symbol: token0Meta.symbol,
         name: token0Meta.name,
         decimals: token0Meta.decimals,
-        priceUsd: token0Price,
+        priceUsd: token0PriceUsd,
       },
       token1: {
         address: positionData.token1,
         symbol: token1Meta.symbol,
         name: token1Meta.name,
         decimals: token1Meta.decimals,
-        priceUsd: token1Price,
+        priceUsd: token1PriceUsd,
       },
       
       fee: positionData.fee,
@@ -140,6 +184,7 @@ export async function enrichPosition(
       rflrRewards,
       rflrUsd,
       
+      createdAt,
       lastUpdated: new Date(),
     };
 

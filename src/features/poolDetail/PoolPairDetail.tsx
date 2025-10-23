@@ -259,10 +259,11 @@ export function PoolPairDetail({
                 <span className="text-enosys-subtext">RFLR rewards:</span>
                 <span className="text-white">{formatAmount(vm.rewards.rflr)} RFLR</span>
               </div>
-              <div className="flex justify-between items-center">
+              {/* APS rewards removed for Phase 3 */}
+              {/* <div className="flex justify-between items-center">
                 <span className="text-enosys-subtext">APS rewards:</span>
-                <span className="text-white">{formatAmount(vm.rewards.aps)} APS</span>
-              </div>
+                <span className="text-white">0 APS</span>
+              </div> */}
               <div className="pt-3 border-t border-enosys-border">
                 <div className="flex justify-between items-center">
                   <span className="text-enosys-subtext">Total Rewards</span>

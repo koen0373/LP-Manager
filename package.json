@@ -9,6 +9,7 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "backfill": "tsx scripts/backfillLedger.ts",
+    "backfill:railway": "bash scripts/railway-backfill.sh",
     "backfill:swaps": "tsx scripts/backfillPoolSwaps.ts",
     "indexer:backfill": "tsx scripts/indexer-backfill.ts",
     "indexer:follow": "tsx scripts/indexer-follower.ts",

@@ -1,13 +1,19 @@
 // middleware.ts - Robust CSP with nonce for Vercel production
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import crypto from 'crypto';
+
+// Edge-compatible nonce generator (crypto module not available in Edge Runtime)
+function generateNonce(): string {
+  const array = new Uint8Array(16);
+  crypto.getRandomValues(array);
+  return Buffer.from(array).toString('base64');
+}
 
 export function middleware(req: NextRequest) {
   const res = NextResponse.next();
 
   // Generate per-request nonce for CSP
-  const nonce = crypto.randomBytes(16).toString('base64');
+  const nonce = generateNonce();
 
   // Store nonce for use in _document (if needed for inline scripts)
   res.headers.set('x-nonce', nonce);

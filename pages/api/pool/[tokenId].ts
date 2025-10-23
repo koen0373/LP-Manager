@@ -82,7 +82,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ledgerTransfers = syncResult.transfers;
     } else {
       // Use database cache - much faster!
-      // Wrap in try-catch for production (Vercel) where SQLite might not be available
+      // Wrap in try-catch for production (Vercel) where database might not be available
       try {
         console.log(`[API] Using cached ledger data for token ${tokenId}`);
         const { getPositionEvents } = await import('@/lib/data/positionEvents');
@@ -92,11 +92,59 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           getPositionEvents(tokenId, { limit: 1000 }),
           getPositionTransfers(tokenId, { limit: 100 }),
         ]);
+        
+        console.log(`[API] Retrieved ${ledgerEvents.length} events and ${ledgerTransfers.length} transfers from database for token ${tokenId}`);
+        
+        // If no data found in database, force sync
+        if (ledgerEvents.length === 0 && ledgerTransfers.length === 0) {
+          console.log(`[API] No cached data found for token ${tokenId}, syncing from blockchain...`);
+          let latestBlock = fromBlock;
+          try {
+            latestBlock = await fetchLatestBlockNumber();
+          } catch (error) {
+            console.warn(`[API] Failed to fetch latest block number for token ${tokenId}:`, error);
+            latestBlock = Math.max(fromBlock, 0);
+          }
+          const syncResult = await syncPositionLedger({
+            tokenId,
+            poolAddress: position.poolAddress,
+            fromBlock,
+            toBlock: latestBlock,
+            refresh: false,
+            seedTransfers: transfers,
+          });
+          ledgerEvents = syncResult.events;
+          ledgerTransfers = syncResult.transfers;
+          console.log(`[API] Synced ${ledgerEvents.length} events and ${ledgerTransfers.length} transfers for token ${tokenId}`);
+        }
       } catch (dbError) {
-        console.warn(`[API] Database unavailable (Prisma error), skipping ledger data:`, dbError);
-        // Continue without database data - the page will still work with limited features
-        ledgerEvents = [];
-        ledgerTransfers = [];
+        console.error(`[API] Database error for token ${tokenId}:`, dbError);
+        // Try to sync from blockchain as fallback
+        console.log(`[API] Falling back to blockchain sync for token ${tokenId}`);
+        let latestBlock = fromBlock;
+        try {
+          latestBlock = await fetchLatestBlockNumber();
+        } catch (error) {
+          console.warn(`[API] Failed to fetch latest block number for token ${tokenId}:`, error);
+          latestBlock = Math.max(fromBlock, 0);
+        }
+        try {
+          const syncResult = await syncPositionLedger({
+            tokenId,
+            poolAddress: position.poolAddress,
+            fromBlock,
+            toBlock: latestBlock,
+            refresh: false,
+            seedTransfers: transfers,
+          });
+          ledgerEvents = syncResult.events;
+          ledgerTransfers = syncResult.transfers;
+          console.log(`[API] Synced ${ledgerEvents.length} events and ${ledgerTransfers.length} transfers for token ${tokenId} after DB error`);
+        } catch (syncError) {
+          console.error(`[API] Failed to sync from blockchain for token ${tokenId}:`, syncError);
+          ledgerEvents = [];
+          ledgerTransfers = [];
+        }
       }
     }
 

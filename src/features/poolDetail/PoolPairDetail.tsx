@@ -247,26 +247,46 @@ export function PoolPairDetail({
           {/* Rewards */}
           <div className="bg-enosys-card rounded-lg p-6">
             <h2 className="text-lg font-bold mb-4">Rewards</h2>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-enosys-subtext">Unclaimed fees:</span>
-                <span className="text-white">{formatUsd(vm.rewards.feesUsd)}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-enosys-subtext">RFLR rewards:</span>
-                <span className="text-white">{formatAmount(vm.rewards.rflr)} RFLR</span>
-              </div>
-              {/* APS rewards removed for Phase 3 */}
-              {/* <div className="flex justify-between items-center">
-                <span className="text-enosys-subtext">APS rewards:</span>
-                <span className="text-white">0 APS</span>
-              </div> */}
-              <div className="pt-3 border-t border-enosys-border">
-                <div className="flex justify-between items-center">
-                  <span className="text-enosys-subtext">Total Rewards</span>
-                  <span className="text-white font-medium">{formatUsd(vm.rewards.totalUsd)}</span>
+            <div className="space-y-4">
+              {/* Total Rewards */}
+              <div className="pb-3 border-b border-enosys-border">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-enosys-subtext font-medium">Total Rewards</span>
+                  <span className="text-white font-bold text-lg">{formatUsd(vm.rewards.totalUsd)}</span>
                 </div>
               </div>
+              
+              {/* Unclaimed Fees */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-enosys-subtext">Unclaimed fees:</span>
+                  <span className="text-white">{formatUsd(vm.rewards.feesUsd)}</span>
+                </div>
+                <div className="pl-4 space-y-1 text-sm">
+                  {vm.rewards.feesToken0 > 0 && (
+                    <div className="text-enosys-subtext">
+                      {formatAmount(vm.rewards.feesToken0)} {vm.token0?.symbol}
+                    </div>
+                  )}
+                  {vm.rewards.feesToken1 > 0 && (
+                    <div className="text-enosys-subtext">
+                      {formatAmount(vm.rewards.feesToken1)} {vm.token1?.symbol}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Incentives (RFLR) */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-enosys-subtext">Incentives:</span>
+                  <span className="text-white">{formatUsd(vm.rewards.rflrUsd)}</span>
+                </div>
+                <div className="pl-4 text-sm text-enosys-subtext">
+                  {formatAmount(vm.rewards.rflr)} RFLR
+                </div>
+              </div>
+              
               {onClaimFees && (
                 <button
                   onClick={onClaimFees}

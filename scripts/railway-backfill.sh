@@ -3,9 +3,12 @@
 
 echo "🔄 Starting Railway backfill..."
 
-# Use direct database connection for backfill (bypass Prisma Accelerate)
-if [ -n "$DIRECT_DATABASE_URL" ]; then
-  echo "📡 Using direct database connection"
+# Use direct Postgres connection for backfill (bypass Prisma Accelerate)
+if [ -n "$POSTGRES_URL" ]; then
+  echo "📡 Using direct Postgres connection (bypassing Accelerate)"
+  export DATABASE_URL="$POSTGRES_URL"
+elif [ -n "$DIRECT_DATABASE_URL" ]; then
+  echo "📡 Using DIRECT_DATABASE_URL"
   export DATABASE_URL="$DIRECT_DATABASE_URL"
 fi
 

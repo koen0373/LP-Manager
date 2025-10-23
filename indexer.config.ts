@@ -18,7 +18,9 @@ export const indexerConfig = {
   // Contract Addresses
   contracts: {
     npm: process.env.NPM_ADDRESS || '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657',
-    startBlock: parseInt(process.env.START_BLOCK || '48500000', 10), // Default to recent blocks if not set
+    // Force start from recent block to prevent OOM on Railway (512MB limit)
+    // If you need to backfill from genesis, change this value directly
+    startBlock: 48500000, // Hardcoded to prevent Railway env var issues
   },
 
   // Retry & Backoff

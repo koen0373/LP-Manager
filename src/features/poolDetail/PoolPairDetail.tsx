@@ -59,9 +59,19 @@ function formatUsd(value: number): string {
   }).format(value);
 }
 
-function formatAmount(value: number, decimals: number = 2): string {
+function formatAmount(value: number, decimals?: number): string {
+  // Auto-determine decimals based on value size if not specified
+  if (decimals === undefined) {
+    if (value === 0) return '0';
+    if (value >= 1000) decimals = 2;
+    else if (value >= 1) decimals = 4;
+    else if (value >= 0.01) decimals = 4;
+    else if (value >= 0.0001) decimals = 6;
+    else decimals = 8;
+  }
+  
   return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: decimals,
+    minimumFractionDigits: Math.min(2, decimals),
     maximumFractionDigits: decimals,
   }).format(value);
 }

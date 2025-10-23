@@ -3,8 +3,8 @@
   "version": "0.1.1",
   "private": true,
   "scripts": {
-    "dev": "next dev -H 127.0.0.1 -p 3000",
-    "build": "prisma generate && prisma db push --accept-data-loss && next build",
+    "dev": "next dev -H 127.0.0.1 -p 3001",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "build:worker": "prisma migrate deploy && prisma generate && tsc --project tsconfig.worker.json && tsc-alias -p tsconfig.worker.json",
     "build:worker:local": "prisma generate && tsc --project tsconfig.worker.json && tsc-alias -p tsconfig.worker.json",
     "start": "next start",

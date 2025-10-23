@@ -248,9 +248,9 @@ async function parsePositionData(
       poolSharePct = (Number(liquidity) / Number(poolLiquidity)) * 100;
     }
     
-    // For inactive (out of range) positions, unclaimed fees should be minimal/zero
-    // Only include RFLR rewards for inactive pools, as they don't generate new fees
-    const totalRewardsUsd = inRange ? (rewardsUsd + rflrUsd) : rflrUsd;
+    // Unclaimed fees are separate from RFLR rewards
+    // For inactive pools, fees should be 0 as they don't generate swap fees
+    const unclaimedFeesUsd = inRange ? rewardsUsd : 0;
 
     // Create position row
     return {
@@ -260,7 +260,7 @@ async function parsePositionData(
       tickLowerLabel: formatPrice(lowerPrice),
       tickUpperLabel: formatPrice(upperPrice),
       tvlUsd,
-      rewardsUsd: totalRewardsUsd,
+      rewardsUsd: unclaimedFeesUsd,
       rflrAmount,
       rflrUsd,
       rflrPriceUsd,

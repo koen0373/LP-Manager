@@ -115,8 +115,8 @@ export default function PositionsTable({
           <div className="text-enosys-subtext font-bold text-left">Specifics</div>
           <div className="text-enosys-subtext font-bold text-left">Liquidity</div>
           <div className="text-enosys-subtext font-bold text-left">Fees</div>
-          <div className="text-enosys-subtext font-bold text-left">RFLR</div>
-          <div className="text-enosys-subtext font-bold text-left">APS</div>
+          <div className="text-enosys-subtext font-bold text-left">Incentives</div>
+          <div className="text-enosys-subtext font-bold text-left">Range</div>
           <div className="text-enosys-subtext font-bold text-left">Status</div>
         </div>
 
@@ -163,7 +163,7 @@ export default function PositionsTable({
                   )}
                 </div>
 
-            {/* RFLR Rewards */}
+            {/* Incentives (formerly RFLR) */}
             <div className="text-left">
               {position.rflrUsd > 0 ? (
                 <div>
@@ -180,22 +180,59 @@ export default function PositionsTable({
               )}
             </div>
 
-            {/* APS Rewards - Removed for Phase 3 */}
-            {/* <div className="text-left">
-              <div className="text-enosys-subtext text-left">-</div>
-            </div> */}
-
-                {/* Range Status */}
-                <div className="text-left">
-                  <div className="flex items-center justify-start mb-1">
-                    <StatusPill inRange={position.isInRange !== undefined ? position.isInRange : position.inRange} />
-                  </div>
-                  {nonStablePrice && nonStablePrice.price > 0 && (
+            {/* Range Visualization (formerly APS column) */}
+            <div className="text-left">
+              {(() => {
+                const lower = position.lowerPrice || 0;
+                const upper = position.upperPrice || 0;
+                const current = nonStablePrice?.price || 0;
+                
+                if (lower === 0 || upper === 0 || current === 0) {
+                  return <div className="text-enosys-subtext text-xs">-</div>;
+                }
+                
+                // Calculate position percentage (0-100)
+                let percentage = 0;
+                if (current < lower) {
+                  percentage = 0;
+                } else if (current > upper) {
+                  percentage = 100;
+                } else {
+                  percentage = ((current - lower) / (upper - lower)) * 100;
+                }
+                
+                return (
+                  <div className="space-y-1">
+                    {/* Current price label */}
                     <div className="text-enosys-subtext text-xs text-left">
-                      {formatPrice(nonStablePrice.price, nonStablePrice.price < 1 ? 5 : 3)}
+                      Current price
                     </div>
-                  )}
-                </div>
+                    {/* Current price value */}
+                    <div className="text-white text-xs text-left mb-2">
+                      {formatPrice(current, current < 1 ? 5 : 3)}
+                    </div>
+                    {/* Range bar */}
+                    <div className="relative w-full h-1 bg-enosys-border rounded-full">
+                      <div 
+                        className="absolute top-0 h-full bg-green-500/30 rounded-full"
+                        style={{ left: 0, width: '100%' }}
+                      />
+                      <div 
+                        className="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 bg-blue-500"
+                        style={{ left: `${Math.max(0, Math.min(100, percentage))}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Status (with range indicator moved here) */}
+            <div className="text-left">
+              <div className="flex items-center justify-start">
+                <StatusPill inRange={position.isInRange !== undefined ? position.isInRange : position.inRange} />
+              </div>
+            </div>
           </div>
         );
         })}
@@ -213,10 +250,9 @@ export default function PositionsTable({
             <div className="text-left">
               <div className="text-white font-normal">${fmtUsd(totals.rflr)}</div>
             </div>
-            {/* APS total - Removed for Phase 3 */}
-            {/* <div className="text-left">
-              <div className="text-white font-normal">-</div>
-            </div> */}
+            {/* Range column - no total */}
+            <div></div>
+            {/* Status column - no total */}
             <div></div>
           </div>
         )}

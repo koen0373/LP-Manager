@@ -30,7 +30,7 @@ async function backfillSinglePosition(
 
     // Use existing syncPositionLedger for comprehensive sync
     // This already handles events, transfers, and proper deduplication
-    await syncPositionLedger(tokenId);
+    await syncPositionLedger(String(tokenId));
 
     // Fetch transfers for completeness
     let page = 1;
@@ -49,7 +49,7 @@ async function backfillSinglePosition(
 
       // Convert to persist format
       const transfersToPersist: TransferToPersist[] = transfers.map(t => ({
-        tokenId: tokenId.toString(),
+        tokenId: String(tokenId),
         from: t.from.hash.toLowerCase(),
         to: t.to.hash.toLowerCase(),
         blockNumber: t.block_number,

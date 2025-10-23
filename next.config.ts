@@ -19,19 +19,14 @@ const nextConfig: NextConfig = {
     return config;
   },
 
-  // Content-Security-Policy: 'unsafe-eval' only in dev for React Refresh
+  // Content-Security-Policy: Allow unsafe-eval for Next.js runtime features
   async headers() {
-    const isDev = process.env.NODE_ENV !== 'production';
-
-    // In dev: 'unsafe-eval' for react-refresh; in prod: strict CSP
-    const scriptSrc = isDev ? "script-src 'self' 'unsafe-eval'" : "script-src 'self'";
-
     const csp = [
       "default-src 'self'",
-      scriptSrc,
+      "script-src 'self' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data:",
-      "connect-src 'self' https://flare-explorer.flare.network https://flarescan.com https://*.flare.network https://*.enosys.global",
+      "connect-src 'self' https://flare-explorer.flare.network https://flarescan.com https://*.flare.network https://*.enosys.global https://coingecko.com https://*.coingecko.com",
       "font-src 'self' https://fonts.gstatic.com data:",
       "object-src 'none'",
       "base-uri 'self'",

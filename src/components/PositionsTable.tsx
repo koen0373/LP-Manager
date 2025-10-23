@@ -201,6 +201,10 @@ export default function PositionsTable({
                   percentage = ((current - lower) / (upper - lower)) * 100;
                 }
                 
+                // Determine if in range
+                const inRange = position.isInRange !== undefined ? position.isInRange : position.inRange;
+                const indicatorColor = inRange ? 'bg-green-500' : 'bg-red-500';
+                
                 return (
                   <div className="space-y-1">
                     {/* Current price label */}
@@ -211,16 +215,14 @@ export default function PositionsTable({
                     <div className="text-white text-xs text-left mb-2">
                       {formatPrice(current, current < 1 ? 5 : 3)}
                     </div>
-                    {/* Range bar */}
-                    <div className="relative w-full h-1 bg-enosys-border rounded-full">
-                      <div 
-                        className="absolute top-0 h-full bg-green-500/30 rounded-full"
-                        style={{ left: 0, width: '100%' }}
-                      />
-                      <div 
-                        className="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 bg-blue-500"
-                        style={{ left: `${Math.max(0, Math.min(100, percentage))}%` }}
-                      />
+                    {/* Range bar - centered with 80% width */}
+                    <div className="relative w-full h-1 flex items-center justify-center">
+                      <div className="relative w-[80%] h-full bg-white rounded-full">
+                        <div 
+                          className={`absolute top-1/2 -translate-y-1/2 w-0.5 h-3 ${indicatorColor}`}
+                          style={{ left: `${Math.max(0, Math.min(100, percentage))}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
                 );

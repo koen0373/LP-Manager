@@ -358,7 +358,7 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
   if (!isClient) {
     return (
       <button
-        className={`px-4 py-2 bg-enosys-subcard hover:bg-enosys-border rounded-lg text-sm font-medium transition-colors ${className || ''}`}
+        className={`px-4 py-2 bg-enosys-subcard hover:bg-enosys-border rounded-lg text-sm font-normal transition-colors ${className || ''}`}
         disabled
       >
         Connect Wallet
@@ -374,7 +374,7 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
           <div className="w-6 h-6 flex items-center justify-center">
             {renderNetworkIcon(FLARE_NETWORK, 24)}
           </div>
-          <span className="text-white text-sm font-medium">Flare</span>
+          <span className="text-white text-sm font-normal">Flare</span>
         </div>
 
         {/* Separator */}
@@ -411,9 +411,9 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
               fill="currentColor"
             />
           </svg>
-          <span className="text-enosys-subtext text-sm font-medium">{formatAddress(address)}</span>
+          <span className="text-enosys-subtext text-sm font-normal">{formatAddress(address)}</span>
           <div className="w-1 h-1 bg-enosys-subtext rounded-full"></div>
-          <span className="text-enosys-subtext text-sm font-medium">11.22 FLR</span>
+          <span className="text-enosys-subtext text-sm font-normal">11.22 FLR</span>
         </div>
 
         {/* Disconnect Icon */}
@@ -469,7 +469,7 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
     <>
       <button
         onClick={() => setShowModal(true)}
-        className={`px-4 py-2 bg-enosys-subcard hover:bg-enosys-border rounded-lg text-sm font-medium transition-colors hover:font-bold ${className || ''}`}
+        className={`px-4 py-2 bg-enosys-subcard hover:bg-enosys-border rounded-lg text-sm font-normal transition-colors hover:font-bold ${className || ''}`}
       >
         Connect Wallet
       </button>
@@ -490,7 +490,7 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
 
             {/* Recommended */}
             <div className="mb-6">
-              <h3 className="text-enosys-subtext text-sm font-medium mb-3">Recommended</h3>
+              <h3 className="text-enosys-subtext text-sm font-bold mb-3">Recommended</h3>
               <div className="space-y-2">
                 <button
                   onClick={handleConnect}
@@ -501,7 +501,7 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
                       <span className="text-white text-xs font-bold">🦊</span>
                     </div>
                   </div>
-                  <span className="text-white font-medium">MetaMask</span>
+                  <span className="text-white font-normal">MetaMask</span>
                 </button>
                 
                 <button
@@ -513,14 +513,14 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
                       <span className="text-white text-xs font-bold">W</span>
                     </div>
                   </div>
-                  <span className="text-white font-medium">WalletConnect</span>
+                  <span className="text-white font-normal">WalletConnect</span>
                 </button>
               </div>
             </div>
 
             {/* Other */}
             <div>
-              <h3 className="text-enosys-subtext text-sm font-medium mb-3">Other</h3>
+              <h3 className="text-enosys-subtext text-sm font-bold mb-3">Other</h3>
               <div className="space-y-2">
                 <button
                   onClick={handleConnect}
@@ -531,7 +531,7 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
                       <span className="text-white text-xs font-bold">🌐</span>
                     </div>
                   </div>
-                  <span className="text-white font-medium">Browser Wallet</span>
+                  <span className="text-white font-normal">Browser Wallet</span>
                 </button>
               </div>
             </div>

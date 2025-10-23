@@ -14,7 +14,7 @@ const flare = {
   rpcUrls: {
     default: {
       http: [
-        'https://flare-api.flare.network/ext/C/rpc',
+        'https://flare.flr.finance/ext/bc/C/rpc',
         'https://flare.public-rpc.com',
       ],
     },

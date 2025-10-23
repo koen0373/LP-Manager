@@ -8,15 +8,16 @@ import type { PositionRow } from '../src/types/positions';
 import { getWalletPositions } from '../src/services/flarescanService';
 
 export default function LPManagerPage() {
-  const [tab, setTab] = React.useState<'active' | 'inactive'>('active');
+  const [tab, setTab] = React.useState<'active' | 'inactive' | 'all'>('active');
   const [walletAddress, setWalletAddress] = React.useState<string>('');
   const [positions, setPositions] = React.useState<PositionRow[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string>('');
-  const [isClient, setIsClient] = React.useState(false);
+  const [isClient, setIsClient] = React.useState(true);
 
   // Ensure client-side rendering
   React.useEffect(() => {
+    console.log('Setting isClient to true');
     setIsClient(true);
   }, []);
 
@@ -24,13 +25,14 @@ export default function LPManagerPage() {
   const TVL_ACTIVE_THRESHOLD = 0.01; // USD
 
   const fetchPositions = React.useCallback(
-    async (address: string) => {
+    async (address: string, refresh = false) => {
       setLoading(true);
       setError('');
       try {
         console.log('Fetching positions for address:', address);
-        const walletPositions = await getWalletPositions(address);
+        const walletPositions = await getWalletPositions(address, { refresh });
         console.log('Received positions:', walletPositions);
+        console.log('Number of positions:', walletPositions.length);
         const normalizedPositions = walletPositions.map((position) => {
           const tvlUsd = Number(position.tvlUsd ?? 0);
           const rewardsUsd = Number(position.rewardsUsd ?? 0);
@@ -43,9 +45,12 @@ export default function LPManagerPage() {
           };
         });
         setPositions(normalizedPositions);
+        setLastUpdated(new Date().toLocaleTimeString());
       } catch (err) {
-        setError('Failed to fetch positions');
         console.error('Error fetching positions:', err);
+        setError(`Failed to fetch positions: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        setPositions([]);
+        setLastUpdated("");
       } finally {
         setLoading(false);
       }
@@ -56,7 +61,7 @@ export default function LPManagerPage() {
   // Handle wallet connection
   const handleWalletConnected = (address: string) => {
     setWalletAddress(address);
-    fetchPositions(address);
+    fetchPositions(address, true);
   };
 
   // Handle wallet disconnection
@@ -64,6 +69,7 @@ export default function LPManagerPage() {
     setWalletAddress('');
     setPositions([]);
     setError('');
+    setLastUpdated('');
   };
 
   const [lastUpdated, setLastUpdated] = React.useState<string>('');
@@ -77,13 +83,38 @@ export default function LPManagerPage() {
 
   const handleRefresh = () => {
     if (walletAddress) {
-      fetchPositions(walletAddress);
+      fetchPositions(walletAddress, true);
     }
   };
 
-  // Calculate counts for active/inactive positions
-  const activePositions = positions.filter((p) => p.status === 'Active');
-  const inactivePositions = positions.filter((p) => p.status === 'Inactive');
+  // Utility function for robust sorting by rewards
+  const sortByRewards = React.useCallback((a: PositionRow, b: PositionRow): number => {
+    // Convert to numbers with fallback
+    const aRewards = parseFloat(String(a.rewardsUsd || 0));
+    const bRewards = parseFloat(String(b.rewardsUsd || 0));
+    
+    // Handle NaN cases - put them at the end
+    if (isNaN(aRewards) && isNaN(bRewards)) return 0;
+    if (isNaN(aRewards)) return 1;
+    if (isNaN(bRewards)) return -1;
+    
+    // Sort high to low (descending)
+    return bRewards - aRewards;
+  }, []);
+
+  // Calculate counts for active/inactive positions with robust sorting
+  const activePositions = positions
+    .filter((p) => p.status === 'Active')
+    .sort(sortByRewards);
+    
+  const inactivePositions = positions
+    .filter((p) => {
+      // Only show inactive positions if they have rewards (RFLR, fees, etc.)
+      const hasRewards = (p.rflrUsd && p.rflrUsd > 0) || 
+                        (p.rewardsUsd && p.rewardsUsd > 0);
+      return p.status === 'Inactive' && hasRewards;
+    })
+    .sort(sortByRewards);
 
   const activeCount = activePositions.length;
   const inactiveCount = inactivePositions.length;
@@ -111,6 +142,7 @@ export default function LPManagerPage() {
           activeTab={tab}
           onWalletConnected={handleWalletConnected}
           onWalletDisconnected={handleWalletDisconnected}
+          showTabs={true}
         />
         
         {!isClient ? (
@@ -145,24 +177,57 @@ export default function LPManagerPage() {
           </div>
         ) : (
           <div className="w-full max-w-[1200px] mx-auto space-y-12">
-            {activePositions.length > 0 ? (
-              <PositionsTable 
-                positions={activePositions} 
-                headerNote={activeHeaderNote} 
-                showTotalsRow={false}
-              />
-            ) : (
-              <div className="rounded-lg border border-enosys-border bg-enosys-card px-6 py-10 text-center text-enosys-subtext">
-                <p className="text-lg">No active LP positions with TVL &gt; $0.01</p>
-              </div>
+            {tab === 'active' && (
+              activePositions.length > 0 ? (
+                <PositionsTable 
+                  positions={activePositions} 
+                  headerNote={activeHeaderNote} 
+                  showTotalsRow={false}
+                />
+              ) : (
+                <div className="rounded-lg border border-enosys-border bg-enosys-card px-6 py-10 text-center text-enosys-subtext">
+                  <p className="text-lg">No active LP positions with TVL &gt; $0.01</p>
+                </div>
+              )
             )}
 
-            {inactivePositions.length > 0 && (
-              <PositionsTable 
-                positions={inactivePositions} 
-                headerNote={inactiveHeaderNote} 
-                showTotalsRow={false}
-              />
+            {tab === 'inactive' && (
+              inactivePositions.length > 0 ? (
+                <PositionsTable 
+                  positions={inactivePositions} 
+                  headerNote={inactiveHeaderNote} 
+                  showTotalsRow={false}
+                />
+              ) : (
+                <div className="rounded-lg border border-enosys-border bg-enosys-card px-6 py-10 text-center text-enosys-subtext">
+                  <p className="text-lg">No inactive LP positions</p>
+                </div>
+              )
+            )}
+
+            {tab === 'all' && (
+              positions.length > 0 ? (
+                <div className="space-y-12">
+                  {activePositions.length > 0 && (
+                    <PositionsTable 
+                      positions={activePositions} 
+                      headerNote={activeHeaderNote} 
+                      showTotalsRow={false}
+                    />
+                  )}
+                  {inactivePositions.length > 0 && (
+                    <PositionsTable 
+                      positions={inactivePositions} 
+                      headerNote={inactiveHeaderNote} 
+                      showTotalsRow={false}
+                    />
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-enosys-border bg-enosys-card px-6 py-10 text-center text-enosys-subtext">
+                  <p className="text-lg">No LP positions found</p>
+                </div>
+              )
             )}
           </div>
         )}

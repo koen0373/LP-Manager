@@ -1,9 +1,11 @@
-import { createPublicClient, fallback, http } from 'viem';
-import { flare } from '../lib/chainFlare';
+import { createClientWithFallback } from '../lib/adapters/clientFactory';
 import PositionManagerABI from '../abis/NonfungiblePositionManager.json';
 import type { PositionRow } from '../types/positions';
 import { getRflrRewardForPosition } from './rflrRewards';
 import { getTokenPrice } from './tokenPrices';
+import { mapWithConcurrency } from '../lib/util/concurrency';
+import { memoize } from '../lib/util/memo';
+import { withTimeout } from '../lib/util/withTimeout';
 import {
   getFactoryAddress,
   getPoolAddress,
@@ -20,29 +22,11 @@ import {
 
 const pm = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657' as `0x${string}`;
 
-const rpcTransports = fallback([
-  http(flare.rpcUrls.default.http[0], {
-    batch: { batchSize: 15, wait: 50 },
-    retryCount: 2,
-    retryDelay: 250,
-  }),
-  http(flare.rpcUrls.default.http[1] ?? 'https://flare.public-rpc.com', {
-    batch: { batchSize: 15, wait: 75 },
-    retryCount: 2,
-    retryDelay: 350,
-  }),
-  http('https://1rpc.io/flare', {
-    batch: { batchSize: 10, wait: 100 },
-    retryCount: 2,
-    retryDelay: 350,
-  }),
+const publicClient = createClientWithFallback([
+  'https://flare.flr.finance/ext/bc/C/rpc',
+  'https://flare.public-rpc.com',
+  'https://rpc-enosys.flare.network'
 ]);
-
-const publicClient = createPublicClient({
-  chain: flare,
-  transport: rpcTransports,
-  pollingInterval: 6_000,
-});
 
 // Token metadata cache
 const tokenCache = new Map<string, { symbol: string; name: string; decimals: number }>();
@@ -130,7 +114,8 @@ type RawPositionTuple = [
 
 async function parsePositionData(
   tokenId: bigint,
-  positionData: readonly unknown[] | Record<string, unknown>
+  positionData: readonly unknown[] | Record<string, unknown>,
+  walletAddress?: string
 ): Promise<PositionRow | null> {
   try {
     console.log(`[DEBUG] Parsing Viem position data for tokenId: ${tokenId.toString()}`);
@@ -254,6 +239,9 @@ async function parsePositionData(
 
     const rflrAmount = rflrAmountRaw ?? 0;
     const rflrUsd = rflrAmount * rflrPriceUsd;
+    
+    // Update rewardsUsd to include RFLR rewards only
+    const totalRewardsUsd = rewardsUsd + rflrUsd;
 
     // Create position row
     return {
@@ -263,10 +251,13 @@ async function parsePositionData(
       tickLowerLabel: formatPrice(lowerPrice),
       tickUpperLabel: formatPrice(upperPrice),
       tvlUsd,
-      rewardsUsd,
+      rewardsUsd: totalRewardsUsd,
       rflrAmount,
       rflrUsd,
       rflrPriceUsd,
+      apsAmount: 0,
+      apsUsd: 0,
+      apsPriceUsd: 0,
       inRange,
       status: 'Active' as const,
       token0: {
@@ -286,10 +277,16 @@ async function parsePositionData(
       amount1,
       lowerPrice,
       upperPrice,
+      tickLower,
+      tickUpper,
       isInRange: inRange,
       poolAddress,
       price0Usd,
       price1Usd,
+      fee0,
+      fee1,
+      walletAddress,
+      currentTick,
     };
   } catch (error) {
     console.error('Failed to parse position data:', error);
@@ -297,17 +294,51 @@ async function parsePositionData(
   }
 }
 
-export async function getLpPositionsOnChain(owner: `0x${string}`): Promise<PositionRow[]> {
-  try {
-    console.log(`Fetching positions for wallet using Viem: ${owner}`);
+// Get a specific position by token ID
+export async function getPositionById(tokenId: string): Promise<PositionRow | null> {
+  return memoize(`position-${tokenId}`, async () => {
+    try {
+      console.log(`[PMFALLBACK] Fetching position by ID: ${tokenId}`);
+      
+      const tokenIdBigInt = BigInt(tokenId);
+      
+      // Get position data directly
+      const positionData = await withTimeout(
+        publicClient.readContract({
+          address: pm,
+          abi: PositionManagerABI,
+          functionName: 'positions',
+          args: [tokenIdBigInt],
+        }) as Promise<Record<string, unknown>>,
+        15000,
+        `Position fetch for ${tokenId} timed out`
+      );
 
-    // Get balance of NFTs (number of positions)
-    const bal = await publicClient.readContract({
-      address: pm,
-      abi: PositionManagerABI,
-      functionName: 'balanceOf',
-      args: [owner],
-    }) as bigint;
+    const parsed = await parsePositionData(tokenIdBigInt, positionData);
+    return parsed;
+  } catch (error) {
+    console.error(`Failed to fetch position ${tokenId}:`, error);
+    return null;
+  }
+  }, 5 * 60 * 1000); // 5 minute cache for individual positions
+}
+
+export async function getLpPositionsOnChain(owner: `0x${string}`): Promise<PositionRow[]> {
+  return memoize(`viem-positions-${owner}`, async () => {
+    try {
+      console.log(`Fetching positions for wallet using Viem: ${owner}`);
+
+      // Get balance of NFTs (number of positions)
+      const bal = await withTimeout(
+        publicClient.readContract({
+          address: pm,
+          abi: PositionManagerABI,
+          functionName: 'balanceOf',
+          args: [owner],
+        }) as Promise<bigint>,
+        15000,
+        `Balance check for ${owner} timed out`
+      );
 
     const count = Number(bal);
     console.log(`Found ${count} positions using Viem`);
@@ -316,52 +347,39 @@ export async function getLpPositionsOnChain(owner: `0x${string}`): Promise<Posit
       return [];
     }
 
-    const tokenIds: bigint[] = [];
-    for (let i = 0; i < count; i++) {
-      try {
-        const tokenId = await publicClient.readContract({
-          address: pm,
-          abi: PositionManagerABI,
-          functionName: 'tokenOfOwnerByIndex',
-          args: [owner, BigInt(i)],
-        }) as bigint;
-        tokenIds.push(tokenId);
-      } catch (tokenErr) {
-        console.error(`Failed to fetch tokenOfOwnerByIndex(${i})`, tokenErr);
-      }
+    const indices = Array.from({ length: count }, (_, i) => i);
+    const tokenIdResults = await mapWithConcurrency(indices, 20, async (i) => {
+      const tokenId = (await publicClient.readContract({
+        address: pm,
+        abi: PositionManagerABI,
+        functionName: 'tokenOfOwnerByIndex',
+        args: [owner, BigInt(i)],
+      })) as bigint;
+      return tokenId;
+    });
 
-      if (i < count - 1) {
-        await new Promise(resolve => setTimeout(resolve, 120));
-      }
-    }
+    const tokenIds = tokenIdResults
+      .sort((a, b) => a.index - b.index)
+      .map((entry) => entry.value);
 
-    const parsedPositions: PositionRow[] = [];
-    for (let index = 0; index < tokenIds.length; index++) {
-      const tokenId = tokenIds[index];
-      try {
-        const positionData = await publicClient.readContract({
-          address: pm,
-          abi: PositionManagerABI,
-          functionName: 'positions',
-          args: [tokenId],
-        }) as Record<string, unknown>;
+    const positionResults = await mapWithConcurrency(tokenIds, 12, async (tokenId) => {
+      const positionData = (await publicClient.readContract({
+        address: pm,
+        abi: PositionManagerABI,
+        functionName: 'positions',
+        args: [tokenId],
+      })) as Record<string, unknown>;
 
-        const parsed = await parsePositionData(tokenId, positionData);
-        if (parsed) {
-          parsedPositions.push(parsed);
-        }
-      } catch (positionErr) {
-        console.error(`Failed to fetch position details for token ${tokenId}`, positionErr);
-      }
+      return parsePositionData(tokenId, positionData, owner);
+    });
 
-      if (index < tokenIds.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 150));
-      }
-    }
-
-    return parsedPositions;
+    return positionResults
+      .sort((a, b) => a.index - b.index)
+      .map((entry) => entry.value)
+      .filter((position): position is PositionRow => position !== null);
   } catch (error) {
     console.error('Failed to fetch wallet positions using Viem:', error);
     return [];
   }
+  }, 30 * 1000); // 30 second cache for wallet positions
 }

@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model PoolEvent {
+  id           String   @id // txHash:logIndex
+  pool         String   // pool address (checksummed lower-case)
+  blockNumber  Int
+  txHash       String
+  logIndex     Int
+  timestamp    Int
+  eventName    String   // 'Mint' | 'Burn' | 'Swap' | 'Collect' | 'Flash' ...
+  // Common decoded fields (NULLABLE; gebruik per event)
+  sender       String?
+  owner        String?
+  recipient    String?
+  tickLower    Int?
+  tickUpper    Int?
+  amount       String?  // uint128/liquidity (for Mint/Burn)
+  amount0      String?
+  amount1      String?
+  sqrtPriceX96 String?
+  liquidity    String?
+  tick         Int?
+
+  // dedupe guard
+  @@unique([txHash, logIndex])
+  @@index([pool, blockNumber])
+}
+
+enum PositionEventType {
+  MINT
+  INCREASE
+  DECREASE
+  COLLECT
+  BURN
+  SWAP
+  OTHER
+}
+
+model PositionEvent {
+  id             String             @id // txHash:logIndex
+  tokenId        String
+  pool           String
+  blockNumber    Int
+  txHash         String
+  logIndex       Int
+  timestamp      Int
+  eventType      PositionEventType
+  sender         String?
+  owner          String?
+  recipient      String?
+  tickLower      Int?
+  tickUpper      Int?
+  tick           Int?
+  liquidityDelta String?
+  amount0        String?
+  amount1        String?
+  sqrtPriceX96   String?
+  price1Per0     Float?
+  usdValue       Float?
+  metadata       Json?
+
+  @@unique([txHash, logIndex])
+  @@index([tokenId, blockNumber])
+  @@index([pool, blockNumber])
+}
+
+model PositionTransfer {
+  id          String @id // txHash:logIndex
+  tokenId     String
+  from        String
+  to          String
+  blockNumber Int
+  txHash      String
+  logIndex    Int
+  timestamp   Int
+  metadata    Json?
+
+  @@unique([txHash, logIndex])
+  @@index([tokenId, blockNumber])
+}
+
+enum CapitalFlowType {
+  DEPOSIT
+  WITHDRAW
+  FEES_REALIZED
+  FEES_REINVESTED
+  TRANSFER
+  OTHER
+}
+
+model CapitalFlow {
+  id          String           @id
+  wallet      String
+  tokenId     String?
+  pool        String?
+  flowType    CapitalFlowType
+  amountUsd   Float
+  amount0     String?
+  amount1     String?
+  timestamp   Int
+  txHash      String
+  relatedTx   String?
+  metadata    Json?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([wallet, timestamp])
+  @@index([tokenId, timestamp])
+  @@index([pool, timestamp])
+}

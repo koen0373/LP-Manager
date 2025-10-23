@@ -1,4 +1,5 @@
 import React from 'react';
+import { useRouter } from 'next/router';
 import { TokenIcon } from './TokenIcon';
 import { StatusPill } from './StatusPill';
 import { FeeBadge } from './FeeBadge';
@@ -66,8 +67,13 @@ export default function PositionsTable({
   headerNote,
   showTotalsRow,
 }: PositionsTableProps) {
+  const router = useRouter();
   const previousRflrRef = React.useRef<Map<string, number>>(new Map());
   const [rflrDeltas, setRflrDeltas] = React.useState<Record<string, number>>({});
+
+  const handleRowClick = (tokenId: string) => {
+    router.push(`/pool/${tokenId}`);
+  };
 
   React.useEffect(() => {
     const nextDeltas: Record<string, number> = {};
@@ -95,8 +101,9 @@ export default function PositionsTable({
       tvl: acc.tvl + (pos.tvlUsd || 0),
       rewards: acc.rewards + (pos.rewardsUsd || 0),
       rflr: acc.rflr + (pos.rflrUsd || 0),
+      aps: acc.aps + (pos.apsUsd || 0),
     }),
-    { tvl: 0, rewards: 0, rflr: 0 }
+    { tvl: 0, rewards: 0, rflr: 0, aps: 0 }
   );
 
   return (
@@ -105,12 +112,13 @@ export default function PositionsTable({
       
       <div className="bg-enosys-card rounded-lg border border-enosys-border overflow-hidden">
         {/* Header */}
-        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-enosys-border bg-enosys-subcard">
-          <div className="text-enosys-subtext text-sm font-medium text-left">Position Specifics</div>
-          <div className="text-enosys-subtext text-sm font-medium text-left">TVL</div>
-          <div className="text-enosys-subtext text-sm font-medium text-left">Pool Rewards</div>
-          <div className="text-enosys-subtext text-sm font-medium text-left">RFLR Rewards</div>
-          <div className="text-enosys-subtext text-sm font-medium text-left">Range Status</div>
+        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-enosys-border bg-enosys-subcard">
+          <div className="text-enosys-subtext font-bold text-left">Specifics</div>
+          <div className="text-enosys-subtext font-bold text-left">Liquidity</div>
+          <div className="text-enosys-subtext font-bold text-left">Fees</div>
+          <div className="text-enosys-subtext font-bold text-left">RFLR</div>
+          <div className="text-enosys-subtext font-bold text-left">APS</div>
+          <div className="text-enosys-subtext font-bold text-left">Status</div>
         </div>
 
         {/* Rows */}
@@ -120,7 +128,11 @@ export default function PositionsTable({
           const showRflrDelta = Math.abs(rflrDelta) >= 0.00001;
           
           return (
-          <div key={position.id} className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 hover:bg-white/5 transition-colors">
+          <div 
+            key={position.id} 
+            className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 hover:bg-white/5 transition-colors cursor-pointer"
+            onClick={() => handleRowClick(position.id)}
+          >
             {/* Position Specifics */}
             <div className="flex items-center justify-start space-x-3">
               <div className="text-enosys-subtext text-sm">#{position.id}</div>
@@ -129,7 +141,7 @@ export default function PositionsTable({
                 <TokenIcon symbol={position.token1.symbol} size={21} />
               </div>
                   <div>
-                    <div className="text-white font-medium whitespace-nowrap">{position.pairLabel}</div>
+                    <div className="text-white font-normal whitespace-nowrap">{position.pairLabel}</div>
                     <div className="text-enosys-subtext text-xs">
                       {formatPrice(position.lowerPrice || 0)} - {formatPrice(position.upperPrice || 0)}
                     </div>
@@ -139,12 +151,12 @@ export default function PositionsTable({
 
                 {/* TVL */}
                 <div className="text-left">
-                  <div className="text-white font-medium">${formatUsd(position.tvlUsd || 0)}</div>
+                  <div className="text-white font-normal">${formatUsd(position.tvlUsd || 0)}</div>
                 </div>
 
                 {/* Pool Rewards */}
                 <div className="text-left">
-                  <div className="text-white font-medium">${formatUsd(position.rewardsUsd || 0)}</div>
+                  <div className="text-white font-normal">${formatUsd(position.rewardsUsd || 0)}</div>
                   {position.rewardsUsd > 0 && (
                     <div className="text-enosys-subtext text-xs text-left">
                       Unclaimed fees
@@ -156,13 +168,25 @@ export default function PositionsTable({
             <div className="text-left">
               {position.rflrUsd > 0 ? (
                 <div>
-                  <div className="text-white font-medium">${fmtUsd(position.rflrUsd)}</div>
+                  <div className="text-white font-normal">${fmtUsd(position.rflrUsd)}</div>
                   <div className="text-enosys-subtext text-xs text-left">{fmtAmt(position.rflrAmount)} RFLR</div>
                   {showRflrDelta ? (
                     <div className="text-enosys-subtext text-[11px] text-left">
                       ({rflrDelta > 0 ? '+' : '-'} {formatRflrDelta(rflrDelta)})
                     </div>
                   ) : null}
+                </div>
+              ) : (
+                <div className="text-enosys-subtext text-left">-</div>
+              )}
+            </div>
+
+            {/* APS Rewards */}
+            <div className="text-left">
+              {position.apsUsd > 0 ? (
+                <div>
+                  <div className="text-white font-normal">${fmtUsd(position.apsUsd)}</div>
+                  <div className="text-enosys-subtext text-xs text-left">{fmtAmt(position.apsAmount)} APS</div>
                 </div>
               ) : (
                 <div className="text-enosys-subtext text-left">-</div>
@@ -186,16 +210,19 @@ export default function PositionsTable({
 
         {/* Totals Row */}
         {showTotalsRow && (
-          <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-t border-enosys-border bg-enosys-subcard">
-            <div className="text-enosys-subtext text-sm font-medium text-left">Total</div>
+          <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-t border-enosys-border bg-enosys-subcard">
+            <div className="text-enosys-subtext text-sm font-bold text-left">Total</div>
             <div className="text-left">
-              <div className="text-white font-medium">${fmtUsd(totals.tvl)}</div>
+              <div className="text-white font-normal">${fmtUsd(totals.tvl)}</div>
             </div>
             <div className="text-left">
-              <div className="text-white font-medium">${fmtUsd(totals.rewards)}</div>
+              <div className="text-white font-normal">${fmtUsd(totals.rewards)}</div>
             </div>
             <div className="text-left">
-              <div className="text-white font-medium">${fmtUsd(totals.rflr)}</div>
+              <div className="text-white font-normal">${fmtUsd(totals.rflr)}</div>
+            </div>
+            <div className="text-left">
+              <div className="text-white font-normal">${fmtUsd(totals.aps)}</div>
             </div>
             <div></div>
           </div>

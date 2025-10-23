@@ -4,6 +4,7 @@ import { getLpPositionsOnChain } from '../../src/services/pmFallback';
 import { getWalletPositionsViaFlareScan } from '../../src/services/flarescanService';
 import { clearCaches } from '../../src/utils/poolHelpers';
 import { clearRflrRewardCache } from '../../src/services/rflrRewards';
+import { clearCache } from '../../src/lib/util/memo';
 import type { PositionRow } from '../../src/types/positions';
 
 function sanitizeBigInts(value: unknown): unknown {
@@ -49,14 +50,8 @@ function serializePositionRow(position: PositionRow): PositionRow {
   };
 }
 
-const CACHE_TTL_MS = 0; // No cache for testing
+const CACHE_TTL_MS = 60_000; // Cache wallet responses for 60s
 const cache = new Map<string, { expires: number; data: PositionRow[] }>();
-
-// Clear cache to force fresh data
-console.log(`[DEBUG] [API] Clearing all caches for fresh data`);
-cache.clear();
-clearCaches();
-clearRflrRewardCache();
 
 function getCached(address: string): PositionRow[] | null {
   const entry = cache.get(address);
@@ -87,6 +82,8 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const startTime = Date.now();
+  
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
     res.status(405).json({ error: 'Method not allowed' });
@@ -100,9 +97,20 @@ export default async function handler(
   }
 
   const normalizedAddress = addressParam.toLowerCase();
+  const forceRefresh = req.query.refresh === '1';
 
-  const cached = getCached(normalizedAddress);
+  if (forceRefresh) {
+    cache.delete(normalizedAddress);
+    clearCache(`wallet-positions-${normalizedAddress}`);
+    clearCache(`viem-positions-${normalizedAddress}`);
+    clearRflrRewardCache();
+    clearCaches();
+  }
+
+  const cached = forceRefresh ? null : getCached(normalizedAddress);
   if (cached) {
+    const duration = Date.now() - startTime;
+    console.log(`[API] /api/positions - Cache hit for ${normalizedAddress} - ${cached.length} positions - ${duration}ms`);
     res.setHeader('Cache-Control', 's-maxage=20, stale-while-revalidate=60');
     res.status(200).json(cached);
     return;
@@ -121,6 +129,8 @@ export default async function handler(
     });
     const serializedPositions = viemPositions.map(serializePositionRow);
     setCached(normalizedAddress, serializedPositions);
+    const duration = Date.now() - startTime;
+    console.log(`[API] /api/positions - Success via Viem for ${normalizedAddress} - ${serializedPositions.length} positions - ${duration}ms`);
     res.setHeader('Cache-Control', 's-maxage=20, stale-while-revalidate=60');
     res.status(200).json(serializedPositions);
     return;
@@ -132,10 +142,13 @@ export default async function handler(
     const fallbackPositions = await getWalletPositionsViaFlareScan(normalizedAddress);
     const serializedFallback = fallbackPositions.map(serializePositionRow);
     setCached(normalizedAddress, serializedFallback);
+    const duration = Date.now() - startTime;
+    console.log(`[API] /api/positions - Success via FlareScan fallback for ${normalizedAddress} - ${serializedFallback.length} positions - ${duration}ms`);
     res.setHeader('Cache-Control', 'no-store');
     res.status(200).json(serializedFallback);
   } catch (fallbackError) {
-    console.error('Fallback FlareScan fetch failed in /api/positions:', fallbackError);
+    const duration = Date.now() - startTime;
+    console.error(`[API] /api/positions - Failed for ${normalizedAddress} - ${duration}ms:`, fallbackError);
     res.status(502).json({
       error: 'Unable to fetch positions',
       details: fallbackError instanceof Error ? fallbackError.message : 'Unknown error',

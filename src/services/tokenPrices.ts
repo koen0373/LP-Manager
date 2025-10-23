@@ -1,129 +1,87 @@
-// Simple token price service with hardcoded prices for known tokens
-// This can be replaced with a real API later
+import { getUsdPriceNow, clearPriceCache as clearRegistryCache } from './tokenRegistry';
+import { memoize } from '../lib/util/memo';
+import { withTimeout } from '../lib/util/withTimeout';
 
-const TOKEN_PRICES: Record<string, number> = {
-  // Flare tokens
-  'WFLR': 0.01758, // Wrapped Flare
-  'FLR': 0.01758,  // Flare
-  'SFLR': 0.01758, // Songbird Flare
-  'DFLR': 0.01758, // Delegated Flare
-  
-  // Stablecoins
-  'USD0': 1.0,     // USD₮0 (normalized from USD₮0)
-  'USDT0': 1.0,    // USD₮0 (alternative symbol)
-  'USDTO': 1.0,    // USD₮0 (alternative symbol)
-  'USDT': 1.0,     // Tether
-  'USDC': 1.0,     // USD Coin
-  'DAI': 1.0,      // Dai
-  
-  // Other tokens
-  'FXRP': 0.52,    // Flare XRP
-  'EETH': 3500.0,  // Ethereum
-  'EQNT': 0.15,    // Equilibria
-  'EUSDT': 1.0,    // Ethereum USDT
-  'HLN': 0.25,     // Holon
-  'APS': 0.05,     // Apollo
-  'BNZ': 0.12,     // Binance
-  'USDX': 1.0,     // USDX
-  'XRP': 0.52,     // XRP
-  'BTC': 65000.0,  // Bitcoin
-  'ETH': 3500.0,   // Ethereum
-  'RFLR': 0.01758, // Reward FLR (assumed parity with FLR spot)
-};
-
-// Cache for API prices
-const priceCache = new Map<string, { price: number; timestamp: number }>();
-const CACHE_TTL = 30000; // 30 seconds
-
+// Legacy function for backward compatibility - now uses token registry
 export async function getTokenPrice(symbol: string): Promise<number> {
-  const normalizedSymbol = symbol
-    .normalize("NFKD")
-    .replace(/[^A-Z0-9]/gi, "")
-    .toUpperCase();
-  
-  console.log(`[PRICE] Getting price for symbol: "${symbol}" -> normalized: "${normalizedSymbol}"`);
-  
-  // Check cache first
-  const cached = priceCache.get(normalizedSymbol);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    console.log(`[PRICE] Cache hit for ${normalizedSymbol}: $${cached.price}`);
-    return cached.price;
-  }
-  
-  // Check hardcoded prices
-  if (TOKEN_PRICES[normalizedSymbol]) {
-    const price = TOKEN_PRICES[normalizedSymbol];
-    console.log(`[PRICE] Found hardcoded price for ${normalizedSymbol}: $${price}`);
-    priceCache.set(normalizedSymbol, { price, timestamp: Date.now() });
-    return price;
-  }
-  
-  console.log(`[PRICE] No hardcoded price found for ${normalizedSymbol}`);
-  
-  // Try to fetch from CoinGecko (optional)
-  try {
-    const price = await fetchFromCoinGecko(normalizedSymbol);
-    if (price > 0) {
-      priceCache.set(normalizedSymbol, { price, timestamp: Date.now() });
+  return memoize(`token-price-${symbol}`, async () => {
+    // Map legacy symbols to addresses for the registry
+    const symbolToAddress: Record<string, string> = {
+      'RFLR': '0x0000000000000000000000000000000000000000', // Placeholder for RFLR rewards
+      'WFLR': '0x1D80c49BbBCd1C0911346656B529DF9E5c2F783d',
+      'USD0': '0xe7cd86e13AC4309349F30B3435a9d337750fC82D',
+      'USDTO': '0xe7cd86e13AC4309349F30B3435a9d337750fC82D',
+      'USDT0': '0xe7cd86e13AC4309349F30B3435a9d337750fC82D',
+      'EUSDT': '0x96B41289D90444B8adD57e6F265DB5aE8651DF29',
+      'FXRP': '0xAd552A648C74D49E10027AB8a618A3ad4901c5bE',
+      'APS': '0xfF56Eb5b1a7FAa972291117E5E9565dA29bc808d',
+    };
+    
+    const normalizedSymbol = symbol
+      .normalize("NFKD")
+      .replace(/[^A-Z0-9]/gi, "")
+      .toUpperCase();
+    
+    console.log(`[PRICE] Getting price for symbol: "${symbol}" -> normalized: "${normalizedSymbol}"`);
+    
+    const address = symbolToAddress[normalizedSymbol];
+    if (!address) {
+      console.warn(`[PRICE] No address mapping found for symbol: ${symbol}`);
+      return 0;
+    }
+    
+    try {
+      const price = await withTimeout(
+        getUsdPriceNow(address as `0x${string}`),
+        10000,
+        `Price fetch for ${symbol} timed out`
+      );
+      console.log(`[PRICE] Price for ${symbol}: $${price}`);
       return price;
+    } catch (error) {
+      console.warn(`[PRICE] Failed to get price for ${symbol}:`, error);
+      return 0;
     }
+  }, 60 * 1000); // 1 minute cache for token prices
+}
+
+// New function for getting prices by address (recommended)
+export async function getTokenPriceByAddress(address: `0x${string}`): Promise<number> {
+  try {
+    return await getUsdPriceNow(address);
   } catch (error) {
-    console.warn(`Failed to fetch price for ${normalizedSymbol}:`, error);
+    console.warn(`[PRICE] Failed to get price for address ${address}:`, error);
+    return 0;
   }
-  
-  // Fallback to 0
-  return 0;
 }
 
-async function fetchFromCoinGecko(symbol: string): Promise<number> {
-  // Map symbols to CoinGecko IDs
-  const coinGeckoMap: Record<string, string> = {
-    'WFLR': 'flare',
-    'FLR': 'flare',
-    'SFLR': 'songbird',
-    'FXRP': 'flare-xrp',
-    'XRP': 'ripple',
-    'BTC': 'bitcoin',
-    'ETH': 'ethereum',
-    'USDT': 'tether',
-    'USDC': 'usd-coin',
-    'DAI': 'dai',
-  };
-  
-  const coinId = coinGeckoMap[symbol];
-  if (!coinId) return 0;
-  
-  const response = await fetch(
-    `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`,
-    { 
-      headers: { 'Accept': 'application/json' },
-      // Add timeout
-      signal: AbortSignal.timeout(5000)
-    }
-  );
-  
-  if (!response.ok) return 0;
-  
-  const data = await response.json();
-  return data[coinId]?.usd || 0;
+// Rewards-specific function with shorter cache TTL
+export async function getTokenPriceForRewards(symbol: string): Promise<number> {
+  return memoize(`rewards-price-${symbol}`, async () => {
+    // Use the same logic as getTokenPrice but with more aggressive caching
+    return getTokenPrice(symbol);
+  }, 30 * 1000); // 30 second cache for rewards prices
 }
 
+// Batch price fetching
 export async function getTokenPrices(symbols: string[]): Promise<Record<string, number>> {
-  const prices: Record<string, number> = {};
-  
-  // Fetch all prices in parallel
-  const pricePromises = symbols.map(async (symbol) => {
-    const price = await getTokenPrice(symbol);
-    return { symbol: symbol.toUpperCase(), price };
-  });
-  
-  const results = await Promise.all(pricePromises);
-  
-  for (const { symbol, price } of results) {
-    prices[symbol] = price;
-  }
-  
-  return prices;
+  return memoize(`batch-prices-${symbols.sort().join(',')}`, async () => {
+    const prices: Record<string, number> = {};
+    
+    // Fetch all prices in parallel
+    const pricePromises = symbols.map(async (symbol) => {
+      const price = await getTokenPrice(symbol);
+      return { symbol: symbol.toUpperCase(), price };
+    });
+    
+    const results = await Promise.all(pricePromises);
+    
+    for (const { symbol, price } of results) {
+      prices[symbol] = price;
+    }
+    
+    return prices;
+  }, 60 * 1000); // 1 minute cache for batch prices
 }
 
 // Helper to calculate USD value
@@ -131,4 +89,9 @@ export function calculateUsdValue(amount: bigint, decimals: number, price: numbe
   const divisor = BigInt(10 ** decimals);
   const amountFloat = Number(amount) / Number(divisor);
   return amountFloat * price;
+}
+
+// Clear cache function for testing
+export function clearPriceCache(): void {
+  clearRegistryCache();
 }

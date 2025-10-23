@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-const FLARESCAN_API = 'https://flare-api.flare.network/ext/C/rpc';
+const FLARESCAN_API = process.env.NEXT_PUBLIC_RPC_URL || 'https://flare.flr.finance/ext/bc/C/rpc';
 
 // Rate limiting: track requests per IP
 const requestCounts = new Map<string, { count: number; resetTime: number }>();
@@ -31,7 +31,7 @@ export default async function handler(
 ) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -39,7 +39,7 @@ export default async function handler(
     return;
   }
 
-  if (req.method !== 'POST') {
+  if (req.method !== 'POST' && req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
@@ -59,56 +59,111 @@ export default async function handler(
   }
 
   try {
-    const { method, params } = req.body;
+    if (req.method === 'POST') {
+      const { method, params } = req.body;
 
-    if (!method) {
-      res.status(400).json({ error: 'Method is required' });
-      return;
-    }
-
-    console.log('Proxying request to FlareScan:', { method, params });
-
-    // Add delay to prevent overwhelming the API
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    const response = await fetch(FLARESCAN_API, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Enosys-LP-Manager/1.0',
-      },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        method,
-        params: params || [],
-        id: 1,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('FlareScan API error:', response.status, errorText);
-      
-      if (response.status === 429) {
-        res.status(429).json({ 
-          error: 'FlareScan API rate limit exceeded. Please try again later.',
-          retryAfter: 60
-        });
+      if (!method) {
+        res.status(400).json({ error: 'Method is required' });
         return;
       }
+
+      console.log('Proxying POST request to FlareScan:', { method, params });
+
+      // Add delay to prevent overwhelming the API
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const response = await fetch(FLARESCAN_API, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Enosys-LP-Manager/1.0',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method,
+          params: params || [],
+          id: 1,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('FlareScan API error:', response.status, errorText);
+        
+        if (response.status === 429) {
+          res.status(429).json({ 
+            error: 'FlareScan API rate limit exceeded. Please try again later.',
+            retryAfter: 60
+          });
+          return;
+        }
+        
+        throw new Error(`FlareScan API error: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        console.error('FlareScan API returned error:', data.error);
+        throw new Error(`FlareScan API error: ${data.error.message}`);
+      }
+
+      console.log('FlareScan response:', data.result);
+      res.status(200).json(data.result);
+    } else if (req.method === 'GET') {
+      // Handle GET requests by converting query params to POST body
+      const { module, action, ...otherParams } = req.query;
       
-      throw new Error(`FlareScan API error: ${response.status} - ${errorText}`);
+      if (!module || !action) {
+        res.status(400).json({ error: 'Module and action are required' });
+        return;
+      }
+
+      console.log('Proxying GET request to FlareScan:', { module, action, ...otherParams });
+
+      // Add delay to prevent overwhelming the API
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Convert GET params to POST body format
+      const postBody: Record<string, unknown> = { module, action };
+      Object.keys(otherParams).forEach(key => {
+        postBody[key] = otherParams[key];
+      });
+
+      const response = await fetch(FLARESCAN_API, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Enosys-LP-Manager/1.0',
+        },
+        body: JSON.stringify(postBody),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('FlareScan API error:', response.status, errorText);
+        
+        if (response.status === 429) {
+          res.status(429).json({ 
+            error: 'FlareScan API rate limit exceeded. Please try again later.',
+            retryAfter: 60
+          });
+          return;
+        }
+        
+        throw new Error(`FlareScan API error: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        console.error('FlareScan API returned error:', data.error);
+        throw new Error(`FlareScan API error: ${data.error.message}`);
+      }
+
+      console.log('FlareScan response:', data.result);
+      res.status(200).json(data.result);
     }
-
-    const data = await response.json();
-
-    if (data.error) {
-      console.error('FlareScan API returned error:', data.error);
-      throw new Error(`FlareScan API error: ${data.error.message}`);
-    }
-
-    console.log('FlareScan response:', data.result);
-    res.status(200).json(data.result);
   } catch (error) {
     console.error('FlareScan proxy error:', error);
     res.status(500).json({

@@ -11,13 +11,13 @@ export const flare = defineChain({
   rpcUrls: {
     default: {
       http: [
-        'https://flare-api.flare.network/ext/C/rpc',
+        'https://flare.flr.finance/ext/bc/C/rpc',
         'https://flare.public-rpc.com',
       ],
     },
     public: {
       http: [
-        'https://flare-api.flare.network/ext/C/rpc',
+        'https://flare.flr.finance/ext/bc/C/rpc',
         'https://flare.public-rpc.com',
       ],
     },

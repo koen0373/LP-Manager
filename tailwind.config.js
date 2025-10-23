@@ -21,7 +21,12 @@ module.exports = {
         'enosys-row-separator': 'var(--enosys-row-separator)',
       },
       fontFamily: {
+        'sans': ['Quicksand', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         'mono': ['ui-monospace', 'SFMono-Regular', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace'],
+      },
+      fontWeight: {
+        'normal': '400',
+        'bold': '700',
       },
     },
   },

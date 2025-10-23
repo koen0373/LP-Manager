@@ -1,8 +1,22 @@
-{
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    }
-  ]
-}
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+# Production context
+[context.production.environment]
+  NEXT_PUBLIC_BASE_URL = "https://liqui.netlify.app"
+
+# Deploy preview context
+[context.deploy-preview.environment]
+  NEXT_PUBLIC_BASE_URL = "https://deploy-preview-$REVIEW_ID--liqui.netlify.app"
+
+# Branch deploy context
+[context.branch-deploy.environment]
+  NEXT_PUBLIC_BASE_URL = "https://$BRANCH--liqui.netlify.app"

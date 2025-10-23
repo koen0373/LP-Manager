@@ -1,6 +1,5 @@
 import { createPublicClient, fallback, http, decodeFunctionResult, getAddress } from 'viem';
 import { flare } from '../lib/chainFlare';
-import { getTokenPrice } from '../services/tokenPrices';
 
 export function normalizeAddress(address: string): `0x${string}` {
   if (!address) {
@@ -93,10 +92,12 @@ const publicClient = createPublicClient({
   chain: flare,
   transport: fallback([
     http(flare.rpcUrls.default.http[0], { batch: true }),
-    http('https://flare-api.flare.network/ext/bc/C/rpc', { batch: true }),
+    http('https://flare.flr.finance/ext/bc/C/rpc', { batch: true }),
   ]),
   pollingInterval: 6_000,
 });
+
+const DEFAULT_FACTORY_ADDRESS = '0x17AA157AC8C54034381b840Cb8f6bf7Fc355f0de' as `0x${string}`;
 
 // PositionManager ABI
 const POSITION_MANAGER_ABI = [
@@ -272,11 +273,18 @@ export async function getFactoryAddress(positionManager: `0x${string}`): Promise
   
   try {
     console.log(`[DEBUG] [CACHE MISS] Fetching factory address from PositionManager: ${positionManager}`);
-    const factory = await publicClient.readContract({
-      address: positionManager,
-      abi: POSITION_MANAGER_ABI,
-      functionName: 'factory',
-    });
+    
+    // Add timeout and retry logic for RPC calls
+    const factory = await Promise.race([
+      publicClient.readContract({
+        address: positionManager,
+        abi: POSITION_MANAGER_ABI,
+        functionName: 'factory',
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('RPC call timeout')), 10000)
+      )
+    ]) as `0x${string}`;
     
     const factoryAddress = factory as `0x${string}`;
     console.log(`[DEBUG] Factory address returned: ${factoryAddress}`);
@@ -293,9 +301,14 @@ export async function getFactoryAddress(positionManager: `0x${string}`): Promise
     return factoryAddress;
   } catch (error) {
     console.error('Failed to get factory address:', error);
-    // Remove any existing cache entry for this key
-    factoryCache.delete(cacheKey);
-    throw error;
+
+    const fallbackFactory = DEFAULT_FACTORY_ADDRESS;
+    console.warn(
+      `[RPC] Falling back to static factory address ${fallbackFactory}. Ensure RPC connectivity is restored.`
+    );
+
+    factoryCache.set(cacheKey, { factory: fallbackFactory, timestamp: Date.now() });
+    return fallbackFactory;
   }
 }
 
@@ -822,32 +835,25 @@ export async function calculatePositionValue(params: {
 
   console.log(`[VALUE] Calculating position value for ${token0Symbol}/${token1Symbol}`);
 
+  // Calculate the actual pool price from sqrtPriceX96
   const poolPrice = sqrtRatioToPrice(sqrtPriceX96, token0Decimals, token1Decimals);
-  let price0Usd: number | undefined;
-  let price1Usd: number | undefined;
-
-  if (poolPrice > 0) {
-    if (isStableSymbol(token1Symbol)) {
-      price1Usd = 1;
-      price0Usd = poolPrice;
-    } else if (isStableSymbol(token0Symbol)) {
-      price0Usd = 1;
-      price1Usd = poolPrice > 0 ? 1 / poolPrice : 0;
-    }
-  }
-
-  if (price0Usd === undefined || !Number.isFinite(price0Usd)) {
-    price0Usd = await getTokenPrice(token0Symbol);
-  }
-  if (price1Usd === undefined || !Number.isFinite(price1Usd)) {
-    price1Usd = await getTokenPrice(token1Symbol);
-  }
-
-  if ((price0Usd === 0 || !Number.isFinite(price0Usd)) && price1Usd > 0 && poolPrice > 0) {
-    price0Usd = price1Usd / poolPrice;
-  }
-  if ((price1Usd === 0 || !Number.isFinite(price1Usd)) && price0Usd > 0 && poolPrice > 0) {
-    price1Usd = price0Usd * poolPrice;
+  
+  // Calculate prices in USDT based on pool price
+  let price0Usd: number;
+  let price1Usd: number;
+  
+  if (isStableSymbol(token1Symbol)) {
+    // Token1 is USDT, so price0Usd = poolPrice (token0 per USDT)
+    price1Usd = 1;
+    price0Usd = poolPrice;
+  } else if (isStableSymbol(token0Symbol)) {
+    // Token0 is USDT, so price1Usd = 1/poolPrice (USDT per token1)
+    price0Usd = 1;
+    price1Usd = poolPrice > 0 ? 1 / poolPrice : 0;
+  } else {
+    // Neither token is USDT, use pool price as is
+    price0Usd = poolPrice;
+    price1Usd = 1;
   }
 
   const amount0 = bigIntToDecimal(amount0Wei, token0Decimals);

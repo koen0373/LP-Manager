@@ -2,6 +2,19 @@ import type { PositionRow } from '../types/positions';
 import { getRflrRewardForPosition } from './rflrRewards';
 import { getTokenPrice } from './tokenPrices';
 import {
+  getContractCreation,
+  getNftTransfers,
+  getContractSourceCode,
+  type FlarescanTokenNftTx,
+} from '../lib/adapters/flarescan';
+import type { ExplorerLog } from '../lib/adapters/logs';
+import { fetchLogsViaBlockscout } from '../lib/adapters/blockscout';
+import { fetchLatestBlockNumber, fetchLogsViaRpc } from '../lib/adapters/rpcLogs';
+import { timedFetch } from '../lib/util/timedFetch';
+import { mapWithConcurrency } from '../lib/util/concurrency';
+import { memoize, clearCache } from '../lib/util/memo';
+import { withTimeout } from '../lib/util/withTimeout';
+import {
   getFactoryAddress,
   getPoolAddress,
   getPoolState,
@@ -15,9 +28,42 @@ import {
   computePriceRange,
   calculateAccruedFees,
 } from '../utils/poolHelpers';
-// FlareScan API endpoints - using local proxy to avoid CORS
-const FLARESCAN_API = process.env.FLARESCAN_PROXY_URL || 'http://localhost:3000/api/flarescan';
+
+const FLARE_RPC_ENDPOINT =
+  process.env.NEXT_PUBLIC_RPC_URL || 'https://flare.flr.finance/ext/bc/C/rpc';
 const ENOSYS_POSITION_MANAGER = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657';
+const COLLECT_TOPIC =
+  '0x70935338e69775456a85ddef226c395fb668b63fa0115f5f20610b388e6ca9c0';
+const PM_INCREASE_TOPIC =
+  '0x3067048beee31b25b2f1681f88dac838c8bba36af25bfb2b7cf7473a5847e35f';
+const PM_DECREASE_TOPIC =
+  '0x26f6a048ee9138f2c0ce266f322cb99228e8d619ae2bff30c67f8dcf9d2377b4';
+const PM_COLLECT_TOPIC =
+  '0x4d8babf9b22e68d8f3c8653392a91073d3f3d246ad70593d8c8ed3fe381b3c96';
+
+export type PositionManagerEvent = {
+  type: 'increase' | 'decrease' | 'collect';
+  blockNumber: number;
+  txHash: string;
+  logIndex: number;
+  timestamp?: number;
+  liquidity: bigint;
+  amount0: bigint;
+  amount1: bigint;
+  recipient?: string;
+};
+
+const toTokenTopic = (tokenId: string): string =>
+  `0x${BigInt(tokenId).toString(16).padStart(64, '0')}`;
+
+function parseAmount(data: string, index: number): bigint {
+  const slice = data.slice(index * 64, (index + 1) * 64);
+  return slice ? BigInt(`0x${slice}`) : 0n;
+}
+
+function parseAddress(data: string): string {
+  return `0x${data.slice(24, 64)}`.toLowerCase();
+}
 
 // Function selectors
 const SELECTORS = {
@@ -28,6 +74,76 @@ const SELECTORS = {
   name: '0x06fdde03',
   decimals: '0x313ce567',
 };
+
+export async function getContractCreationDate(contractAddress: string): Promise<Date | null> {
+  return memoize(`contract-creation-${contractAddress}`, async () => {
+    try {
+      // Try Blockscout REST API first
+      const response = await withTimeout(
+        timedFetch(
+          `https://flare-explorer.flare.network/api/v2/smart-contracts/${contractAddress}`
+        ),
+        15000,
+        `Contract creation fetch for ${contractAddress} timed out`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.creation_transaction_hash) {
+          const txResponse = await withTimeout(
+            timedFetch(
+              `https://flare-explorer.flare.network/api/v2/transactions/${data.creation_transaction_hash}`
+            ),
+            15000,
+            `Transaction fetch for ${data.creation_transaction_hash} timed out`
+          );
+          if (txResponse.ok) {
+            const txData = await txResponse.json();
+            return new Date(txData.timestamp);
+          }
+        }
+      }
+  } catch (error) {
+    console.warn('[Flarescan] Blockscout contract creation failed, falling back to Flarescan API:', error);
+  }
+
+  // Fallback to Flarescan API
+  try {
+    const creation = await getContractCreation(contractAddress);
+    if (!creation?.txHash) {
+      return null;
+    }
+
+    const receipt = (await callFlareScan('eth_getTransactionReceipt', [creation.txHash])) as {
+      blockNumber?: string;
+    } | null;
+
+    if (!receipt?.blockNumber) {
+      return null;
+    }
+
+    const block = (await callFlareScan('eth_getBlockByNumber', [receipt.blockNumber, false])) as {
+      timestamp?: string;
+    } | null;
+
+    if (!block?.timestamp) {
+      return null;
+    }
+
+    const timestampMs = Number.parseInt(block.timestamp, 16) * 1000;
+    return new Date(timestampMs);
+  } catch (error) {
+    console.error('[FLARESCAN] Error fetching contract creation date:', error);
+    return null;
+  }
+  }, 5 * 60 * 1000); // 5 minute cache
+}
+
+export async function getPositionTransferHistory(
+  tokenId: string
+): Promise<FlarescanTokenNftTx[]> {
+  return getNftTransfers(ENOSYS_POSITION_MANAGER, tokenId);
+}
 
 // Token metadata cache
 const tokenCache = new Map<string, { symbol: string; name: string; decimals: number }>();
@@ -65,60 +181,51 @@ function setCachedPositions(address: `0x${string}`, data: PositionRow[]): void {
 
 // Helper function to call FlareScan API via local proxy with retry logic
 async function callFlareScan(method: string, params: unknown[] = [], retries = 3): Promise<unknown> {
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      console.log(`Calling FlareScan API (attempt ${attempt}/${retries}): ${method}`, params);
+  let attempt = 0;
+  let lastError: unknown = null;
 
-      const response = await fetch(FLARESCAN_API, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          method,
-          params,
+  while (attempt < retries) {
+    attempt += 1;
+    try {
+      const response = await withTimeout(
+        timedFetch(FLARE_RPC_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method,
+            params,
+          }),
         }),
-      });
+        15000,
+        `RPC call ${method} timed out`
+      );
 
       if (!response.ok) {
-        const errorText = await response.text();
-        
-        if (response.status === 429 && attempt < retries) {
-          // Rate limited, wait and retry
-          const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff
-          console.log(`Rate limited, waiting ${waitTime}ms before retry...`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-          continue;
-        }
-        
-        throw new Error(`FlareScan API error: ${response.status} - ${errorText}`);
+        throw new Error(`RPC ${method} failed with status ${response.status}`);
       }
 
-      const data = await response.json();
-
-      if (data.error) {
-        throw new Error(`FlareScan API error: ${JSON.stringify(data.error)}`);
+      const payload = await response.json();
+      if (payload.error) {
+        throw new Error(payload.error.message);
       }
 
-      if (data.result === undefined) {
-        console.warn(`FlareScan API response missing result for ${method}`, data);
-        return data;
-      }
-
-      console.log(`FlareScan API response for ${method}:`, data.result);
-      return data.result;
+      return payload.result;
     } catch (error) {
-      console.error(`FlareScan API call failed (attempt ${attempt}/${retries}):`, error);
-      
-      if (attempt === retries) {
-        throw error;
-      }
-      
-      // Wait before retry
-      const waitTime = Math.pow(2, attempt) * 1000;
-      await new Promise(resolve => setTimeout(resolve, waitTime));
+      lastError = error;
+      const waitTime = 2 ** attempt * 1000;
+      console.warn(
+        `[RPC] ${method} failed (attempt ${attempt}/${retries}). Retrying in ${waitTime}ms`,
+        error
+      );
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
     }
   }
+
+  throw lastError ?? new Error(`[RPC] ${method} failed after ${retries} attempts`);
 }
 
 // Get token metadata
@@ -194,24 +301,35 @@ function decodeString(hex: string): string {
 }
 
 // Get wallet's LP positions with Viem fallback
-export async function getWalletPositions(walletAddress: string): Promise<PositionRow[]> {
-  try {
-    const normalizedAddress = normalizeAddress(walletAddress);
-    const cached = getCachedPositions(normalizedAddress);
-    if (cached) {
-      return cached;
-    }
+export async function getWalletPositions(walletAddress: string, options?: { refresh?: boolean }): Promise<PositionRow[]> {
+  const normalizedAddress = normalizeAddress(walletAddress);
+  const cacheKey = `wallet-positions-${normalizedAddress}`;
+  if (options?.refresh) {
+    clearCache(cacheKey);
+    clearCache(`viem-positions-${normalizedAddress}`);
+  }
 
-    console.log(`Fetching positions for wallet: ${normalizedAddress}`);
+  return memoize(cacheKey, async () => {
+    try {
+      const cached = getCachedPositions(normalizedAddress);
+      if (cached) {
+        return cached;
+      }
+
+      console.log(`Fetching positions for wallet: ${normalizedAddress}`);
 
     // Try server-side viem endpoint first to avoid hitting FlareScan unnecessarily
     try {
-      const response = await fetch(`/api/positions?address=${normalizedAddress}`, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-        },
-      });
+      const response = await withTimeout(
+        timedFetch(`/api/positions?address=${normalizedAddress}${options?.refresh ? '&refresh=1' : ''}`, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+          },
+        }),
+        15000,
+        `Positions API call for ${normalizedAddress} timed out`
+      );
 
       if (response.ok) {
         const positions = (await response.json()) as PositionRow[];
@@ -237,6 +355,7 @@ export async function getWalletPositions(walletAddress: string): Promise<Positio
     console.error('Failed to fetch wallet positions:', error);
     return [];
   }
+  }, 2 * 60 * 1000); // 2 minute cache for wallet positions
 }
 
 // FlareScan API implementation (fallback)
@@ -260,39 +379,14 @@ export async function getWalletPositionsViaFlareScan(walletAddress: string): Pro
       return [];
     }
 
-    const positions: PositionRow[] = [];
+    const indices = Array.from({ length: balance }, (_, i) => i);
+    const processed = await mapWithConcurrency(indices, 12, async (i) =>
+      processPosition(normalised, i, factory)
+    );
 
-    // Process positions in smaller batches to avoid rate limiting
-    const batchSize = 3; // Process 3 positions at a time
-    for (let batchStart = 0; batchStart < balance; batchStart += batchSize) {
-      const batchEnd = Math.min(batchStart + batchSize, balance);
-      console.log(`Processing batch ${batchStart + 1}-${batchEnd} of ${balance}`);
-
-      // Process batch in parallel
-      const batchPromises = [];
-      for (let i = batchStart; i < batchEnd; i++) {
-        batchPromises.push(processPosition(normalised, i, factory));
-      }
-
-      try {
-        const batchResults = await Promise.allSettled(batchPromises);
-        
-        for (const result of batchResults) {
-          if (result.status === 'fulfilled' && result.value) {
-            positions.push(result.value);
-          }
-        }
-      } catch (error) {
-        console.error(`Failed to process batch ${batchStart + 1}-${batchEnd}:`, error);
-      }
-
-      // Add delay between batches to respect rate limits
-      if (batchEnd < balance) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    }
-
-    return positions;
+    return processed
+      .map((entry) => entry.value)
+      .filter((position): position is PositionRow => position !== null);
   } catch (error) {
     console.error('Failed to fetch wallet positions via FlareScan:', error);
     return [];
@@ -324,7 +418,7 @@ async function processPosition(walletAddress: `0x${string}`, index: number, fact
     ]);
 
     // Parse position data
-    return await parsePositionData(tokenId, positionData as string, factory);
+    return await parsePositionData(tokenId, positionData as string, factory, walletAddress);
   } catch (error) {
     console.error(`Failed to process position ${index}:`, error);
     return null;
@@ -332,7 +426,7 @@ async function processPosition(walletAddress: `0x${string}`, index: number, fact
 }
 
 // Parse position data using shared helpers
-async function parsePositionData(tokenId: number, positionData: string, factory: `0x${string}`): Promise<PositionRow | null> {
+async function parsePositionData(tokenId: number, positionData: string, factory: `0x${string}`, walletAddress?: string): Promise<PositionRow | null> {
   try {
     console.log(`[DEBUG] Parsing position data for tokenId: ${tokenId}`);
     console.log(`[DEBUG] Position data length: ${positionData.length}`);
@@ -437,7 +531,7 @@ async function parsePositionData(tokenId: number, positionData: string, factory:
 
     const rflrAmount = rflrAmountRaw ?? 0;
     const rflrUsd = rflrAmount * rflrPriceUsd;
-    
+
     // Create position row with real data
     return {
       id: tokenId.toString(),
@@ -450,6 +544,9 @@ async function parsePositionData(tokenId: number, positionData: string, factory:
       rflrAmount,
       rflrUsd,
       rflrPriceUsd,
+      apsAmount: 0,
+      apsUsd: 0,
+      apsPriceUsd: 0,
       inRange,
       status: 'Active' as const,
       token0: {
@@ -469,13 +566,260 @@ async function parsePositionData(tokenId: number, positionData: string, factory:
       amount1,
       lowerPrice,
       upperPrice,
+      tickLower,
+      tickUpper,
       isInRange: inRange,
       poolAddress,
       price0Usd,
       price1Usd,
+      fee0: 0, // TODO: Calculate individual fees
+      fee1: 0, // TODO: Calculate individual fees
+      walletAddress,
+      currentTick,
     };
   } catch (error) {
     console.error('Failed to parse position data:', error);
     return null;
+  }
+}
+
+// Function to get position NFT transfers for a specific token ID (Blockscout REST v2 API)
+export async function getPositionNftTransfers(
+  positionsAddress: string,
+  tokenId: string,
+  options?: { refresh?: boolean }
+): Promise<
+  Array<{
+    from: string;
+    to: string;
+    timestamp: number;
+    txHash: string;
+    blockNumber: number;
+  }>
+> {
+  const cacheKey = `nft-transfers-${positionsAddress}-${tokenId}`;
+  if (options?.refresh) {
+    clearCache(cacheKey);
+  }
+
+  return memoize(cacheKey, async () => {
+    try {
+      // Try Blockscout REST API first
+      const response = await withTimeout(
+        timedFetch(
+          `https://flare-explorer.flare.network/api/v2/tokens/${positionsAddress}/instances/${tokenId}/transfers?page=1&page_size=100`
+        ),
+        15000,
+        `NFT transfers fetch for token ${tokenId} timed out`
+      );
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.items.map((transfer: {
+        from: { hash: string };
+        to: { hash: string };
+        timestamp: string;
+        transaction_hash: string;
+        block_number: number;
+        log_index: number;
+      }) => ({
+        from: transfer.from.hash,
+        to: transfer.to.hash,
+        timestamp: new Date(transfer.timestamp).getTime() / 1000,
+        txHash: transfer.transaction_hash,
+        blockNumber: transfer.block_number,
+        logIndex: transfer.log_index,
+      }));
+    }
+  } catch (error) {
+    console.warn('[Flarescan] Blockscout NFT transfers failed, falling back to Flarescan API:', error);
+  }
+
+    // Fallback to Flarescan API
+    const transfers = await getNftTransfers(positionsAddress, tokenId);
+    return transfers.map((transfer) => ({
+      from: transfer.from,
+      to: transfer.to,
+      timestamp: Number.parseInt(transfer.timeStamp, 10),
+      txHash: transfer.hash,
+      blockNumber: Number.parseInt(transfer.blockNumber, 10),
+    }));
+  }, 60_000);
+}
+
+export async function getPositionManagerEvents(
+  tokenId: string,
+  fromBlock: number,
+  toBlock: number,
+  options?: { refresh?: boolean }
+): Promise<PositionManagerEvent[]> {
+  const cacheKey = `pm-events-${tokenId}-${fromBlock}-${toBlock}`;
+  if (options?.refresh) {
+    clearCache(cacheKey);
+  }
+
+  return memoize(
+    cacheKey,
+    async () => {
+  const tokenTopic = toTokenTopic(tokenId);
+  const address = ENOSYS_POSITION_MANAGER.toLowerCase();
+
+  const fetchLogs = async (topic: string) => {
+    try {
+      const logs = await fetchLogsViaBlockscout({
+        address,
+        fromBlock,
+        toBlock,
+        topics: [topic, tokenTopic],
+      });
+      return logs;
+    } catch (blockscoutError) {
+      console.warn(`[Flarescan] Blockscout logs failed for topic ${topic}, falling back to RPC:`, blockscoutError);
+      try {
+        const logs = await fetchLogsViaRpc({
+          address,
+          fromBlock,
+          toBlock,
+          topics: [topic, tokenTopic],
+        });
+        return logs;
+      } catch (rpcError) {
+        console.warn(`[Flarescan] RPC logs also failed for topic ${topic}:`, rpcError);
+        return [];
+      }
+    }
+  };
+
+  const [increaseLogs, decreaseLogs, collectLogs] = await Promise.all([
+    fetchLogs(PM_INCREASE_TOPIC),
+    fetchLogs(PM_DECREASE_TOPIC),
+    fetchLogs(PM_COLLECT_TOPIC),
+  ]);
+
+  const mapLogs = (
+    logs: ExplorerLog[],
+    type: PositionManagerEvent['type']
+  ): PositionManagerEvent[] => {
+    return logs.map((log) => {
+      const dataHex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
+      const timestamp = log.timestamp ? Math.floor(new Date(log.timestamp).getTime() / 1000) : undefined;
+
+      if (type === 'collect') {
+        return {
+          type,
+          blockNumber: log.blockNumber,
+          txHash: log.transactionHash,
+          logIndex: log.logIndex ?? 0,
+          timestamp,
+          liquidity: 0n,
+          amount0: parseAmount(dataHex, 1),
+          amount1: parseAmount(dataHex, 2),
+          recipient: parseAddress(dataHex.slice(0, 64)),
+        };
+      }
+
+      return {
+        type,
+        blockNumber: log.blockNumber,
+        txHash: log.transactionHash,
+        logIndex: log.logIndex ?? 0,
+        timestamp,
+        liquidity: parseAmount(dataHex, 0),
+        amount0: parseAmount(dataHex, 1),
+        amount1: parseAmount(dataHex, 2),
+      };
+    });
+  };
+
+  const increaseEvents = mapLogs(increaseLogs, 'increase');
+  const decreaseEvents = mapLogs(decreaseLogs, 'decrease');
+  const collectEvents = mapLogs(collectLogs, 'collect');
+
+  return [...increaseEvents, ...decreaseEvents, ...collectEvents].sort(
+    (a, b) =>
+      a.blockNumber === b.blockNumber ? a.txHash.localeCompare(b.txHash) : a.blockNumber - b.blockNumber
+  );
+    },
+    60_000
+  );
+}
+
+// Function to get collect events for a specific position (Blockscout REST v2 API)
+export async function getPositionCollects(
+  poolAddress: string,
+  positionsAddress: string,
+  tokenId: string
+): Promise<
+  Array<{
+    timestamp: number;
+    amount0: number;
+    amount1: number;
+    txHash: string;
+    blockNumber: number;
+  }>
+> {
+  try {
+    const transfers = await getPositionNftTransfers(positionsAddress, tokenId);
+    const mintTransfer = transfers.find(
+      (transfer) => transfer.from === '0x0000000000000000000000000000000000000000'
+    );
+    const fromBlock = mintTransfer?.blockNumber ?? 0;
+    const toBlock = await fetchLatestBlockNumber();
+
+    let logs = await fetchLogsViaBlockscout({
+      address: poolAddress,
+      fromBlock,
+      toBlock,
+      topics: [COLLECT_TOPIC],
+    });
+
+    if (logs.length === 0) {
+      logs = await fetchLogsViaRpc({
+        address: poolAddress,
+        fromBlock,
+        toBlock,
+        topics: [COLLECT_TOPIC],
+      });
+    }
+
+    return logs.map((log) => {
+      const dataHex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
+      const amount0 = Number.parseInt(dataHex.slice(0, 64) || '0', 16);
+      const amount1 = Number.parseInt(dataHex.slice(64, 128) || '0', 16);
+
+      return {
+        timestamp: log.timestamp ? Math.floor(new Date(log.timestamp).getTime() / 1000) : 0,
+        amount0,
+        amount1,
+        txHash: log.transactionHash,
+        blockNumber: log.blockNumber,
+      };
+    });
+  } catch (error) {
+    console.error('[FLARESCAN] Error fetching collect events:', error);
+    return [];
+  }
+}
+
+// Function to get contract code and ABI (simplified implementation)
+export async function getContractCodeAbi(contractAddress: string): Promise<{
+  sourceCode: string | null;
+  abi: string | null;
+  contractName: string | null;
+}> {
+  try {
+    const sourceEntry = await getContractSourceCode(contractAddress);
+    if (!sourceEntry) {
+      return { sourceCode: null, abi: null, contractName: null };
+    }
+
+    return {
+      sourceCode: sourceEntry.SourceCode || null,
+      abi: sourceEntry.ABI || null,
+      contractName: sourceEntry.ContractName || null,
+    };
+  } catch (error) {
+    console.error('[FLARESCAN] Error fetching contract code:', error);
+    return { sourceCode: null, abi: null, contractName: null };
   }
 }

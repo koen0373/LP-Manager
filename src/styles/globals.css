@@ -32,12 +32,12 @@ body {
 /* Enosys theme colors */
 :root {
   --enosys-bg: #0a0a0a;
-  --enosys-card: #1a1a1a;
-  --enosys-subcard: #2a2a2a;
+  --enosys-card: rgba(26, 26, 26, 0.85); /* Semi-transparent to show water background */
+  --enosys-subcard: rgba(42, 42, 42, 0.85); /* Semi-transparent */
   --enosys-border: #3a3a3a;
   --enosys-text: #ffffff;
   --enosys-subtext: #888888;
-  --enosys-hover: #333333;
+  --enosys-hover: rgba(51, 51, 51, 0.7); /* Semi-transparent */
 }
 
 /* Custom animations */

@@ -92,9 +92,10 @@ async function backfillSinglePosition(
       lastBlock: currentBlock,
       elapsedMs,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     const elapsedMs = Date.now() - startTime;
-    console.error(`[BACKFILL:${tokenId}] ❌ Failed after ${elapsedMs}ms:`, error.message);
+    console.error(`[BACKFILL:${tokenId}] ❌ Failed after ${elapsedMs}ms:`, err.message);
 
     return {
       tokenId,

@@ -1,8 +1,7 @@
 import { publicClient } from '@/lib/viemClient';
 import { getPositionById } from '@/services/pmFallback';
 import { getPositionNftTransfers } from '@/services/flarescanService';
-import { decodeEventLog, Hex, encodeEventTopics } from 'viem';
-import { UNISWAP_V3_POOL_ABI } from '@/abis/UniswapV3Pool';
+import { decodeEventLog, Hex } from 'viem';
 import { POSITION_MANAGER_EVENTS_ABI } from '@/abis/PositionManagerEvents';
 import { 
   bulkUpsertPositionEvents, 
@@ -312,6 +311,7 @@ export async function syncPositionLedger(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function checkEventRelevance(
   decoded: { eventName: string; args?: Record<string, unknown> }, 
   position: { tickLower: number; tickUpper: number; walletAddress?: string }

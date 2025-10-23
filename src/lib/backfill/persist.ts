@@ -23,7 +23,7 @@ export interface EventToPersist {
   sqrtPriceX96?: string;
   price1Per0?: number;
   usdValue?: number;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 export interface TransferToPersist {
@@ -34,7 +34,7 @@ export interface TransferToPersist {
   txHash: string;
   logIndex: number;
   timestamp: number;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -45,7 +45,7 @@ export async function persistEvents(
   events: EventToPersist[]
 ): Promise<{ inserted: number; updated: number; skipped: number }> {
   let inserted = 0;
-  let updated = 0;
+  const updated = 0; // TODO: Track actual updates vs inserts
   let skipped = 0;
 
   // Process in batches to avoid transaction size limits
@@ -116,7 +116,7 @@ export async function persistTransfers(
   transfers: TransferToPersist[]
 ): Promise<{ inserted: number; updated: number; skipped: number }> {
   let inserted = 0;
-  let updated = 0;
+  const updated = 0; // TODO: Track actual updates vs inserts
   let skipped = 0;
 
   const batchSize = 50;

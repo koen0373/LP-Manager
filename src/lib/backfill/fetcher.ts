@@ -23,17 +23,18 @@ async function withRetry<T>(
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       return await fn();
-    } catch (error: any) {
-      lastError = error;
+    } catch (error: unknown) {
+      const err = error as Error & { status?: number };
+      lastError = err;
       
       // Don't retry on 4xx errors (except 429)
-      if (error.status && error.status >= 400 && error.status < 500 && error.status !== 429) {
-        throw error;
+      if (err.status && err.status >= 400 && err.status < 500 && err.status !== 429) {
+        throw err;
       }
 
       if (attempt < maxRetries - 1) {
         const delay = baseDelay * Math.pow(2, attempt);
-        console.log(`[BACKFILL] Retry ${attempt + 1}/${maxRetries} after ${delay}ms due to:`, error.message);
+        console.log(`[BACKFILL] Retry ${attempt + 1}/${maxRetries} after ${delay}ms due to:`, err.message);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }

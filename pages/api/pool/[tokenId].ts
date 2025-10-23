@@ -535,6 +535,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             ],
           });
           break;
+        case PositionEventType.BURN:
+          activityEntries.push({
+            id: `burn-${event.txHash}-${event.blockNumber}`,
+            type: 'burn',
+            timestamp: iso,
+            txHash: event.txHash,
+            title: 'Position Burned',
+            subtitle: 'Liquidity completely removed',
+            metrics: [
+              {
+                label: position.token0.symbol,
+                value: formatTokenDelta(amount0, position.token0.symbol, 'negative'),
+                accent: 'token0',
+              },
+              {
+                label: position.token1.symbol,
+                value: formatTokenDelta(amount1, position.token1.symbol, 'negative'),
+                accent: 'token1',
+              },
+              { label: 'USD Delta', value: formatUsd(usdValue), accent: 'negative' },
+            ],
+          });
+          break;
         default:
           break;
       }

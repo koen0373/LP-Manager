@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Railway backfill script for specific positions
 
 echo "🔄 Starting Railway backfill..."

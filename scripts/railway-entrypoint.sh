@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Railway entrypoint: run backfill once, then start indexer
 
 set -e

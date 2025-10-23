@@ -82,14 +82,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ledgerTransfers = syncResult.transfers;
     } else {
       // Use database cache - much faster!
-      console.log(`[API] Using cached ledger data for token ${tokenId}`);
-      const { getPositionEvents } = await import('@/lib/data/positionEvents');
-      const { getPositionTransfers } = await import('@/lib/data/positionTransfers');
-      
-      [ledgerEvents, ledgerTransfers] = await Promise.all([
-        getPositionEvents(tokenId, { limit: 1000 }),
-        getPositionTransfers(tokenId, { limit: 100 }),
-      ]);
+      // Wrap in try-catch for production (Vercel) where SQLite might not be available
+      try {
+        console.log(`[API] Using cached ledger data for token ${tokenId}`);
+        const { getPositionEvents } = await import('@/lib/data/positionEvents');
+        const { getPositionTransfers } = await import('@/lib/data/positionTransfers');
+        
+        [ledgerEvents, ledgerTransfers] = await Promise.all([
+          getPositionEvents(tokenId, { limit: 1000 }),
+          getPositionTransfers(tokenId, { limit: 100 }),
+        ]);
+      } catch (dbError) {
+        console.warn(`[API] Database unavailable (Prisma error), skipping ledger data:`, dbError);
+        // Continue without database data - the page will still work with limited features
+        ledgerEvents = [];
+        ledgerTransfers = [];
+      }
     }
 
     // Get current prices for accurate rewards calculation

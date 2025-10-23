@@ -14,6 +14,7 @@ interface HeaderProps {
   onWalletConnected?: (address: string) => void;
   onWalletDisconnected?: () => void;
   showTabs?: boolean;
+  currentPage?: 'pools' | 'summary';
 }
 
 export default function Header({
@@ -25,6 +26,7 @@ export default function Header({
   onWalletConnected,
   onWalletDisconnected,
   showTabs = true,
+  currentPage = 'pools',
 }: HeaderProps) {
   const [logoError, setLogoError] = useState(false);
   const handleRefresh = onRefresh ?? (() => {});
@@ -65,13 +67,21 @@ export default function Header({
             </Link>
             <Link 
               href="/" 
-              className="text-sm font-normal text-liqui-subtext hover:text-white transition-colors"
+              className={`text-sm transition-colors ${
+                currentPage === 'pools' 
+                  ? 'font-bold text-white' 
+                  : 'font-normal text-liqui-subtext hover:text-white'
+              }`}
             >
               My Pools
             </Link>
             <Link 
               href="/summary" 
-              className="text-sm font-normal text-liqui-subtext hover:text-white transition-colors"
+              className={`text-sm transition-colors ${
+                currentPage === 'summary' 
+                  ? 'font-bold text-white' 
+                  : 'font-normal text-liqui-subtext hover:text-white'
+              }`}
             >
               Portfolio Performance
             </Link>

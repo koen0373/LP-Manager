@@ -66,7 +66,7 @@ export default function SummaryPage() {
   if (!walletAddress) {
     return (
       <div className="min-h-screen">
-        <Header 
+        <Header currentPage="summary" 
           showTabs={false}
           onWalletConnected={handleWalletConnected}
           onWalletDisconnected={handleWalletDisconnected}
@@ -87,7 +87,7 @@ export default function SummaryPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen">
-        <Header 
+        <Header currentPage="summary" 
           showTabs={false}
           onWalletConnected={handleWalletConnected}
           onWalletDisconnected={handleWalletDisconnected}
@@ -114,7 +114,7 @@ export default function SummaryPage() {
   if (isError || !data) {
     return (
       <div className="min-h-screen">
-        <Header 
+        <Header currentPage="summary" 
           showTabs={false}
           onWalletConnected={handleWalletConnected}
           onWalletDisconnected={handleWalletDisconnected}
@@ -174,7 +174,7 @@ export default function SummaryPage() {
 
   return (
     <div className="min-h-screen bg-liqui-bg">
-      <Header 
+      <Header currentPage="summary" 
         showTabs={false}
         onWalletConnected={handleWalletConnected}
         onWalletDisconnected={handleWalletDisconnected}

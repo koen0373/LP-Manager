@@ -233,6 +233,7 @@ export default function LPManagerPage() {
           onWalletConnected={handleWalletConnected}
           onWalletDisconnected={handleWalletDisconnected}
           showTabs={true}
+          currentPage="pools"
         />
         
         {!isClient ? (

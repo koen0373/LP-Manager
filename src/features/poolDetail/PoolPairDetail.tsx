@@ -93,7 +93,7 @@ export function PoolPairDetail({
   if (loading) {
     return (
       <div className="min-h-screen text-white">
-        <Header
+        <Header currentPage="pools"
           showTabs={false}
           onWalletConnected={onWalletConnected}
           onWalletDisconnected={onWalletDisconnected}
@@ -108,7 +108,7 @@ export function PoolPairDetail({
   if (error) {
     return (
       <div className="min-h-screen text-white">
-        <Header
+        <Header currentPage="pools"
           showTabs={false}
           onWalletConnected={onWalletConnected}
           onWalletDisconnected={onWalletDisconnected}
@@ -133,7 +133,7 @@ export function PoolPairDetail({
 
   return (
     <div className="min-h-screen bg-liqui-bg text-white">
-      <Header
+      <Header currentPage="pools"
         showTabs={false}
         onWalletConnected={onWalletConnected}
         onWalletDisconnected={onWalletDisconnected}

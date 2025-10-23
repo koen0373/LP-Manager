@@ -11,6 +11,7 @@ export default function LPManagerPage() {
   const [walletAddress, setWalletAddress] = React.useState<string>('');
   const [positions, setPositions] = React.useState<PositionRow[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [syncing, setSyncing] = React.useState(false);
   const [error, setError] = React.useState<string>('');
   const [isClient, setIsClient] = React.useState(true);
 
@@ -19,6 +20,69 @@ export default function LPManagerPage() {
     console.log('Setting isClient to true');
     setIsClient(true);
   }, []);
+
+  // Auto-sync trigger
+  const triggerAutoSync = async (tokenIds: number[]) => {
+    try {
+      console.log('[AUTO-SYNC] Triggering sync for positions:', tokenIds);
+      setSyncing(true);
+
+      const response = await fetch('/api/backfill/auto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tokenIds }),
+      });
+
+      const result = await response.json();
+      console.log('[AUTO-SYNC] Response:', result);
+
+      if (result.syncing) {
+        // Start polling for completion
+        startSyncPolling(tokenIds);
+      } else {
+        setSyncing(false);
+      }
+    } catch (err) {
+      console.error('[AUTO-SYNC] Error:', err);
+      setSyncing(false);
+    }
+  };
+
+  // Poll sync status
+  const startSyncPolling = (tokenIds: number[]) => {
+    let attempts = 0;
+    const maxAttempts = 60; // 5 minutes max (5s intervals)
+
+    const interval = setInterval(async () => {
+      attempts++;
+
+      try {
+        const response = await fetch(`/api/backfill/status?tokenIds=${tokenIds.join(',')}`);
+        const status = await response.json();
+
+        console.log(`[POLLING] Attempt ${attempts}/${maxAttempts}:`, status);
+
+        if (status.allFresh) {
+          console.log('[POLLING] ✅ All positions synced!');
+          clearInterval(interval);
+          setSyncing(false);
+          
+          // Refresh positions with full data
+          if (walletAddress) {
+            fetchPositions(walletAddress, true);
+          }
+        } else if (attempts >= maxAttempts) {
+          console.log('[POLLING] ⏱️ Timeout reached');
+          clearInterval(interval);
+          setSyncing(false);
+        }
+      } catch (err) {
+        console.error('[POLLING] Error:', err);
+        clearInterval(interval);
+        setSyncing(false);
+      }
+    }, 5000); // Poll every 5 seconds
+  };
 
   // Fetch positions when wallet connects
   const TVL_ACTIVE_THRESHOLD = 0.01; // USD
@@ -66,6 +130,11 @@ export default function LPManagerPage() {
         });
         setPositions(normalizedPositions);
         setLastUpdated(new Date().toLocaleTimeString());
+
+        // Trigger auto-sync for pool history
+        if (walletPositions.length > 0) {
+          triggerAutoSync(walletPositions.map(p => p.tokenId));
+        }
       } catch (err) {
         console.error('[HOME] Error fetching positions:', err);
         setError(`Failed to fetch positions: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -182,6 +251,62 @@ export default function LPManagerPage() {
             <div className="text-enosys-subtext text-lg">
               Loading positions...
             </div>
+          </div>
+        ) : syncing ? (
+          <div className="w-full max-w-[1200px] mx-auto">
+            {/* Show positions immediately if available */}
+            {positions.length > 0 && (
+              <div className="space-y-12">
+                {/* Syncing loader banner */}
+                <div className="rounded-lg border border-blue-500/30 bg-blue-900/10 px-6 py-8 text-center">
+                  <div className="flex items-center justify-center space-x-3 mb-2">
+                    <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-lg font-medium text-blue-400">
+                      Collecting your pooldata from the blockchain
+                    </span>
+                  </div>
+                  <p className="text-sm text-enosys-subtext">
+                    This may take up to 30 seconds...
+                  </p>
+                </div>
+
+                {/* Show positions while syncing */}
+                {tab === 'active' && activePositions.length > 0 && (
+                  <PositionsTable 
+                    positions={activePositions} 
+                    headerNote={activeHeaderNote} 
+                    showTotalsRow={false}
+                  />
+                )}
+
+                {tab === 'inactive' && inactivePositions.length > 0 && (
+                  <PositionsTable 
+                    positions={inactivePositions} 
+                    headerNote={inactiveHeaderNote} 
+                    showTotalsRow={false}
+                  />
+                )}
+
+                {tab === 'all' && (
+                  <div className="space-y-12">
+                    {activePositions.length > 0 && (
+                      <PositionsTable 
+                        positions={activePositions} 
+                        headerNote={activeHeaderNote} 
+                        showTotalsRow={false}
+                      />
+                    )}
+                    {inactivePositions.length > 0 && (
+                      <PositionsTable 
+                        positions={inactivePositions} 
+                        headerNote={inactiveHeaderNote} 
+                        showTotalsRow={false}
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ) : error ? (
           <div className="w-full max-w-[1200px] mx-auto text-center py-20">

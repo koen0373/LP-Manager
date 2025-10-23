@@ -10,7 +10,7 @@ export const indexerConfig = {
   rpc: {
     url: process.env.FLARE_RPC_URL || 'https://flare-api.flare.network/ext/bc/C/rpc',
     batchSize: 25, // Blocks per getLogs call (Flare RPC limit is 30)
-    maxConcurrency: 4, // Parallel RPC requests
+    maxConcurrency: 2, // Parallel RPC requests (reduced for low memory)
     minConcurrency: 1, // Minimum when throttled
     requestTimeout: 30000, // 30s timeout per RPC call
   },
@@ -18,7 +18,7 @@ export const indexerConfig = {
   // Contract Addresses
   contracts: {
     npm: process.env.NPM_ADDRESS || '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657',
-    startBlock: parseInt(process.env.START_BLOCK || '48000000', 10), // Flare mainnet NPM deployment
+    startBlock: parseInt(process.env.START_BLOCK || '48500000', 10), // Default to recent blocks if not set
   },
 
   // Retry & Backoff
@@ -34,8 +34,8 @@ export const indexerConfig = {
 
   // Database Batching
   db: {
-    batchSize: 200, // Events per transaction
-    checkpointInterval: 50, // Update checkpoint every N batches
+    batchSize: 100, // Events per transaction (reduced for low memory)
+    checkpointInterval: 25, // Update checkpoint every N batches
   },
 
   // Follower Mode (tail)

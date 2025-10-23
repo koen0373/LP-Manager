@@ -19,6 +19,7 @@ import {
   computePriceRange,
   calculateAccruedFees,
 } from '../utils/poolHelpers';
+import { readPoolLiquidity } from '../lib/onchain/readers';
 
 const pm = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657' as `0x${string}`;
 
@@ -232,13 +233,20 @@ async function parsePositionData(
       price1Usd,
     });
 
-    const [rflrAmountRaw, rflrPriceUsd] = await Promise.all([
+    const [rflrAmountRaw, rflrPriceUsd, poolLiquidity] = await Promise.all([
       getRflrRewardForPosition(tokenId.toString()),
       getTokenPrice('RFLR'),
+      readPoolLiquidity(poolAddress),
     ]);
 
     const rflrAmount = rflrAmountRaw ?? 0;
     const rflrUsd = rflrAmount * rflrPriceUsd;
+    
+    // Calculate pool share percentage
+    let poolSharePct: number | undefined;
+    if (poolLiquidity && poolLiquidity > 0n) {
+      poolSharePct = (Number(liquidity) / Number(poolLiquidity)) * 100;
+    }
     
     // Update rewardsUsd to include RFLR rewards only
     const totalRewardsUsd = rewardsUsd + rflrUsd;
@@ -285,6 +293,9 @@ async function parsePositionData(
       fee1,
       walletAddress,
       currentTick,
+      liquidity,
+      poolLiquidity: poolLiquidity || undefined,
+      poolSharePct,
     };
   } catch (error) {
     console.error('Failed to parse position data:', error);

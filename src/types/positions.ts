@@ -52,6 +52,9 @@ export interface PositionRow {
   currentTick?: number; // Current tick of the pool
   createdAt?: string; // ISO timestamp of position creation
   lastUpdated?: string; // ISO timestamp of last update
+  liquidity?: bigint; // Position liquidity
+  poolLiquidity?: bigint; // Total pool liquidity
+  poolSharePct?: number; // Percentage of pool owned (0-100)
 }
 
 export interface PositionState {

@@ -480,6 +480,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
+    console.log(`[API] Processing ${ledgerEvents.length} ledger events for activity timeline`);
+    
     for (const event of ledgerEvents) {
       const ts = await resolveTimestamp(event.blockNumber, event.timestamp);
       const amount0 = bigIntToDecimal(
@@ -593,6 +595,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Final sort of activity entries by timestamp (most recent first)
     activityEntries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    console.log(`[API] Total activity entries: ${activityEntries.length} (${ledgerEvents.length} events + transfers)`);
 
     const vm: PoolDetailVM = {
       pairLabel: `${position.token0.symbol}/${position.token1.symbol}`,

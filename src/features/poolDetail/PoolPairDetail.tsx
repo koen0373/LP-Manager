@@ -142,10 +142,6 @@ export function PoolPairDetail({
       />
       
       <div className="container mx-auto px-4 py-8">
-        {/* Back to overview link */}
-        <Link href="/" className="inline-flex items-center text-enosys-blue hover:text-enosys-blueHover mb-6">
-          ← My Pools
-        </Link>
 
         {/* Pool Detail Header */}
         <div className="bg-enosys-card rounded-lg p-6 mb-6">

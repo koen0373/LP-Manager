@@ -105,7 +105,7 @@ async function backfillSinglePosition(
       skipped: 0,
       lastBlock: 0,
       elapsedMs,
-      error: error.message || 'Unknown error',
+      error: err.message || 'Unknown error',
     };
   }
 }

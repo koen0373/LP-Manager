@@ -83,10 +83,7 @@ export function PoolPairDetail({
     return (
       <div className="min-h-screen bg-enosys-bg text-white">
         <Header
-          activeCount={activeCount}
-          inactiveCount={inactiveCount}
-          onTabChange={onTabChange}
-          activeTab={activeTab}
+          showTabs={false}
           onWalletConnected={onWalletConnected}
           onWalletDisconnected={onWalletDisconnected}
         />
@@ -105,10 +102,7 @@ export function PoolPairDetail({
     return (
       <div className="min-h-screen bg-enosys-bg text-white">
         <Header
-          activeCount={activeCount}
-          inactiveCount={inactiveCount}
-          onTabChange={onTabChange}
-          activeTab={activeTab}
+          showTabs={false}
           onWalletConnected={onWalletConnected}
           onWalletDisconnected={onWalletDisconnected}
         />
@@ -133,10 +127,7 @@ export function PoolPairDetail({
   return (
     <div className="min-h-screen bg-enosys-bg text-white">
       <Header
-        activeCount={activeCount}
-        inactiveCount={inactiveCount}
-        onTabChange={onTabChange}
-        activeTab={activeTab}
+        showTabs={false}
         onWalletConnected={onWalletConnected}
         onWalletDisconnected={onWalletDisconnected}
       />

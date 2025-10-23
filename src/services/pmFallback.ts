@@ -248,8 +248,9 @@ async function parsePositionData(
       poolSharePct = (Number(liquidity) / Number(poolLiquidity)) * 100;
     }
     
-    // Update rewardsUsd to include RFLR rewards only
-    const totalRewardsUsd = rewardsUsd + rflrUsd;
+    // For inactive (out of range) positions, unclaimed fees should be minimal/zero
+    // Only include RFLR rewards for inactive pools, as they don't generate new fees
+    const totalRewardsUsd = inRange ? (rewardsUsd + rflrUsd) : rflrUsd;
 
     // Create position row
     return {

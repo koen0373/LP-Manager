@@ -102,9 +102,9 @@ export class DbWriter {
       );
 
       written = transfers.length;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle unique constraint violations
-      if (error.code === 'P2002') {
+      if ((error as { code?: string }).code === 'P2002') {
         duplicates = transfers.length;
       } else {
         console.error('[DB] Error writing transfer batch:', error);
@@ -157,9 +157,9 @@ export class DbWriter {
       );
 
       written = events.length;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle unique constraint violations
-      if (error.code === 'P2002') {
+      if ((error as { code?: string }).code === 'P2002') {
         duplicates = events.length;
       } else {
         console.error('[DB] Error writing position event batch:', error);

@@ -6,7 +6,6 @@
 
 import { decodeEventLog, type Log, type Hex } from 'viem';
 import {
-  NPM_EVENTS_ABI,
   TOPIC_TO_EVENT_TYPE,
   TRANSFER_ABI,
   INCREASE_LIQUIDITY_ABI,

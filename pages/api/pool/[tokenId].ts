@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getPositionById } from '@/services/pmFallback';
 import { PoolDetailVM, PoolActivityEntry } from '@/features/poolDetail/types';
 import { getTokenPriceForRewards } from '@/services/tokenPrices';
-import { getApsRewardForPosition } from '@/services/apsRewards';
+// import { getApsRewardForPosition } from '@/services/apsRewards';
 import { tickToPrice, bigIntToDecimal } from '@/utils/poolHelpers';
 import {
   getContractCreationDate,

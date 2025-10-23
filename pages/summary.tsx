@@ -23,12 +23,6 @@ interface ApiPosition {
   rflrUsd?: number;
 }
 
-export const getServerSideProps: GetServerSideProps = async () => {
-  return {
-    props: {},
-  };
-};
-
 export default function SummaryPage() {
   const [walletAddress, setWalletAddress] = React.useState<string>('');
   const { data, isLoading, isError, refetch } = useWalletSummary(walletAddress);

@@ -6,17 +6,14 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies
-RUN npm ci
+# Install dependencies (use npm install for flexibility)
+RUN npm install
 
 # Copy source
 COPY . .
 
 # Generate Prisma Client
 RUN npx prisma generate
-
-# Build (if needed)
-RUN npm run build || true
 
 # Default command (can be overridden)
 CMD ["npm", "run", "indexer:follow"]

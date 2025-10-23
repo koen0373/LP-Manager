@@ -6,16 +6,16 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
+# Copy Prisma schema BEFORE npm install (needed for postinstall hook)
+COPY prisma ./prisma
+
 # Install dependencies (use install instead of ci to handle lock file discrepancies)
 RUN npm install
 
-# Copy source code
+# Copy rest of source code
 COPY . .
 
-# Generate Prisma Client
-RUN npx prisma generate
-
-# Build Next.js app
+# Build Next.js app (Prisma Client already generated via postinstall hook)
 RUN npm run build
 
 # Production stage

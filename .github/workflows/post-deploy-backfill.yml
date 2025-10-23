@@ -1,0 +1,41 @@
+name: Post-Deploy Backfill
+
+on:
+  workflow_dispatch:  # Allow manual triggering
+  push:
+    branches: [ main ]
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Trigger backfill API
+        run: |
+          echo "🚀 Triggering backfill for LP positions..."
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${{ secrets.PROD_URL }}/api/admin/backfill" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "tokenIds": [22003, 22326, 20445, 21866],
+              "secret": "${{ secrets.ADMIN_SECRET }}",
+              "mode": "since"
+            }')
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+          
+          echo "📊 Response (HTTP $HTTP_CODE):"
+          echo "$BODY" | jq '.' || echo "$BODY"
+          
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "✅ Backfill completed successfully"
+            exit 0
+          else
+            echo "❌ Backfill failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+        env:
+          PROD_URL: ${{ secrets.PROD_URL }}
+          ADMIN_SECRET: ${{ secrets.ADMIN_SECRET }}
+

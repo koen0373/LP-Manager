@@ -2,6 +2,211 @@
 
 ## 🚀 Quick Start
 
+---
+
+## ⚙️ Deployment & Workers
+
+### Railway Deployment
+
+This application uses a **dual-service architecture** on Railway:
+1. **Web Service** - Next.js application serving the UI and API
+2. **Backfill Worker** - Background worker for ingesting blockchain events
+
+#### Setup Instructions
+
+**1. Create Railway Project**
+- Connect your GitHub repository to Railway
+- Create two services from the same repository:
+
+**2. Web Service (Next.js App)**
+```
+Service Name: liqui-web
+Build Command: (default)
+Start Command: npm start
+```
+
+**3. Backfill Worker Service**
+```
+Service Name: liqui-backfill-worker
+Build Command: (default)
+Start Command: bash -lc "npm run backfill:run"
+```
+
+**4. Environment Variables (Both Services)**
+
+Set these environment variables on **both** services:
+
+```bash
+# Database (automatically set by Railway Postgres add-on)
+DATABASE_URL=postgresql://...
+
+# Admin API Security (REQUIRED - generate a strong random value)
+ADMIN_SECRET=your-strong-random-secret-here
+
+# Flarescan API
+FLARESCAN_API_BASE=https://flare-explorer.flare.network/api
+FLARESCAN_API_KEY=  # Optional
+
+# RPC Endpoint
+RPC_URL_FALLBACK=https://flare-api.flare.network/ext/C/rpc
+
+# WalletConnect
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your-project-id
+```
+
+**5. Add PostgreSQL Database**
+- In your Railway project, click "New" → "Database" → "PostgreSQL"
+- Railway will automatically inject `DATABASE_URL` into both services
+
+**6. Deploy**
+- Push to `main` branch
+- Web service starts automatically
+- Worker service runs backfill and exits (or runs continuously if configured)
+
+---
+
+### 🔄 Backfill Options
+
+#### Option A: Railway Worker Service (Recommended)
+
+Create a second service that runs the backfill continuously or on-demand:
+
+```bash
+# One-time backfill
+Start Command: bash -lc "npm run backfill:ids"
+
+# Continuous indexer (future)
+Start Command: bash -lc "npm run indexer:loop"
+```
+
+#### Option B: HTTP Trigger via Admin API
+
+Trigger backfill manually or via automation:
+
+```bash
+curl -X POST "https://your-app.railway.app/api/admin/backfill" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tokenIds": [22003, 22326, 20445, 21866],
+    "secret": "your-admin-secret",
+    "mode": "since"
+  }'
+```
+
+Response:
+```json
+{
+  "success": true,
+  "summary": {
+    "total": 4,
+    "successful": 4,
+    "failed": 0,
+    "totalInserted": 127,
+    "totalUpdated": 5,
+    "totalSkipped": 3,
+    "elapsedMs": 4523
+  },
+  "results": [...]
+}
+```
+
+#### Option C: GitHub Action (Automated)
+
+A GitHub Action automatically triggers backfill after each deploy to `main`:
+
+```yaml
+# .github/workflows/post-deploy-backfill.yml
+# Runs automatically on push to main
+# Can also be triggered manually via "Actions" tab
+```
+
+**Setup GitHub Secrets:**
+1. Go to repository Settings → Secrets → Actions
+2. Add secrets:
+   - `PROD_URL`: `https://your-app.railway.app`
+   - `ADMIN_SECRET`: (same value as Railway env var)
+
+#### Option D: Railway Cron Schedule
+
+For periodic catch-up (e.g., nightly backfill):
+
+1. Railway Dashboard → Service → Cron
+2. Schedule: `0 2 * * *` (2 AM daily)
+3. Command: 
+```bash
+curl -X POST "$RAILWAY_PUBLIC_DOMAIN/api/admin/backfill" \
+  -H "Content-Type: application/json" \
+  -d '{"tokenIds":[22003,22326,20445,21866],"secret":"'"$ADMIN_SECRET"'","mode":"since"}'
+```
+
+---
+
+### 🛠️ Local Backfill
+
+Run backfill locally for development/testing:
+
+```bash
+# Backfill specific positions
+npm run backfill:ids
+
+# Custom token IDs
+npm run backfill:run 22003 22326
+
+# Full re-sync (ignore checkpoint)
+npm run backfill:run 22003 -- --full
+
+# Since specific block
+npm run backfill:run 22003 -- --since=5000000
+```
+
+---
+
+### 🔍 Backfill Architecture
+
+**Key Features:**
+- ✅ **Idempotent upserts** - Safe to run multiple times
+- ✅ **Checkpointing** - Resumes from last sync point
+- ✅ **Exponential backoff** - Handles rate limits gracefully
+- ✅ **Concurrency control** - Limits parallel requests (p-limit)
+- ✅ **Comprehensive logging** - Detailed progress tracking
+
+**How It Works:**
+1. Reads `BackfillCursor` from database (last synced block)
+2. Fetches events/transfers from Flarescan API in chunks
+3. Persists to database using idempotent upserts
+4. Updates cursor for resume capability
+5. Parallel processing with configurable concurrency
+
+**Database Tables:**
+- `PositionEvent` - Position-specific events (Mint, Burn, Collect, etc.)
+- `PositionTransfer` - NFT ownership transfers
+- `BackfillCursor` - Checkpoint tracking per tokenId
+
+---
+
+### 🚨 Troubleshooting
+
+**Worker not running on Railway:**
+- Check logs in Railway dashboard
+- Verify `npm run backfill:run` works locally
+- Ensure `DATABASE_URL` is accessible from worker service
+
+**Admin API returns 401:**
+- Verify `ADMIN_SECRET` matches in GitHub Secrets and Railway
+- Check request body includes correct `secret` field
+
+**Backfill fails with rate limits:**
+- Default: 2 req/sec with exponential backoff
+- Reduce concurrency in worker.ts if needed
+- Consider adding `FLARESCAN_API_KEY` for higher limits
+
+**Database connection errors:**
+- Verify `DATABASE_URL` is set correctly
+- Check PostgreSQL service is running on Railway
+- Run `npx prisma generate` after schema changes
+
+---
+
 ### Database Setup (Vercel Postgres)
 
 This app uses PostgreSQL via Vercel Postgres for production deployment.

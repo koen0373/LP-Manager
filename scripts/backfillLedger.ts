@@ -1,99 +1,85 @@
-#!/usr/bin/env tsx
+#!/usr/bin/env node
+/**
+ * Backfill script for LP Manager
+ * 
+ * Usage:
+ *   npm run backfill:run                  # Interactive mode (not implemented yet)
+ *   npm run backfill:ids 22003 22326 ...  # Backfill specific tokenIds
+ *   npm run backfill:ids -- --full        # Full re-sync (ignore cursor)
+ * 
+ * Environment:
+ *   DATABASE_URL - Postgres connection string
+ *   FLARESCAN_API_BASE - Flarescan API base URL
+ *   RPC_URL_FALLBACK - RPC endpoint for block numbers
+ */
 
-import { syncPositionLedger, syncMultiplePositions } from '../src/lib/sync/syncPositionLedger';
+import { backfillPositions } from '../src/lib/backfill/worker';
+
+// Parse CLI arguments
+const args = process.argv.slice(2);
+
+// Check for flags
+const fullMode = args.includes('--full');
+const sinceBlockArg = args.find(a => a.startsWith('--since='));
+const sinceBlock = sinceBlockArg ? parseInt(sinceBlockArg.split('=')[1]) : undefined;
+
+// Extract tokenIds (numeric arguments)
+const tokenIds = args
+  .filter(arg => !arg.startsWith('--'))
+  .map(arg => parseInt(arg, 10))
+  .filter(id => !isNaN(id));
 
 async function main() {
-  const args = process.argv.slice(2);
-
-  if (args.length === 0) {
-    console.log(`
-Usage:
-  npm run backfill <tokenId> [tokenId2 tokenId3 ...]
-  npm run backfill -- --all
-  npm run backfill -- --help
-
-Examples:
-  npm run backfill 22003
-  npm run backfill 22003 22326 20445
-  npm run backfill -- --all
-
-Options:
-  --help      Show this help message
-  --all       Sync all positions (use with caution)
-  --verbose   Enable verbose logging
-    `);
-    process.exit(0);
-  }
-
-  const verbose = args.includes('--verbose');
-  const tokenIds = args.filter(arg => !arg.startsWith('--') && !isNaN(Number(arg)));
-
-  if (args.includes('--all')) {
-    console.log('⚠️  --all flag is not yet implemented');
-    console.log('Please specify token IDs manually for now');
-    process.exit(1);
-  }
+  console.log(`
+╔═══════════════════════════════════════════════════════════╗
+║                                                           ║
+║           LP MANAGER - BACKFILL WORKER                    ║
+║                                                           ║
+╚═══════════════════════════════════════════════════════════╝
+  `);
 
   if (tokenIds.length === 0) {
-    console.error('❌ No valid token IDs provided');
+    console.error('❌ No tokenIds provided');
+    console.log('\nUsage:');
+    console.log('  node --loader tsx ./scripts/backfillLedger.ts 22003 22326 20445 21866');
+    console.log('  node --loader tsx ./scripts/backfillLedger.ts 22003 --full');
+    console.log('  node --loader tsx ./scripts/backfillLedger.ts 22003 --since=1000000');
     process.exit(1);
   }
 
-  console.log(`\n🔄 Starting ledger backfill for ${tokenIds.length} position(s)\n`);
-
-  if (tokenIds.length === 1) {
-    // Single position sync with detailed output
-    const tokenId = tokenIds[0];
-    console.log(`Syncing position ${tokenId}...`);
-    
-    const result = await syncPositionLedger(tokenId, { verbose: true });
-
-    console.log('\n' + '='.repeat(60));
-    if (result.success) {
-      console.log(`✅ Success! Position ${tokenId} synced`);
-      console.log(`   - Events ingested: ${result.eventsIngested}`);
-      console.log(`   - Transfers ingested: ${result.transfersIngested}`);
-    } else {
-      console.log(`❌ Failed to sync position ${tokenId}`);
-      console.log(`   Error: ${result.error}`);
-      process.exit(1);
-    }
-    console.log('='.repeat(60) + '\n');
-  } else {
-    // Multiple positions sync with summary
-    const result = await syncMultiplePositions(tokenIds, { verbose });
-
-    console.log('\n' + '='.repeat(60));
-    console.log(`📊 Batch Sync Summary`);
-    console.log('='.repeat(60));
-    console.log(`Total positions: ${result.total}`);
-    console.log(`✅ Successful: ${result.successful}`);
-    console.log(`❌ Failed: ${result.failed}`);
-    console.log('');
-
-    // Show detailed results
-    for (const res of result.results) {
-      if (res.success) {
-        console.log(
-          `✅ Position ${res.tokenId}: ` +
-          `${res.eventsIngested} events, ${res.transfersIngested} transfers`
-        );
-      } else {
-        console.log(`❌ Position ${res.tokenId}: ${res.error}`);
-      }
-    }
-    console.log('='.repeat(60) + '\n');
-
-    if (result.failed > 0) {
-      process.exit(1);
-    }
+  console.log('📋 Configuration:');
+  console.log(`  Token IDs: ${tokenIds.join(', ')}`);
+  console.log(`  Mode: ${fullMode ? 'FULL' : 'SINCE LAST CHECKPOINT'}`);
+  if (sinceBlock) {
+    console.log(`  Since Block: ${sinceBlock}`);
   }
+  console.log(`  Concurrency: 6`);
+  console.log();
 
-  console.log('✨ Ledger backfill completed successfully!\n');
+  try {
+    const summary = await backfillPositions({
+      tokenIds,
+      mode: fullMode ? 'full' : 'since',
+      sinceBlock,
+      concurrency: 6,
+    });
+
+    if (summary.failed > 0) {
+      console.error('\n⚠️  Some positions failed to backfill');
+      process.exit(1);
+    }
+
+    console.log('\n✅ Backfill completed successfully!');
+    process.exit(0);
+  } catch (error: any) {
+    console.error('\n❌ Backfill failed:', error.message);
+    console.error(error.stack);
+    process.exit(1);
+  }
 }
 
-main().catch((error) => {
-  console.error('\n❌ Fatal error during backfill:');
-  console.error(error);
+// Run main and handle unhandled rejections
+main().catch(error => {
+  console.error('Fatal error:', error);
   process.exit(1);
 });

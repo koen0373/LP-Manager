@@ -133,3 +133,14 @@ model SyncCheckpoint {
   @@unique([source, key])
   @@index([source, lastBlock])
 }
+
+// Backfill checkpoint per tokenId (LP position)
+model BackfillCursor {
+  tokenId        Int      @id
+  lastBlock      Int      @default(0)
+  lastFetchedAt  DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now())
+
+  @@index([lastBlock])
+}

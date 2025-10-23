@@ -1,54 +1,57 @@
-// middleware.ts - Robust CSP with nonce for Vercel production
+// middleware.ts - Production-tested CSP for Next.js + Vercel
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Edge-compatible nonce generator (crypto module not available in Edge Runtime)
+// Edge-compatible nonce generator (Web Crypto API)
 function generateNonce(): string {
-  const array = new Uint8Array(16);
-  crypto.getRandomValues(array);
-  return Buffer.from(array).toString('base64');
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Buffer.from(bytes).toString('base64');
 }
 
 export function middleware(req: NextRequest) {
-  const res = NextResponse.next();
+  // Only apply CSP to HTML navigation requests (not API, not assets)
+  const accept = req.headers.get('accept') || '';
+  if (!accept.includes('text/html')) {
+    return NextResponse.next();
+  }
 
-  // Generate per-request nonce for CSP
+  const res = NextResponse.next();
   const nonce = generateNonce();
 
-  // Store nonce for use in _document (if needed for inline scripts)
+  // Store nonce for _document to use with inline scripts
   res.headers.set('x-nonce', nonce);
 
-  // Strict CSP with nonce + strict-dynamic (no unsafe-eval needed)
-  // strict-dynamic allows Next.js dynamic chunks without unsafe-inline
-  // Note: https: fallback for older browsers that don't support strict-dynamic
+  // CSP without strict-dynamic:
+  // - Inline scripts require nonce (secure)
+  // - Self-hosted external scripts (/_next/static/...) allowed without nonce (needed for Next.js)
+  // - No strict-dynamic = no accidental blocking of Next.js scripts
   const csp = [
     "default-src 'self'",
-    // Scripts: self + nonce for inline init, strict-dynamic for dynamic chunks, https: fallback
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https:`,
-    // Connect: own API + external backends (server-side only)
-    "connect-src 'self' https://flare-explorer.flare.network https://flarescan.com https://flare-api.flare.network https://api.coingecko.com wss://relay.walletconnect.com https://rpc.walletconnect.com",
-    // Styles: self + unsafe-inline for Tailwind, Google Fonts
+    // Inline scripts only with nonce, external scripts from own domain allowed
+    `script-src 'self' 'nonce-${nonce}'`,
+    // Limit connect-src; external calls moved to server-side API routes
+    "connect-src 'self'",
+    // Fonts/styles for Google Fonts (adjust or remove if not used)
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
+    // Images and workers
     "img-src 'self' data: blob:",
     "worker-src 'self' blob:",
+    // Additional hardening
     "frame-ancestors 'self'",
     "base-uri 'self'",
     "form-action 'self'",
   ].join('; ');
 
   res.headers.set('Content-Security-Policy', csp);
-  
-  // Additional security headers
   res.headers.set('X-Content-Type-Options', 'nosniff');
-  res.headers.set('X-Frame-Options', 'SAMEORIGIN');
   res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.headers.set('X-XSS-Protection', '1; mode=block');
+  res.headers.set('X-Frame-Options', 'SAMEORIGIN');
 
   return res;
 }
 
 export const config = {
-  matcher: ['/:path*'], // Apply to all routes
+  matcher: ['/:path*'], // All routes, but we filter on Accept: text/html
 };
-

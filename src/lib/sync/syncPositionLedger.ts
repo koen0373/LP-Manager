@@ -15,6 +15,7 @@ import { PositionEventType } from '@prisma/client';
 import { bigIntToDecimal, tickToPrice } from '@/utils/poolHelpers';
 
 const POSITION_MANAGER_ADDRESS = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657';
+const MAX_BLOCK_RANGE = 10_000; // Limit to prevent RPC timeout
 
 interface SyncOptions {
   fromBlock?: number;
@@ -95,7 +96,9 @@ export async function syncPositionLedger(
     // 1. Position Manager contract (IncreaseLiquidity, DecreaseLiquidity, Collect filtered by tokenId)
     // 2. Pool contract (Mint, Burn, Collect filtered by tick range)
 
-    const chunkSize = 25n;
+    // Use larger chunks for faster syncing (Flare RPC can handle up to ~10k blocks)
+    const blockRange = Number(toBlock - fromBlock);
+    const chunkSize = BigInt(Math.min(blockRange, MAX_BLOCK_RANGE));
     
     // PART 1: Fetch Position Manager events (filtered by tokenId)
     if (verbose) {

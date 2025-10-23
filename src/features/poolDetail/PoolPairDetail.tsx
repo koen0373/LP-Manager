@@ -4,6 +4,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { PoolDetailVM } from './types';
 import Header from '@/components/Header';
+import { WaterSpinner } from '@/components/WaterSpinner';
 import { formatDate, formatDateShort } from '@/lib/formatDate';
 
 // Dynamic import - pure client-side (no SSR)
@@ -97,12 +98,8 @@ export function PoolPairDetail({
           onWalletConnected={onWalletConnected}
           onWalletDisconnected={onWalletDisconnected}
         />
-        <div className="container mx-auto px-4 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-enosys-card rounded mb-4"></div>
-            <div className="h-32 bg-enosys-card rounded mb-4"></div>
-            <div className="h-32 bg-enosys-card rounded mb-4"></div>
-          </div>
+        <div className="container mx-auto px-4 py-8 flex items-center justify-center" style={{ minHeight: 'calc(100vh - 200px)' }}>
+          <WaterSpinner size="lg" text="Loading pool data..." />
         </div>
       </div>
     );

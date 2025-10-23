@@ -19,17 +19,20 @@ const nextConfig: NextConfig = {
     return config;
   },
 
-  // Content-Security-Policy: Allow unsafe-eval for Next.js runtime features
+  // Content-Security-Policy: Relaxed for Vercel + Next.js compatibility
   async headers() {
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval'",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "img-src 'self' data:",
-      "connect-src 'self' https://flare-explorer.flare.network https://flarescan.com https://*.flare.network https://*.enosys.global https://coingecko.com https://*.coingecko.com",
+      "img-src 'self' data: blob:",
+      "connect-src 'self' https://flare-explorer.flare.network https://flarescan.com https://*.flare.network https://*.enosys.global https://coingecko.com https://*.coingecko.com wss://*.flare.network",
       "font-src 'self' https://fonts.gstatic.com data:",
+      "worker-src 'self' blob:",
       "object-src 'none'",
       "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
     ].join('; ');
 
     return [
@@ -40,6 +43,7 @@ const nextConfig: NextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-XSS-Protection', value: '1; mode=block' },
         ],
       },
     ];

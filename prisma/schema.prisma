@@ -118,3 +118,18 @@ model CapitalFlow {
   @@index([tokenId, timestamp])
   @@index([pool, timestamp])
 }
+
+// Indexer checkpoint tracking
+model SyncCheckpoint {
+  id             String   @id // source:key (e.g., "NPM:global" or "NPM:tokenId:22003")
+  source         String   // "NPM" | "POOL" | etc
+  key            String   // "global" | "tokenId:22003" | "pool:0x..."
+  lastBlock      Int      // Last fully synced block
+  lastTimestamp  Int?     // Block timestamp (for reference)
+  eventsCount    Int      @default(0) // Total events synced
+  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now())
+
+  @@unique([source, key])
+  @@index([source, lastBlock])
+}

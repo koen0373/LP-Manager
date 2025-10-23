@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GetServerSideProps } from 'next';
+import { GetServerSideProps, NextApiRequest, NextApiResponse } from 'next';
 import { PoolPairDetail } from '@/features/poolDetail/PoolPairDetail';
 import { PoolDetailVM } from '@/features/poolDetail/types';
 
@@ -69,20 +69,45 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const { tokenId } = context.params!;
   
   try {
-    // Fetch live data from our API
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/pool/${tokenId}`);
+    // Import the API handler directly instead of making an HTTP fetch
+    // This avoids CORS/network issues on the server side
+    const handler = (await import('../api/pool/[tokenId]')).default;
     
-    if (!response.ok) {
-      throw new Error(`Failed to fetch pool data: ${response.status}`);
+    // Create mock request/response objects
+    const mockReq = {
+      method: 'GET',
+      query: { tokenId },
+    } as NextApiRequest;
+    
+    let responseData: PoolDetailVM | null = null;
+    let responseError: string | null = null;
+    let responseStatus = 200;
+    
+    const mockRes = {
+      status: (code: number) => {
+        responseStatus = code;
+        return mockRes;
+      },
+      json: (data: any) => {
+        if (responseStatus >= 400) {
+          responseError = data.error || 'Failed to load pool data';
+        } else {
+          responseData = data;
+        }
+        return mockRes;
+      },
+    } as unknown as NextApiResponse;
+    
+    await handler(mockReq, mockRes);
+    
+    if (responseError || !responseData) {
+      throw new Error(responseError || 'Failed to load pool data');
     }
-    
-    const initialData: PoolDetailVM = await response.json();
     
     return {
       props: {
         tokenId,
-        initialData
+        initialData: responseData
       }
     };
   } catch (error) {
@@ -91,7 +116,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     // Return error page
     return {
       props: {
-        tokenId,
+        tokenId: tokenId as string,
         initialData: null,
         error: error instanceof Error ? error.message : 'Failed to load pool data'
       }

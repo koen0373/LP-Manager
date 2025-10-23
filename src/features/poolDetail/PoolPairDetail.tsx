@@ -91,7 +91,7 @@ export function PoolPairDetail({
 }: PoolPairDetailProps) {
   if (loading) {
     return (
-      <div className="min-h-screen bg-enosys-bg text-white">
+      <div className="min-h-screen text-white">
         <Header
           showTabs={false}
           onWalletConnected={onWalletConnected}
@@ -110,7 +110,7 @@ export function PoolPairDetail({
 
   if (error) {
     return (
-      <div className="min-h-screen bg-enosys-bg text-white">
+      <div className="min-h-screen text-white">
         <Header
           showTabs={false}
           onWalletConnected={onWalletConnected}

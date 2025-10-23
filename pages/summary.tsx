@@ -65,7 +65,7 @@ export default function SummaryPage() {
   // Wallet not connected
   if (!walletAddress) {
     return (
-      <div className="min-h-screen bg-enosys-bg">
+      <div className="min-h-screen">
         <Header 
           showTabs={false}
           onWalletConnected={handleWalletConnected}
@@ -86,7 +86,7 @@ export default function SummaryPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-enosys-bg">
+      <div className="min-h-screen">
         <Header 
           showTabs={false}
           onWalletConnected={handleWalletConnected}
@@ -113,7 +113,7 @@ export default function SummaryPage() {
   // Error state
   if (isError || !data) {
     return (
-      <div className="min-h-screen bg-enosys-bg">
+      <div className="min-h-screen">
         <Header 
           showTabs={false}
           onWalletConnected={handleWalletConnected}

@@ -5,7 +5,6 @@ import Head from 'next/head';
 import Header from '../src/components/Header';
 import PositionsTable from '../src/components/PositionsTable';
 import type { PositionRow } from '../src/types/positions';
-import { getWalletPositions } from '../src/services/flarescanService';
 
 export default function LPManagerPage() {
   const [tab, setTab] = React.useState<'active' | 'inactive' | 'all'>('active');
@@ -29,11 +28,32 @@ export default function LPManagerPage() {
       setLoading(true);
       setError('');
       try {
-        console.log('Fetching positions for address:', address);
-        const walletPositions = await getWalletPositions(address, { refresh });
-        console.log('Received positions:', walletPositions);
-        console.log('Number of positions:', walletPositions.length);
-        const normalizedPositions = walletPositions.map((position) => {
+        console.log('[HOME] Fetching positions for address:', address);
+        
+        // Use API route for Vercel compatibility
+        const url = `/api/positions?address=${address}${refresh ? '&refresh=1' : ''}`;
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        
+        console.log('[HOME] Response status:', response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('[HOME] Error response:', errorText);
+          throw new Error(`API returned ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!data.positions || !Array.isArray(data.positions)) {
+          throw new Error('Invalid response format');
+        }
+
+        const walletPositions = data.positions;
+        console.log('[HOME] Received positions:', walletPositions.length);
+        
+        const normalizedPositions = walletPositions.map((position: PositionRow) => {
           const tvlUsd = Number(position.tvlUsd ?? 0);
           const rewardsUsd = Number(position.rewardsUsd ?? 0);
           const status = tvlUsd > TVL_ACTIVE_THRESHOLD ? 'Active' : 'Inactive';
@@ -47,7 +67,7 @@ export default function LPManagerPage() {
         setPositions(normalizedPositions);
         setLastUpdated(new Date().toLocaleTimeString());
       } catch (err) {
-        console.error('Error fetching positions:', err);
+        console.error('[HOME] Error fetching positions:', err);
         setError(`Failed to fetch positions: ${err instanceof Error ? err.message : 'Unknown error'}`);
         setPositions([]);
         setLastUpdated("");

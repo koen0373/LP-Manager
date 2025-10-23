@@ -1,8 +1,61 @@
+# Dependencies
 node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Next.js build output
 .next
 out
-.git
-.env.local
-*.log
-prisma/dev.db
+
+# Testing
+coverage
+.nyc_output
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env*.local
+.env.development
+.env.test
+
+# Vercel
 .vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Prisma
+prisma/dev.db
+prisma/dev.db-journal
+
+# Railway
+.railway
+
+# Scripts (don't need in production)
+scripts/testIngestion.ts
+scripts/indexer-follower.ts
+
+# README
+README.md
+TAILWIND_TROUBLESHOOTING.md

@@ -16,6 +16,8 @@ RUN npm install
 COPY . .
 
 # Build Next.js app (Prisma Client already generated via postinstall hook)
+# Set NODE_OPTIONS to increase memory limit and disable parallelism
+ENV NODE_OPTIONS="--max-old-space-size=2048"
 RUN npm run build
 
 # Production stage

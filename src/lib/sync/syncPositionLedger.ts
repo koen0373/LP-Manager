@@ -1,8 +1,9 @@
 import { publicClient } from '@/lib/viemClient';
 import { getPositionById } from '@/services/pmFallback';
 import { getPositionNftTransfers } from '@/services/flarescanService';
-import { decodeEventLog, Hex } from 'viem';
+import { decodeEventLog, Hex, encodeEventTopics } from 'viem';
 import { UNISWAP_V3_POOL_ABI } from '@/abis/UniswapV3Pool';
+import { POSITION_MANAGER_EVENTS_ABI } from '@/abis/PositionManagerEvents';
 import { 
   bulkUpsertPositionEvents, 
   PositionEventData 
@@ -91,42 +92,92 @@ export async function syncPositionLedger(
 
     const positionEvents: PositionEventData[] = [];
 
-    // Fetch events in chunks to avoid RPC limits (Flare RPC max is 30 blocks)
+    // Fetch events from TWO sources:
+    // 1. Position Manager contract (IncreaseLiquidity, DecreaseLiquidity, Collect filtered by tokenId)
+    // 2. Pool contract (Mint, Burn, Collect filtered by tick range)
+
     const chunkSize = 25n;
+    
+    // PART 1: Fetch Position Manager events (filtered by tokenId)
+    if (verbose) {
+      console.log(`[SYNC] Fetching Position Manager events for tokenId ${tokenId}...`);
+    }
+
     for (let currentBlock = fromBlock; currentBlock <= toBlock; currentBlock += chunkSize) {
       const chunkEnd = currentBlock + chunkSize - 1n < toBlock 
         ? currentBlock + chunkSize - 1n 
         : toBlock;
 
       try {
-        const logs = await publicClient.getLogs({
-          address: position.poolAddress as Hex,
+        // Position Manager events: IncreaseLiquidity, DecreaseLiquidity, Collect
+        const pmLogs = await publicClient.getLogs({
+          address: POSITION_MANAGER_ADDRESS as Hex,
           fromBlock: currentBlock,
           toBlock: chunkEnd,
+          // Filter events by tokenId (first indexed parameter)
+          event: {
+            type: 'event',
+            name: 'IncreaseLiquidity',
+            inputs: [
+              { type: 'uint256', indexed: true, name: 'tokenId' },
+            ],
+          },
+          args: {
+            tokenId: BigInt(tokenId),
+          },
         });
 
-        if (verbose && logs.length > 0) {
-          console.log(`[SYNC] Found ${logs.length} logs in block range ${currentBlock}-${chunkEnd}`);
+        // Also fetch DecreaseLiquidity events
+        const pmDecreaseLogs = await publicClient.getLogs({
+          address: POSITION_MANAGER_ADDRESS as Hex,
+          fromBlock: currentBlock,
+          toBlock: chunkEnd,
+          event: {
+            type: 'event',
+            name: 'DecreaseLiquidity',
+            inputs: [
+              { type: 'uint256', indexed: true, name: 'tokenId' },
+            ],
+          },
+          args: {
+            tokenId: BigInt(tokenId),
+          },
+        });
+
+        // Also fetch Collect events from Position Manager
+        const pmCollectLogs = await publicClient.getLogs({
+          address: POSITION_MANAGER_ADDRESS as Hex,
+          fromBlock: currentBlock,
+          toBlock: chunkEnd,
+          event: {
+            type: 'event',
+            name: 'Collect',
+            inputs: [
+              { type: 'uint256', indexed: true, name: 'tokenId' },
+            ],
+          },
+          args: {
+            tokenId: BigInt(tokenId),
+          },
+        });
+
+        const allPmLogs = [...pmLogs, ...pmDecreaseLogs, ...pmCollectLogs];
+
+        if (verbose && allPmLogs.length > 0) {
+          console.log(`[SYNC] Found ${allPmLogs.length} Position Manager logs in block range ${currentBlock}-${chunkEnd}`);
         }
 
-        // Process each log
-        for (const log of logs) {
+        // Process Position Manager logs
+        for (const log of allPmLogs) {
           try {
             const decoded = decodeEventLog({
-              abi: UNISWAP_V3_POOL_ABI,
+              abi: POSITION_MANAGER_EVENTS_ABI,
               data: log.data,
               topics: log.topics,
             });
 
-            // Only process events related to this position
-            const isRelevant = checkEventRelevance(decoded, position);
-            if (!isRelevant) continue;
-
             const eventType = mapEventType(decoded.eventName);
-            if (!eventType) {
-              // TODO: For pool-level events (Swap, Flash), consider separate ingestion
-              continue;
-            }
+            if (!eventType) continue;
 
             // Get block timestamp
             const block = await publicClient.getBlock({ blockNumber: log.blockNumber });

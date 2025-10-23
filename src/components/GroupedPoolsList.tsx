@@ -85,8 +85,8 @@ export const GroupedPoolsList: React.FC<GroupedPoolsListProps> = ({ pools }) => 
 
   if (groupedPools.length === 0) {
     return (
-      <div className="bg-enosys-card rounded-lg p-6">
-        <p className="text-enosys-subtext text-center py-8">No positions found</p>
+      <div className="bg-liqui-card rounded-lg p-6">
+        <p className="text-liqui-subtext text-center py-8">No positions found</p>
       </div>
     );
   }
@@ -103,11 +103,11 @@ export const GroupedPoolsList: React.FC<GroupedPoolsListProps> = ({ pools }) => 
         );
 
         return (
-          <div key={group.pairLabel} className="bg-enosys-card rounded-lg overflow-hidden">
+          <div key={group.pairLabel} className="bg-liqui-card rounded-lg overflow-hidden">
             {/* Pair Header - Clickable */}
             <button
               onClick={() => togglePair(group.pairLabel)}
-              className="w-full px-6 py-4 flex items-center justify-between hover:bg-enosys-subcard/30 transition-colors"
+              className="w-full px-6 py-4 flex items-center justify-between hover:bg-liqui-subcard/30 transition-colors"
             >
               <div className="flex items-center gap-4">
                 {/* Token Icons */}
@@ -122,7 +122,7 @@ export const GroupedPoolsList: React.FC<GroupedPoolsListProps> = ({ pools }) => 
                 </h3>
 
                 {/* Pool Count */}
-                <span className="text-enosys-subtext text-sm">
+                <span className="text-liqui-subtext text-sm">
                   ({group.pools.length} {group.pools.length === 1 ? 'pool' : 'pools'})
                 </span>
               </div>
@@ -133,13 +133,13 @@ export const GroupedPoolsList: React.FC<GroupedPoolsListProps> = ({ pools }) => 
                   <div className="text-white font-medium">
                     {formatUsd(totalValue)}
                   </div>
-                  <div className="text-enosys-subtext text-sm">
+                  <div className="text-liqui-subtext text-sm">
                     Total Earnings
                   </div>
                 </div>
 
                 {/* Expand/Collapse Icon */}
-                <div className={`text-enosys-subtext transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                <div className={`text-liqui-subtext transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
                   ▼
                 </div>
               </div>
@@ -147,11 +147,11 @@ export const GroupedPoolsList: React.FC<GroupedPoolsListProps> = ({ pools }) => 
 
             {/* Expanded Content */}
             {isExpanded && (
-              <div className="border-t border-enosys-border">
+              <div className="border-t border-liqui-border">
                 {/* Individual Pools */}
-                <div className="divide-y divide-enosys-border">
+                <div className="divide-y divide-liqui-border">
                   {sortedPools.map(pool => (
-                    <div key={pool.tokenId} className="px-6 py-4 hover:bg-enosys-subcard/20 transition-colors">
+                    <div key={pool.tokenId} className="px-6 py-4 hover:bg-liqui-subcard/20 transition-colors">
                       <div className="flex items-start justify-between">
                         {/* Left: Pool Info */}
                         <div className="flex items-center gap-3">
@@ -180,7 +180,7 @@ export const GroupedPoolsList: React.FC<GroupedPoolsListProps> = ({ pools }) => 
                             <div className="text-white font-medium mb-1">
                               {formatUsd((pool.earningsUsd || 0) + (pool.rflrUsd || 0))}
                             </div>
-                            <div className="text-enosys-subtext text-sm space-y-0.5">
+                            <div className="text-liqui-subtext text-sm space-y-0.5">
                               {pool.earningsUsd > 0 && (
                                 <div>Fees: {formatUsd(pool.earningsUsd)}</div>
                               )}
@@ -197,9 +197,9 @@ export const GroupedPoolsList: React.FC<GroupedPoolsListProps> = ({ pools }) => 
 
                           {/* TVL */}
                           <div className="text-right">
-                            <div className="text-enosys-subtext text-xs mb-1">TVL</div>
+                            <div className="text-liqui-subtext text-xs mb-1">TVL</div>
                             {pool.tvlAtMintUsd !== undefined && (
-                              <div className="text-enosys-subtext text-sm mb-0.5">
+                              <div className="text-liqui-subtext text-sm mb-0.5">
                                 At mint: {formatUsd(pool.tvlAtMintUsd)}
                               </div>
                             )}
@@ -211,7 +211,7 @@ export const GroupedPoolsList: React.FC<GroupedPoolsListProps> = ({ pools }) => 
                           {/* ROI */}
                           {pool.roi !== undefined && (
                             <div className="text-right">
-                              <div className="text-enosys-subtext text-xs mb-1">ROI</div>
+                              <div className="text-liqui-subtext text-xs mb-1">ROI</div>
                               <div className={`font-medium ${pool.roi >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                                 {pool.roi >= 0 ? '+' : ''}{formatPercent(pool.roi)}
                               </div>
@@ -224,7 +224,7 @@ export const GroupedPoolsList: React.FC<GroupedPoolsListProps> = ({ pools }) => 
                 </div>
 
                 {/* Total Row for this Pairing */}
-                <div className="px-6 py-4 bg-enosys-subcard/30 border-t-2 border-enosys-border">
+                <div className="px-6 py-4 bg-liqui-subcard/30 border-t-2 border-liqui-border">
                   <div className="flex items-center justify-between">
                     <div className="text-white font-bold">
                       Total for {group.pairLabel}
@@ -235,7 +235,7 @@ export const GroupedPoolsList: React.FC<GroupedPoolsListProps> = ({ pools }) => 
                         <div className="text-white font-bold mb-1">
                           {formatUsd(group.totalEarningsUsd + group.totalRflrUsd)}
                         </div>
-                        <div className="text-enosys-subtext text-sm">
+                        <div className="text-liqui-subtext text-sm">
                           {group.totalEarningsUsd > 0 && <div>Fees: {formatUsd(group.totalEarningsUsd)}</div>}
                           {group.totalRflrAmount > 0 && (
                             <div>RFLR: {group.totalRflrAmount.toFixed(2)} ({formatUsd(group.totalRflrUsd)})</div>
@@ -245,7 +245,7 @@ export const GroupedPoolsList: React.FC<GroupedPoolsListProps> = ({ pools }) => 
 
                       {/* Total TVL */}
                       <div className="text-right">
-                        <div className="text-enosys-subtext text-xs mb-1">Total TVL</div>
+                        <div className="text-liqui-subtext text-xs mb-1">Total TVL</div>
                         <div className="text-white font-bold">
                           {formatUsd(group.totalTvlUsd)}
                         </div>

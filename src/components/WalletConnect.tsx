@@ -358,7 +358,7 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
   if (!isClient) {
     return (
       <button
-        className={`px-4 py-2 bg-enosys-subcard hover:bg-enosys-border rounded-lg text-sm font-normal transition-colors ${className || ''}`}
+        className={`px-4 py-2 bg-liqui-subcard hover:bg-liqui-border rounded-lg text-sm font-normal transition-colors ${className || ''}`}
         disabled
       >
         Connect Wallet
@@ -378,17 +378,17 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
         </div>
 
         {/* Separator */}
-        <div className="w-px h-6 bg-enosys-border"></div>
+        <div className="w-px h-6 bg-liqui-border"></div>
 
         {/* Wallet Info */}
-        <div className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-enosys-hover/20 transition-colors cursor-pointer hover:font-bold">
+        <div className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-liqui-hover/20 transition-colors cursor-pointer hover:font-bold">
           <svg 
             width="16" 
             height="16" 
             viewBox="0 0 24 24" 
             fill="none" 
             xmlns="http://www.w3.org/2000/svg"
-            className="text-enosys-subtext"
+            className="text-liqui-subtext"
           >
             <path 
               d="M21 12V7H5a2 2 0 0 1 0-4h14v4" 
@@ -411,16 +411,16 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
               fill="currentColor"
             />
           </svg>
-          <span className="text-enosys-subtext text-sm font-normal">{formatAddress(address)}</span>
-          <div className="w-1 h-1 bg-enosys-subtext rounded-full"></div>
-          <span className="text-enosys-subtext text-sm font-normal">11.22 FLR</span>
+          <span className="text-liqui-subtext text-sm font-normal">{formatAddress(address)}</span>
+          <div className="w-1 h-1 bg-liqui-subtext rounded-full"></div>
+          <span className="text-liqui-subtext text-sm font-normal">11.22 FLR</span>
         </div>
 
         {/* Disconnect Icon */}
         <button
           onClick={handleDisconnect}
           disabled={isDisconnecting}
-          className="p-2 rounded-lg hover:bg-enosys-hover/20 transition-colors hover:font-bold"
+          className="p-2 rounded-lg hover:bg-liqui-hover/20 transition-colors hover:font-bold"
           title={isDisconnecting ? 'Disconnecting...' : 'Disconnect'}
         >
           <svg 
@@ -431,8 +431,8 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
             xmlns="http://www.w3.org/2000/svg"
             className={`transition-colors ${
               isDisconnecting 
-                ? 'text-enosys-subtext' 
-                : 'text-enosys-subtext hover:text-white'
+                ? 'text-liqui-subtext' 
+                : 'text-liqui-subtext hover:text-white'
             }`}
           >
             <path 
@@ -469,7 +469,7 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
     <>
       <button
         onClick={() => setShowModal(true)}
-        className={`px-4 py-2 bg-enosys-subcard hover:bg-enosys-border rounded-lg text-sm font-normal transition-colors hover:font-bold ${className || ''}`}
+        className={`px-4 py-2 bg-liqui-subcard hover:bg-liqui-border rounded-lg text-sm font-normal transition-colors hover:font-bold ${className || ''}`}
       >
         Connect Wallet
       </button>
@@ -477,12 +477,12 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-enosys-card rounded-lg p-6 w-96 max-w-md mx-4">
+          <div className="bg-liqui-card rounded-lg p-6 w-96 max-w-md mx-4">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-white text-xl font-bold">Connect a Wallet</h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-enosys-subtext hover:text-white transition-colors"
+                className="text-liqui-subtext hover:text-white transition-colors"
               >
                 ✕
               </button>
@@ -490,13 +490,13 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
 
             {/* Recommended */}
             <div className="mb-6">
-              <h3 className="text-enosys-subtext text-sm font-bold mb-3">Recommended</h3>
+              <h3 className="text-liqui-subtext text-sm font-bold mb-3">Recommended</h3>
               <div className="space-y-2">
                 <button
                   onClick={handleConnect}
-                  className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-enosys-subcard transition-colors"
+                  className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-liqui-subcard transition-colors"
                 >
-                  <div className="w-8 h-8 bg-enosys-subcard rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8 bg-liqui-subcard rounded-lg flex items-center justify-center">
                     <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs font-bold">🦊</span>
                     </div>
@@ -506,9 +506,9 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
                 
                 <button
                   onClick={handleConnect}
-                  className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-enosys-subcard transition-colors"
+                  className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-liqui-subcard transition-colors"
                 >
-                  <div className="w-8 h-8 bg-enosys-subcard rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8 bg-liqui-subcard rounded-lg flex items-center justify-center">
                     <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs font-bold">W</span>
                     </div>
@@ -520,13 +520,13 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
 
             {/* Other */}
             <div>
-              <h3 className="text-enosys-subtext text-sm font-bold mb-3">Other</h3>
+              <h3 className="text-liqui-subtext text-sm font-bold mb-3">Other</h3>
               <div className="space-y-2">
                 <button
                   onClick={handleConnect}
-                  className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-enosys-subcard transition-colors"
+                  className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-liqui-subcard transition-colors"
                 >
-                  <div className="w-8 h-8 bg-enosys-subcard rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8 bg-liqui-subcard rounded-lg flex items-center justify-center">
                     <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs font-bold">🌐</span>
                     </div>

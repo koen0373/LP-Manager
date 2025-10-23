@@ -237,19 +237,19 @@ export default function LPManagerPage() {
         
         {!isClient ? (
           <div className="w-full max-w-[1200px] mx-auto text-center py-20">
-            <div className="text-enosys-subtext text-lg">
+            <div className="text-liqui-subtext text-lg">
               Loading...
             </div>
           </div>
         ) : !walletAddress ? (
           <div className="w-full max-w-[1200px] mx-auto text-center py-20">
-            <div className="text-enosys-subtext text-lg">
+            <div className="text-liqui-subtext text-lg">
               Connect your wallet to view your LP positions
             </div>
           </div>
         ) : loading ? (
           <div className="w-full max-w-[1200px] mx-auto text-center py-20">
-            <div className="text-enosys-subtext text-lg">
+            <div className="text-liqui-subtext text-lg">
               Loading positions...
             </div>
           </div>
@@ -266,7 +266,7 @@ export default function LPManagerPage() {
                       Collecting your pooldata from the blockchain
                     </span>
                   </div>
-                  <p className="text-sm text-enosys-subtext">
+                  <p className="text-sm text-liqui-subtext">
                     This may take up to 30 seconds...
                   </p>
                 </div>
@@ -317,7 +317,7 @@ export default function LPManagerPage() {
           </div>
         ) : positions.length === 0 ? (
           <div className="w-full max-w-[1200px] mx-auto text-center py-20">
-            <div className="text-enosys-subtext text-lg">
+            <div className="text-liqui-subtext text-lg">
               No LP positions found for this wallet
             </div>
           </div>
@@ -331,7 +331,7 @@ export default function LPManagerPage() {
                   showTotalsRow={false}
                 />
               ) : (
-                <div className="rounded-lg border border-enosys-border bg-enosys-card px-6 py-10 text-center text-enosys-subtext">
+                <div className="rounded-lg border border-liqui-border bg-liqui-card px-6 py-10 text-center text-liqui-subtext">
                   <p className="text-lg">No active LP positions with TVL &gt; $0.01</p>
                 </div>
               )
@@ -345,7 +345,7 @@ export default function LPManagerPage() {
                   showTotalsRow={false}
                 />
               ) : (
-                <div className="rounded-lg border border-enosys-border bg-enosys-card px-6 py-10 text-center text-enosys-subtext">
+                <div className="rounded-lg border border-liqui-border bg-liqui-card px-6 py-10 text-center text-liqui-subtext">
                   <p className="text-lg">No inactive LP positions</p>
                 </div>
               )
@@ -370,7 +370,7 @@ export default function LPManagerPage() {
                   )}
                 </div>
               ) : (
-                <div className="rounded-lg border border-enosys-border bg-enosys-card px-6 py-10 text-center text-enosys-subtext">
+                <div className="rounded-lg border border-liqui-border bg-liqui-card px-6 py-10 text-center text-liqui-subtext">
                   <p className="text-lg">No LP positions found</p>
                 </div>
               )
@@ -381,8 +381,8 @@ export default function LPManagerPage() {
         {/* Disclaimer */}
         <div className="w-full max-w-[1200px] mx-auto px-4 py-8">
           <div className="p-6">
-            <h3 className="text-enosys-text font-semibold mb-3">Disclaimer</h3>
-            <p className="text-enosys-subtext text-sm leading-relaxed">
+            <h3 className="text-liqui-text font-semibold mb-3">Disclaimer</h3>
+            <p className="text-liqui-subtext text-sm leading-relaxed">
               The information displayed on this application is provided for informational purposes only and may not be accurate or up-to-date. 
               Data may vary from actual on-chain values due to network conditions, caching, or other technical factors. 
               This application is not financial advice and should not be used as the sole basis for making investment decisions. 

@@ -72,9 +72,9 @@ export default function SummaryPage() {
           onWalletDisconnected={handleWalletDisconnected}
         />
         <div className="w-full max-w-[1200px] mx-auto px-4 py-8">
-          <div className="bg-enosys-card rounded-lg p-8 text-center">
+          <div className="bg-liqui-card rounded-lg p-8 text-center">
             <h2 className="text-xl font-bold text-white mb-4">Connect Your Wallet</h2>
-            <p className="text-enosys-subtext mb-6">
+            <p className="text-liqui-subtext mb-6">
               Please connect your wallet to view your portfolio summary.
             </p>
           </div>
@@ -95,15 +95,15 @@ export default function SummaryPage() {
         <div className="w-full max-w-[1200px] mx-auto px-4 py-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-enosys-card rounded-lg p-6 animate-pulse">
-                <div className="h-4 bg-enosys-subcard rounded w-1/2 mb-4"></div>
-                <div className="h-8 bg-enosys-subcard rounded w-3/4"></div>
+              <div key={i} className="bg-liqui-card rounded-lg p-6 animate-pulse">
+                <div className="h-4 bg-liqui-subcard rounded w-1/2 mb-4"></div>
+                <div className="h-8 bg-liqui-subcard rounded w-3/4"></div>
               </div>
             ))}
           </div>
-          <div className="bg-enosys-card rounded-lg p-6 animate-pulse mb-8">
-            <div className="h-6 bg-enosys-subcard rounded w-1/4 mb-4"></div>
-            <div className="h-64 bg-enosys-subcard rounded"></div>
+          <div className="bg-liqui-card rounded-lg p-6 animate-pulse mb-8">
+            <div className="h-6 bg-liqui-subcard rounded w-1/4 mb-4"></div>
+            <div className="h-64 bg-liqui-subcard rounded"></div>
           </div>
         </div>
       </div>
@@ -120,14 +120,14 @@ export default function SummaryPage() {
           onWalletDisconnected={handleWalletDisconnected}
         />
         <div className="w-full max-w-[1200px] mx-auto px-4 py-8">
-          <div className="bg-enosys-card rounded-lg p-8 text-center">
+          <div className="bg-liqui-card rounded-lg p-8 text-center">
             <h2 className="text-xl font-bold text-red-500 mb-4">Error Loading Summary</h2>
-            <p className="text-enosys-subtext mb-6">
+            <p className="text-liqui-subtext mb-6">
               Failed to fetch your portfolio data. Please try again.
             </p>
             <button
               onClick={() => refetch()}
-              className="px-6 py-2 bg-enosys-blue hover:bg-enosys-blueHover text-white rounded-lg transition-colors"
+              className="px-6 py-2 bg-liqui-blue hover:bg-liqui-blueHover text-white rounded-lg transition-colors"
             >
               Retry
             </button>
@@ -173,7 +173,7 @@ export default function SummaryPage() {
     });
 
   return (
-    <div className="min-h-screen bg-enosys-bg">
+    <div className="min-h-screen bg-liqui-bg">
       <Header 
         showTabs={false}
         onWalletConnected={handleWalletConnected}
@@ -184,57 +184,57 @@ export default function SummaryPage() {
         {/* Top Row Cards - Totals */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           {/* Total TVL */}
-          <div className="bg-enosys-card rounded-lg p-6">
-            <div className="text-enosys-subtext text-sm mb-2">Total TVL</div>
+          <div className="bg-liqui-card rounded-lg p-6">
+            <div className="text-liqui-subtext text-sm mb-2">Total TVL</div>
             <div className="text-white text-2xl font-bold mb-1">
               {formatUsd(totals.tvlUsd)}
             </div>
-            <div className="text-enosys-subtext text-xs">
+            <div className="text-liqui-subtext text-xs">
               Current value in pools
             </div>
           </div>
 
           {/* Realized Fees */}
-          <div className="bg-enosys-card rounded-lg p-6">
-            <div className="text-enosys-subtext text-sm mb-2">Realized Fees</div>
+          <div className="bg-liqui-card rounded-lg p-6">
+            <div className="text-liqui-subtext text-sm mb-2">Realized Fees</div>
             <div className="text-white text-2xl font-bold mb-1">
               {formatUsd(totals.feesRealizedUsd)}
             </div>
-            <div className="text-enosys-subtext text-xs">
+            <div className="text-liqui-subtext text-xs">
               From collect events
             </div>
           </div>
 
           {/* Total Rewards */}
-          <div className="bg-enosys-card rounded-lg p-6">
-            <div className="text-enosys-subtext text-sm mb-2">Total Rewards</div>
+          <div className="bg-liqui-card rounded-lg p-6">
+            <div className="text-liqui-subtext text-sm mb-2">Total Rewards</div>
             <div className="text-white text-2xl font-bold mb-1">
               {formatUsd(totals.rewardsUsd)}
             </div>
-            <div className="text-enosys-subtext text-xs">
+            <div className="text-liqui-subtext text-xs">
               RFLR rewards
             </div>
           </div>
 
           {/* ROI */}
-          <div className="bg-enosys-card rounded-lg p-6">
-            <div className="text-enosys-subtext text-sm mb-2">ROI</div>
+          <div className="bg-liqui-card rounded-lg p-6">
+            <div className="text-liqui-subtext text-sm mb-2">ROI</div>
             <div className={`text-2xl font-bold mb-1 ${totals.roiPct >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {totals.roiPct >= 0 ? '+' : ''}{formatPercent(totals.roiPct)}
             </div>
-            <div className="text-enosys-subtext text-xs">
+            <div className="text-liqui-subtext text-xs">
               Return on investment
             </div>
           </div>
         </div>
 
         {/* Capital Timeline Section */}
-        <div className="bg-enosys-card rounded-lg p-6 mb-8">
+        <div className="bg-liqui-card rounded-lg p-6 mb-8">
           <h2 className="text-white text-lg font-bold mb-4">Capital Timeline</h2>
           {/* TODO: Add Recharts line chart with capitalTimeline data */}
           {/* TODO: Add time range filters (7d, 30d, 90d, all) */}
-          <div className="h-64 flex items-center justify-center bg-enosys-subcard rounded-lg">
-            <p className="text-enosys-subtext">Chart Coming Soon</p>
+          <div className="h-64 flex items-center justify-center bg-liqui-subcard rounded-lg">
+            <p className="text-liqui-subtext">Chart Coming Soon</p>
           </div>
         </div>
 
@@ -245,24 +245,24 @@ export default function SummaryPage() {
         </div>
 
         {/* Recent Activity Section */}
-        <div className="bg-enosys-card rounded-lg p-6">
+        <div className="bg-liqui-card rounded-lg p-6">
           <h2 className="text-white text-lg font-bold mb-4">Recent Activity</h2>
           {/* TODO: Add event type icons (mint, collect, burn, swap) */}
           {/* TODO: Add pagination for long lists */}
           <div className="space-y-3">
             {recentActivity.length === 0 ? (
-              <p className="text-enosys-subtext text-center py-8">No recent activity</p>
+              <p className="text-liqui-subtext text-center py-8">No recent activity</p>
             ) : (
               recentActivity.map((activity, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between bg-enosys-subcard rounded-lg p-4"
+                  className="flex items-center justify-between bg-liqui-subcard rounded-lg p-4"
                 >
                   <div>
                     <div className="text-white font-medium">
                       {activity.label.charAt(0).toUpperCase() + activity.label.slice(1).toLowerCase()}
                     </div>
-                    <div className="text-enosys-subtext text-sm">
+                    <div className="text-liqui-subtext text-sm">
                       {dayjs.unix(activity.timestamp).format('DD MMM YYYY HH:mm')}
                     </div>
                   </div>
@@ -274,7 +274,7 @@ export default function SummaryPage() {
                       href={`https://flarescan.com/tx/${activity.txHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-enosys-blue hover:text-enosys-blueHover text-sm transition-colors"
+                      className="text-liqui-blue hover:text-liqui-blueHover text-sm transition-colors"
                       onClick={(e) => e.stopPropagation()}
                     >
                       View →

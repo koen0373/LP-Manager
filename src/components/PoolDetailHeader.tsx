@@ -78,12 +78,12 @@ export default function PoolDetailHeader({
              <div className="flex items-center justify-between">
                <div className="flex items-center space-x-4">
                  <div>
-                   <h1 className="text-enosys-subtext text-lg font-medium">Liquidity Pools</h1>
+                   <h1 className="text-liqui-subtext text-lg font-medium">Liquidity Pools</h1>
                    <h2 className="text-white text-2xl font-bold mt-1">LP Manager</h2>
                  </div>
                  <button
                    onClick={handleBackToOverview}
-                   className="flex items-center gap-2 px-3 py-2 text-enosys-subtext hover:text-white hover:font-bold rounded-lg transition-all duration-200"
+                   className="flex items-center gap-2 px-3 py-2 text-liqui-subtext hover:text-white hover:font-bold rounded-lg transition-all duration-200"
                    title="Back to My Pools"
                  >
                    <svg
@@ -109,7 +109,7 @@ export default function PoolDetailHeader({
                  <button
                    onClick={onRefresh}
                    disabled={isLoading}
-                   className="flex items-center gap-2 px-3 py-2 text-enosys-subtext hover:text-white hover:font-bold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                   className="flex items-center gap-2 px-3 py-2 text-liqui-subtext hover:text-white hover:font-bold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                    title="Refresh data"
                  >
                    <svg
@@ -143,7 +143,7 @@ export default function PoolDetailHeader({
              <div className="space-y-3">
                {/* Pool Detail header */}
                <div className="flex items-center space-x-3">
-                 <div className="text-enosys-subtext text-sm font-medium">Pool Detail</div>
+                 <div className="text-liqui-subtext text-sm font-medium">Pool Detail</div>
                  
                  {/* In/Out Range Indicator */}
                  {inRange !== undefined && (
@@ -183,7 +183,7 @@ export default function PoolDetailHeader({
                <div className="flex items-center space-x-6">
                  <div className="flex items-center space-x-2">
                    <span className="text-white text-sm font-medium">ID #{tokenId}</span>
-                   <span className="text-enosys-subtext text-sm">{(feeTierBps / 100).toFixed(1)}%</span>
+                   <span className="text-liqui-subtext text-sm">{(feeTierBps / 100).toFixed(1)}%</span>
                  </div>
                  <div className="flex items-center space-x-2">
                    <span className="text-white text-sm font-mono">{poolAddress.slice(0, 6)}...{poolAddress.slice(-4)}</span>
@@ -191,7 +191,7 @@ export default function PoolDetailHeader({
                      href={`https://mainnet.flarescan.com/address/${poolAddress}`}
                      target="_blank"
                      rel="noopener noreferrer"
-                     className="flex items-center justify-center w-6 h-6 text-enosys-subtext hover:text-white transition-all duration-200"
+                     className="flex items-center justify-center w-6 h-6 text-liqui-subtext hover:text-white transition-all duration-200"
                      title="View contract on Flarescan"
                    >
                      <svg

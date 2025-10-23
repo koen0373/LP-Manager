@@ -233,10 +233,10 @@ export default function EChartsRangeChart({
   }, [priceHistory, minPrice, maxPrice, currentPrice]);
 
   return (
-    <div className="bg-enosys-card rounded-lg border border-enosys-border p-6">
+    <div className="bg-liqui-card rounded-lg border border-liqui-border p-6">
       <div className="mb-4">
         <h2 className="text-lg font-bold text-white">Range & Price</h2>
-        <p className="text-sm text-enosys-subtext">Track live price vs your range</p>
+        <p className="text-sm text-liqui-subtext">Track live price vs your range</p>
       </div>
       <ReactECharts
         option={option as EChartsOption}

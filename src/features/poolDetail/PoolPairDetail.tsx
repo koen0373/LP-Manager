@@ -13,8 +13,8 @@ const EChartsRangeChart = dynamic(
   { 
     ssr: false,
     loading: () => (
-      <div className="bg-enosys-card rounded-lg border border-enosys-border p-6 h-[400px] flex items-center justify-center">
-        <span className="text-enosys-subtext">Loading chart...</span>
+      <div className="bg-liqui-card rounded-lg border border-liqui-border p-6 h-[400px] flex items-center justify-center">
+        <span className="text-liqui-subtext">Loading chart...</span>
       </div>
     )
   }
@@ -120,7 +120,7 @@ export function PoolPairDetail({
             {onRefresh && (
               <button
                 onClick={onRefresh}
-                className="mt-4 px-4 py-2 bg-enosys-primary text-white rounded hover:bg-enosys-blueHover"
+                className="mt-4 px-4 py-2 bg-liqui-primary text-white rounded hover:bg-liqui-blueHover"
               >
                 Try Again
               </button>
@@ -132,7 +132,7 @@ export function PoolPairDetail({
   }
 
   return (
-    <div className="min-h-screen bg-enosys-bg text-white">
+    <div className="min-h-screen bg-liqui-bg text-white">
       <Header
         showTabs={false}
         onWalletConnected={onWalletConnected}
@@ -142,12 +142,12 @@ export function PoolPairDetail({
       <div className="container mx-auto px-4 py-8">
 
         {/* Pool Detail Header */}
-        <div className="bg-enosys-card rounded-lg p-6 mb-6">
+        <div className="bg-liqui-card rounded-lg p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold">Pool Detail</h1>
             <div className="flex items-center gap-2">
               <div className={`w-3 h-3 rounded-full ${vm.range?.inRange ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-              <span className="text-sm text-enosys-subtext">
+              <span className="text-sm text-liqui-subtext">
                 {vm.range?.inRange ? 'In Range' : 'Out of Range'}
               </span>
             </div>
@@ -177,7 +177,7 @@ export function PoolPairDetail({
           </div>
           
           {/* ID and Contract */}
-          <div className="flex items-center gap-4 text-sm text-enosys-subtext">
+          <div className="flex items-center gap-4 text-sm text-liqui-subtext">
             <span>ID #{vm.poolId}</span>
             <span>•</span>
             <span>{vm.feeTierBps / 10000}%</span>
@@ -188,7 +188,7 @@ export function PoolPairDetail({
                   href={`https://flarescan.com/address/${vm.poolAddress}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-enosys-blue hover:text-enosys-blueHover flex items-center gap-1"
+                  className="text-liqui-blue hover:text-liqui-blueHover flex items-center gap-1"
                 >
                   Contract
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,7 +203,7 @@ export function PoolPairDetail({
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Liquidity */}
-          <div className="bg-enosys-card rounded-lg p-6">
+          <div className="bg-liqui-card rounded-lg p-6">
             <h2 className="text-lg font-bold mb-4">Liquidity</h2>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
@@ -215,7 +215,7 @@ export function PoolPairDetail({
                     height={16}
                     className="rounded-full"
                   />
-                  <span className="text-enosys-subtext">{vm.token0?.symbol}</span>
+                  <span className="text-liqui-subtext">{vm.token0?.symbol}</span>
                 </div>
                 <span className="text-white">{formatAmount(vm.tvl.amount0)}</span>
               </div>
@@ -228,13 +228,13 @@ export function PoolPairDetail({
                     height={16}
                     className="rounded-full"
                   />
-                  <span className="text-enosys-subtext">{vm.token1?.symbol}</span>
+                  <span className="text-liqui-subtext">{vm.token1?.symbol}</span>
                 </div>
                 <span className="text-white">{formatAmount(vm.tvl.amount1)}</span>
               </div>
-              <div className="pt-3 border-t border-enosys-border">
+              <div className="pt-3 border-t border-liqui-border">
                 <div className="flex justify-between items-center">
-                  <span className="text-enosys-subtext">Total Value</span>
+                  <span className="text-liqui-subtext">Total Value</span>
                   <span className="text-white font-medium">{formatUsd(vm.tvl.tvlUsd)}</span>
                 </div>
               </div>
@@ -242,13 +242,13 @@ export function PoolPairDetail({
           </div>
 
           {/* Rewards */}
-          <div className="bg-enosys-card rounded-lg p-6">
+          <div className="bg-liqui-card rounded-lg p-6">
             <h2 className="text-lg font-bold mb-4">Rewards</h2>
             <div className="space-y-4">
               {/* Total Rewards */}
-              <div className="pb-3 border-b border-enosys-border">
+              <div className="pb-3 border-b border-liqui-border">
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-enosys-subtext font-medium">Total Rewards</span>
+                  <span className="text-liqui-subtext font-medium">Total Rewards</span>
                   <span className="text-white font-bold text-lg">{formatUsd(vm.rewards.totalUsd)}</span>
                 </div>
               </div>
@@ -256,17 +256,17 @@ export function PoolPairDetail({
               {/* Unclaimed Fees */}
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-enosys-subtext">Unclaimed fees:</span>
+                  <span className="text-liqui-subtext">Unclaimed fees:</span>
                   <span className="text-white">{formatUsd(vm.rewards.feesUsd)}</span>
                 </div>
                 <div className="pl-4 space-y-1 text-sm">
                   {vm.rewards.feesToken0 > 0 && (
-                    <div className="text-enosys-subtext">
+                    <div className="text-liqui-subtext">
                       {formatAmount(vm.rewards.feesToken0)} {vm.token0?.symbol}
                     </div>
                   )}
                   {vm.rewards.feesToken1 > 0 && (
-                    <div className="text-enosys-subtext">
+                    <div className="text-liqui-subtext">
                       {formatAmount(vm.rewards.feesToken1)} {vm.token1?.symbol}
                     </div>
                   )}
@@ -276,10 +276,10 @@ export function PoolPairDetail({
               {/* Incentives (RFLR) */}
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-enosys-subtext">Incentives:</span>
+                  <span className="text-liqui-subtext">Incentives:</span>
                   <span className="text-white">{formatUsd(vm.rewards.rflrUsd)}</span>
                 </div>
-                <div className="pl-4 text-sm text-enosys-subtext">
+                <div className="pl-4 text-sm text-liqui-subtext">
                   {formatAmount(vm.rewards.rflr)} RFLR
                 </div>
               </div>
@@ -287,7 +287,7 @@ export function PoolPairDetail({
               {onClaimFees && (
                 <button
                   onClick={onClaimFees}
-                  className="w-full mt-3 px-4 py-2 bg-enosys-primary text-white rounded hover:bg-enosys-blueHover font-medium"
+                  className="w-full mt-3 px-4 py-2 bg-liqui-primary text-white rounded hover:bg-liqui-blueHover font-medium"
                 >
                   Claim Rewards
                 </button>
@@ -296,30 +296,30 @@ export function PoolPairDetail({
           </div>
 
           {/* Range */}
-          <div className="bg-enosys-card rounded-lg p-6">
+          <div className="bg-liqui-card rounded-lg p-6">
             <h2 className="text-lg font-bold mb-4">Range</h2>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-enosys-subtext">Min Price</span>
+                <span className="text-liqui-subtext">Min Price</span>
                 <span className="text-white">
                   {vm.range?.min && !isNaN(vm.range.min) ? formatAmount(vm.range.min) : 'N/A'}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-enosys-subtext">Max Price</span>
+                <span className="text-liqui-subtext">Max Price</span>
                 <span className="text-white">
                   {vm.range?.max && !isNaN(vm.range.max) ? formatAmount(vm.range.max) : 'N/A'}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-enosys-subtext">Current Price</span>
+                <span className="text-liqui-subtext">Current Price</span>
                 <span className="text-white">
                   {vm.range?.current && !isNaN(vm.range.current) ? formatAmount(vm.range.current) : 'N/A'}
                 </span>
               </div>
-              <div className="pt-3 border-t border-enosys-border">
+              <div className="pt-3 border-t border-liqui-border">
                 <div className="flex justify-between items-center">
-                  <span className="text-enosys-subtext">Status</span>
+                  <span className="text-liqui-subtext">Status</span>
                   <span className={`font-medium ${vm.range?.inRange ? 'text-green-400' : 'text-red-400'}`}>
                     {vm.range?.inRange ? 'In Range' : 'Out of Range'}
                   </span>
@@ -340,25 +340,25 @@ export function PoolPairDetail({
         </div>
 
         {/* Pool Earnings */}
-        <div className="mt-6 bg-enosys-card rounded-lg p-6">
+        <div className="mt-6 bg-liqui-card rounded-lg p-6">
           <h2 className="text-lg font-bold mb-4">Pool Earnings</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <div className="text-enosys-subtext text-sm">Creation Date</div>
+              <div className="text-liqui-subtext text-sm">Creation Date</div>
               <div className="text-white">
                 {formatDate(vm.createdAt)}
               </div>
             </div>
             <div>
-              <div className="text-enosys-subtext text-sm">Initial TVL</div>
+              <div className="text-liqui-subtext text-sm">Initial TVL</div>
               <div className="text-white">{formatUsd(vm.funding.usdValue)}</div>
             </div>
             <div>
-              <div className="text-enosys-subtext text-sm">Current TVL</div>
+              <div className="text-liqui-subtext text-sm">Current TVL</div>
               <div className="text-white">{formatUsd(vm.tvl.tvlUsd)}</div>
             </div>
             <div>
-              <div className="text-enosys-subtext text-sm">Total Claimed</div>
+              <div className="text-liqui-subtext text-sm">Total Claimed</div>
               <div className="text-white">{formatUsd(vm.rewards.claimedUsd)}</div>
             </div>
           </div>
@@ -366,18 +366,18 @@ export function PoolPairDetail({
 
         {/* Activity */}
         {vm.activity && vm.activity.length > 0 && (
-          <div className="mt-6 bg-enosys-card rounded-lg p-6">
+          <div className="mt-6 bg-liqui-card rounded-lg p-6">
             <h2 className="text-lg font-bold mb-4">Recent Activity</h2>
             <div className="space-y-3">
               {vm.activity.slice(0, 5).map((entry) => (
-                <div key={entry.id} className="flex items-center justify-between py-2 border-b border-enosys-border last:border-b-0">
+                <div key={entry.id} className="flex items-center justify-between py-2 border-b border-liqui-border last:border-b-0">
                   <div>
                     <div className="text-white font-medium">{entry.title}</div>
                     {entry.subtitle && (
-                      <div className="text-enosys-subtext text-sm">{entry.subtitle}</div>
+                      <div className="text-liqui-subtext text-sm">{entry.subtitle}</div>
                     )}
                   </div>
-                  <div className="text-enosys-subtext text-sm">
+                  <div className="text-liqui-subtext text-sm">
                     {formatDateShort(entry.timestamp)}
                   </div>
                 </div>

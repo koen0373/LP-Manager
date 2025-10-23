@@ -65,13 +65,13 @@ export default function Header({
             </Link>
             <Link 
               href="/" 
-              className="text-sm font-normal text-enosys-subtext hover:text-white transition-colors"
+              className="text-sm font-normal text-liqui-subtext hover:text-white transition-colors"
             >
               My Pools
             </Link>
             <Link 
               href="/summary" 
-              className="text-sm font-normal text-enosys-subtext hover:text-white transition-colors"
+              className="text-sm font-normal text-liqui-subtext hover:text-white transition-colors"
             >
               Portfolio Performance
             </Link>
@@ -80,7 +80,7 @@ export default function Header({
           <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={handleRefresh}
-              className="flex items-center gap-2 px-3 py-2 text-enosys-subtext hover:text-white rounded-lg transition-all duration-200"
+              className="flex items-center gap-2 px-3 py-2 text-liqui-subtext hover:text-white rounded-lg transition-all duration-200"
               title="Refresh data"
               type="button"
             >
@@ -116,7 +116,7 @@ export default function Header({
               className={`px-4 py-2 rounded-lg transition-colors hover:font-bold ${
                 activeTab === 'active'
                   ? 'text-white font-bold'
-                  : 'text-enosys-subtext hover:text-enosys-text font-normal'
+                  : 'text-liqui-subtext hover:text-liqui-text font-normal'
               }`}
             >
               Active ({activeCount})
@@ -126,7 +126,7 @@ export default function Header({
               className={`px-4 py-2 rounded-lg transition-colors hover:font-bold ${
                 activeTab === 'inactive'
                   ? 'text-white font-bold'
-                  : 'text-enosys-subtext hover:text-enosys-text font-normal'
+                  : 'text-liqui-subtext hover:text-liqui-text font-normal'
               }`}
             >
               Inactive ({inactiveCount})
@@ -136,7 +136,7 @@ export default function Header({
               className={`px-4 py-2 rounded-lg transition-colors hover:font-bold ${
                 activeTab === 'all'
                   ? 'text-white font-bold'
-                  : 'text-enosys-subtext hover:text-enosys-text font-normal'
+                  : 'text-liqui-subtext hover:text-liqui-text font-normal'
               }`}
             >
               Show All ({activeCount + inactiveCount})

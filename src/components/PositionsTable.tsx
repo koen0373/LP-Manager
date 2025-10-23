@@ -107,17 +107,17 @@ export default function PositionsTable({
 
   return (
     <div className="w-full max-w-[1200px] mx-auto">
-      <div className="text-enosys-subtext text-sm mb-4">{headerNote}</div>
+      <div className="text-liqui-subtext text-sm mb-4">{headerNote}</div>
       
-      <div className="bg-enosys-card rounded-lg border border-enosys-border overflow-hidden">
+      <div className="bg-liqui-card rounded-lg border border-liqui-border overflow-hidden">
         {/* Header */}
-        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-enosys-border bg-enosys-subcard">
-          <div className="text-enosys-subtext font-bold text-left">Specifics</div>
-          <div className="text-enosys-subtext font-bold text-left">Liquidity</div>
-          <div className="text-enosys-subtext font-bold text-left">Fees</div>
-          <div className="text-enosys-subtext font-bold text-left">Incentives</div>
-          <div className="text-enosys-subtext font-bold text-left">Range</div>
-          <div className="text-enosys-subtext font-bold text-left">Status</div>
+        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-liqui-border bg-liqui-subcard">
+          <div className="text-liqui-subtext font-bold text-left">Specifics</div>
+          <div className="text-liqui-subtext font-bold text-left">Liquidity</div>
+          <div className="text-liqui-subtext font-bold text-left">Fees</div>
+          <div className="text-liqui-subtext font-bold text-left">Incentives</div>
+          <div className="text-liqui-subtext font-bold text-left">Range</div>
+          <div className="text-liqui-subtext font-bold text-left">Status</div>
         </div>
 
         {/* Rows */}
@@ -134,14 +134,14 @@ export default function PositionsTable({
           >
             {/* Position Specifics */}
             <div className="flex items-center justify-start space-x-3">
-              <div className="text-enosys-subtext text-sm">#{position.id}</div>
+              <div className="text-liqui-subtext text-sm">#{position.id}</div>
               <div className="flex -space-x-2">
                 <TokenIcon symbol={position.token0.symbol} size={21} />
                 <TokenIcon symbol={position.token1.symbol} size={21} />
               </div>
                   <div>
                     <div className="text-white font-normal whitespace-nowrap">{position.pairLabel}</div>
-                    <div className="text-enosys-subtext text-xs">
+                    <div className="text-liqui-subtext text-xs">
                       {formatPrice(position.lowerPrice || 0)} - {formatPrice(position.upperPrice || 0)}
                     </div>
                   </div>
@@ -157,7 +157,7 @@ export default function PositionsTable({
                 <div className="text-left">
                   <div className="text-white font-normal">${formatUsd(position.rewardsUsd || 0)}</div>
                   {position.rewardsUsd > 0 && (
-                    <div className="text-enosys-subtext text-xs text-left">
+                    <div className="text-liqui-subtext text-xs text-left">
                       Unclaimed fees
                     </div>
                   )}
@@ -168,15 +168,15 @@ export default function PositionsTable({
               {position.rflrUsd > 0 ? (
                 <div>
                   <div className="text-white font-normal">${fmtUsd(position.rflrUsd)}</div>
-                  <div className="text-enosys-subtext text-xs text-left">{fmtAmt(position.rflrAmount)} RFLR</div>
+                  <div className="text-liqui-subtext text-xs text-left">{fmtAmt(position.rflrAmount)} RFLR</div>
                   {showRflrDelta ? (
-                    <div className="text-enosys-subtext text-[11px] text-left">
+                    <div className="text-liqui-subtext text-[11px] text-left">
                       ({rflrDelta > 0 ? '+' : '-'} {formatRflrDelta(rflrDelta)})
                     </div>
                   ) : null}
                 </div>
               ) : (
-                <div className="text-enosys-subtext text-left">-</div>
+                <div className="text-liqui-subtext text-left">-</div>
               )}
             </div>
 
@@ -188,7 +188,7 @@ export default function PositionsTable({
                 const current = nonStablePrice?.price || 0;
                 
                 if (lower === 0 || upper === 0 || current === 0) {
-                  return <div className="text-enosys-subtext text-xs">-</div>;
+                  return <div className="text-liqui-subtext text-xs">-</div>;
                 }
                 
                 // Calculate position percentage (0-100)
@@ -208,7 +208,7 @@ export default function PositionsTable({
                 return (
                   <div className="space-y-1">
                     {/* Current price label */}
-                    <div className="text-enosys-subtext text-xs text-left">
+                    <div className="text-liqui-subtext text-xs text-left">
                       Current price
                     </div>
                     {/* Current price value */}
@@ -241,8 +241,8 @@ export default function PositionsTable({
 
         {/* Totals Row */}
         {showTotalsRow && (
-          <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-t border-enosys-border bg-enosys-subcard">
-            <div className="text-enosys-subtext text-sm font-bold text-left">Total</div>
+          <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-t border-liqui-border bg-liqui-subcard">
+            <div className="text-liqui-subtext text-sm font-bold text-left">Total</div>
             <div className="text-left">
               <div className="text-white font-normal">${fmtUsd(totals.tvl)}</div>
             </div>

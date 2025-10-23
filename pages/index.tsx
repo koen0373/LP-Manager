@@ -46,11 +46,11 @@ export default function LPManagerPage() {
         }
 
         const data = await response.json();
-        if (!data.positions || !Array.isArray(data.positions)) {
+        if (!Array.isArray(data)) {
           throw new Error('Invalid response format');
         }
 
-        const walletPositions = data.positions;
+        const walletPositions = data;
         console.log('[HOME] Received positions:', walletPositions.length);
         
         const normalizedPositions = walletPositions.map((position: PositionRow) => {

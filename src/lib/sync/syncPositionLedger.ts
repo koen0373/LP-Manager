@@ -29,6 +29,8 @@ export async function syncPositionLedger(
   success: boolean;
   eventsIngested: number;
   transfersIngested: number;
+  events: PositionEventData[];
+  transfers: PositionTransferData[];
   error?: string;
 }> {
   const { verbose = false } = options;
@@ -213,25 +215,38 @@ export async function syncPositionLedger(
       }
     }
 
-    // Step 4: Bulk insert into database
-    if (verbose) {
-      console.log(`[SYNC] Inserting ${positionTransfers.length} transfers into database`);
+    // Step 4: Bulk insert into database (optional - gracefully handle failures)
+    let dbWriteSuccess = false;
+    try {
+      if (verbose) {
+        console.log(`[SYNC] Inserting ${positionTransfers.length} transfers into database`);
+      }
+      await bulkUpsertPositionTransfers(positionTransfers);
+
+      if (verbose) {
+        console.log(`[SYNC] Inserting ${positionEvents.length} events into database`);
+      }
+      await bulkUpsertPositionEvents(positionEvents);
+      
+      dbWriteSuccess = true;
+      if (verbose) {
+        console.log(`[SYNC] Successfully wrote to database for position ${tokenId}`);
+      }
+    } catch (dbError) {
+      // Database write failed - log but don't fail the entire sync
+      console.warn(`[SYNC] Database write failed for position ${tokenId} (continuing without persistence):`, dbError);
     }
-    await bulkUpsertPositionTransfers(positionTransfers);
 
     if (verbose) {
-      console.log(`[SYNC] Inserting ${positionEvents.length} events into database`);
-    }
-    await bulkUpsertPositionEvents(positionEvents);
-
-    if (verbose) {
-      console.log(`[SYNC] Ledger sync completed successfully for position ${tokenId}`);
+      console.log(`[SYNC] Ledger sync completed for position ${tokenId} (DB write: ${dbWriteSuccess ? 'success' : 'skipped'})`);
     }
 
     return {
       success: true,
       eventsIngested: positionEvents.length,
       transfersIngested: positionTransfers.length,
+      events: positionEvents,
+      transfers: positionTransfers,
     };
   } catch (error) {
     console.error(`[SYNC] Error syncing position ${tokenId}:`, error);
@@ -239,6 +254,8 @@ export async function syncPositionLedger(
       success: false,
       eventsIngested: 0,
       transfersIngested: 0,
+      events: [],
+      transfers: [],
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   }

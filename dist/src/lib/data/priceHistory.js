@@ -4,8 +4,8 @@ exports.buildPriceHistory = buildPriceHistory;
 exports.buildPriceHistoryFromSwaps = buildPriceHistoryFromSwaps;
 exports.getCurrentPriceFromEvents = getCurrentPriceFromEvents;
 // Build price history from position events and pool events
-const prisma_1 = require("@/store/prisma");
-const poolHelpers_1 = require("@/utils/poolHelpers");
+const prisma_1 = require("../../store/prisma");
+const poolHelpers_1 = require("../../utils/poolHelpers");
 /**
  * Build price history for a pool from stored events
  * Uses PositionEvent records which have tick/price data

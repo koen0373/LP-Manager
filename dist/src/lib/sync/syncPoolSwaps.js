@@ -2,10 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.syncPoolSwaps = syncPoolSwaps;
 // Sync pool-level Swap events for price history
-const viemClient_1 = require("@/lib/viemClient");
+const viemClient_1 = require("../../lib/viemClient");
 const viem_1 = require("viem");
-const UniswapV3Pool_1 = require("@/abis/UniswapV3Pool");
-const prisma_1 = require("@/store/prisma");
+const UniswapV3Pool_1 = require("../../abis/UniswapV3Pool");
+const prisma_1 = require("../../store/prisma");
 async function syncPoolSwaps(poolAddress, options = {}) {
     const { fromBlock, toBlock, verbose = false } = options;
     try {

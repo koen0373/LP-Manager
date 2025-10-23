@@ -7,7 +7,7 @@ exports.getCapitalFlowsByPool = getCapitalFlowsByPool;
 exports.getCapitalFlowStats = getCapitalFlowStats;
 exports.getCapitalFlowSummary = getCapitalFlowSummary;
 exports.bulkUpsertCapitalFlows = bulkUpsertCapitalFlows;
-const prisma_1 = require("@/store/prisma");
+const prisma_1 = require("../../store/prisma");
 async function upsertCapitalFlow(data) {
     return await prisma_1.db.capitalFlow.upsert({
         where: { id: data.id },

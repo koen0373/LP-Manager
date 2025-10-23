@@ -7,7 +7,7 @@ exports.getPositionOwnershipHistory = getPositionOwnershipHistory;
 exports.getCurrentPositionOwner = getCurrentPositionOwner;
 exports.getPositionTransferStats = getPositionTransferStats;
 exports.bulkUpsertPositionTransfers = bulkUpsertPositionTransfers;
-const prisma_1 = require("@/store/prisma");
+const prisma_1 = require("../../store/prisma");
 async function upsertPositionTransfer(data) {
     return await prisma_1.db.positionTransfer.upsert({
         where: { id: data.id },

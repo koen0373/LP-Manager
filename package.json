@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev -H 127.0.0.1 -p 3000",
     "build": "prisma generate && prisma db push --accept-data-loss && next build",
-    "build:worker": "prisma generate && tsc --project tsconfig.worker.json",
+    "build:worker": "prisma generate && tsc --project tsconfig.worker.json && tsc-alias -p tsconfig.worker.json",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
@@ -54,6 +54,7 @@
     "eslint-config-next": "15.5.6",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
+    "tsc-alias": "^1.8.16",
     "tsx": "^4.19.2",
     "typescript": "^5"
   }

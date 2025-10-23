@@ -6,7 +6,7 @@ exports.getPositionEventsByPool = getPositionEventsByPool;
 exports.getPositionEventsByWallet = getPositionEventsByWallet;
 exports.getPositionEventStats = getPositionEventStats;
 exports.bulkUpsertPositionEvents = bulkUpsertPositionEvents;
-const prisma_1 = require("@/store/prisma");
+const prisma_1 = require("../../store/prisma");
 async function upsertPositionEvent(data) {
     return await prisma_1.db.positionEvent.upsert({
         where: { id: data.id },

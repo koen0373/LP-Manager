@@ -4,10 +4,9 @@
 import React from 'react';
 import dayjs from 'dayjs';
 import Header from '@/components/Header';
-import PositionsTable from '@/components/PositionsTable';
+import { GroupedPoolsList } from '@/components/GroupedPoolsList';
 import { useWalletSummary } from '@/hooks/useWalletSummary';
 import { formatUsd, formatPercent } from '@/utils/format';
-import type { PositionRow } from '@/types/positions';
 import { Address } from 'viem';
 
 import { GetServerSideProps } from 'next';
@@ -150,53 +149,37 @@ export default function SummaryPage() {
   // Data state
   const { totals, positions, recentActivity } = data;
 
-  // Convert API positions to PositionRow format for the table
-  const convertedPositions: PositionRow[] = positions.map((pos: ApiPosition) => {
-    const isActive = pos.status === 'active';
-    const token0Symbol = pos.token0Symbol || 'TOKEN0';
-    const token1Symbol = pos.token1Symbol || 'TOKEN1';
-    const pairLabel = pos.pairLabel || `${token0Symbol}/${token1Symbol}`;
-    
-    return {
-      id: pos.tokenId,
-      pairLabel,
-      poolAddress: pos.pool as Address,
-      feeTierBps: 0, // Not used in display
-      tickLowerLabel: '',
-      tickUpperLabel: '',
-      tvlUsd: pos.tvlUsd || 0,
-      // Fees column: always show unclaimed fees (will be 0 for inactive pools)
-      rewardsUsd: pos.accruedFeesUsd || 0,
-      // RFLR column: show RFLR rewards (claimable via Flare Portal)
-      rflrAmount: pos.rflrAmount || 0,
-      rflrUsd: pos.rflrUsd || 0,
-      rflrPriceUsd: (pos.rflrAmount || 0) > 0 ? (pos.rflrUsd || 0) / (pos.rflrAmount || 1) : 0,
-      status: isActive ? 'Active' : 'Inactive',
-      inRange: isActive,
-      isInRange: isActive,
-      token0: { symbol: token0Symbol, decimals: 18, name: token0Symbol },
-      token1: { symbol: token1Symbol, decimals: 18, name: token1Symbol },
-      amount0: 0,
-      amount1: 0,
-      lowerPrice: 0,
-      upperPrice: 0,
-      currentPrice: 0,
-      previousRflrAmount: undefined,
-      rflrDelta: undefined,
-      tickLower: 0,
-      tickUpper: 0,
-      price0Usd: 0,
-      price1Usd: 0,
-      fee0: 0,
-      fee1: 0,
-    };
-  });
-
-  // Filter and separate active and inactive positions
-  const activePositions = convertedPositions.filter(p => p.status === 'Active');
-  const inactivePositions = convertedPositions.filter(p => 
-    p.status === 'Inactive' && (p.rewardsUsd > 0 || p.rflrUsd > 0)
-  );
+  // Convert API positions to GroupedPoolsList format
+  const poolsData = positions
+    .filter((pos: ApiPosition) => 
+      // Show all active pools, and inactive pools with rewards
+      pos.status === 'active' || (pos.rflrAmount && pos.rflrAmount > 0)
+    )
+    .map((pos: ApiPosition) => {
+      const token0Symbol = pos.token0Symbol || 'TOKEN0';
+      const token1Symbol = pos.token1Symbol || 'TOKEN1';
+      const pairLabel = pos.pairLabel || `${token0Symbol}/${token1Symbol}`;
+      
+      // Calculate total earnings (fees + RFLR)
+      const earningsUsd = (pos.realizedFeesUsd || 0) + (pos.accruedFeesUsd || 0);
+      
+      return {
+        tokenId: pos.tokenId,
+        pairLabel,
+        token0Symbol,
+        token1Symbol,
+        status: pos.status,
+        tvlUsd: pos.tvlUsd || 0,
+        tvlAtMintUsd: undefined, // TODO: Get from API
+        earningsUsd,
+        unclaimedFeesUsd: pos.accruedFeesUsd || 0,
+        fee0: undefined, // TODO: Get from API
+        fee1: undefined, // TODO: Get from API
+        rflrAmount: pos.rflrAmount || 0,
+        rflrUsd: pos.rflrUsd || 0,
+        roi: undefined, // TODO: Calculate ROI
+      };
+    });
 
   return (
     <div className="min-h-screen bg-enosys-bg">
@@ -264,33 +247,11 @@ export default function SummaryPage() {
           </div>
         </div>
 
-        {/* Active Positions */}
-        {activePositions.length > 0 && (
-          <PositionsTable 
-            positions={activePositions}
-            headerNote={`Active pools (${activePositions.length})`}
-            showTotalsRow={false}
-          />
-        )}
-
-        {/* Inactive Positions */}
-        {inactivePositions.length > 0 && (
-          <div className="mt-6">
-            <PositionsTable 
-              positions={inactivePositions}
-              headerNote={`Inactive pools (${inactivePositions.length})`}
-              showTotalsRow={false}
-            />
-          </div>
-        )}
-
-        {/* No positions message */}
-        {activePositions.length === 0 && inactivePositions.length === 0 && (
-          <div className="bg-enosys-card rounded-lg p-6 mb-8">
-            <h2 className="text-white text-lg font-bold mb-4">Your Positions</h2>
-            <p className="text-enosys-subtext text-center py-8">No positions found</p>
-          </div>
-        )}
+        {/* Grouped Pools by Pairing */}
+        <div className="mb-8">
+          <h2 className="text-white text-lg font-bold mb-4">Your Pools</h2>
+          <GroupedPoolsList pools={poolsData} />
+        </div>
 
         {/* Recent Activity Section */}
         <div className="bg-enosys-card rounded-lg p-6">

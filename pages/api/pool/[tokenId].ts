@@ -89,10 +89,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const { getPositionEvents } = await import('@/lib/data/positionEvents');
         const { getPositionTransfers } = await import('@/lib/data/positionTransfers');
         
-        [ledgerEvents, ledgerTransfers] = await Promise.all([
+        const [dbEvents, dbTransfers] = await Promise.all([
           getPositionEvents(tokenId, { limit: 1000 }),
           getPositionTransfers(tokenId, { limit: 100 }),
         ]);
+        
+        // Convert Prisma null to undefined for TypeScript compatibility
+        ledgerEvents = dbEvents.map(e => ({
+          ...e,
+          sender: e.sender ?? undefined,
+          owner: e.owner ?? undefined,
+          recipient: e.recipient ?? undefined,
+          tickLower: e.tickLower ?? undefined,
+          tickUpper: e.tickUpper ?? undefined,
+          tick: e.tick ?? undefined,
+          liquidityDelta: e.liquidityDelta ?? undefined,
+          amount0: e.amount0 ?? undefined,
+          amount1: e.amount1 ?? undefined,
+          sqrtPriceX96: e.sqrtPriceX96 ?? undefined,
+          price1Per0: e.price1Per0 ?? undefined,
+          usdValue: e.usdValue ?? undefined,
+          metadata: e.metadata as Record<string, unknown> | undefined,
+        }));
+        
+        ledgerTransfers = dbTransfers.map(t => ({
+          ...t,
+          metadata: t.metadata as Record<string, unknown> | undefined,
+        }));
         
         console.log(`[API] Retrieved ${ledgerEvents.length} events and ${ledgerTransfers.length} transfers from database for token ${tokenId}`);
         

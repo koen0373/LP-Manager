@@ -130,7 +130,7 @@ export default function EChartsRangeChart({
         },
       },
       series: [
-        // Main price line
+        // Main price line with all markLines
         {
           name: 'Price',
           type: 'line',
@@ -160,16 +160,13 @@ export default function EChartsRangeChart({
               width: 3,
             },
           },
-        },
-        // Min price line
-        ...(minPrice !== undefined
-          ? [
-              {
-                name: 'Min Price',
-                type: 'line',
-                markLine: {
-                  symbol: 'none',
-                  data: [
+          markLine: {
+            symbol: 'none',
+            silent: false,
+            data: [
+              // Min price line
+              ...(minPrice !== undefined
+                ? [
                     {
                       yAxis: minPrice,
                       lineStyle: {
@@ -182,22 +179,14 @@ export default function EChartsRangeChart({
                         color: '#16a34a',
                         fontFamily: 'Quicksand, sans-serif',
                         fontSize: 11,
+                        position: 'end' as const,
                       },
                     },
-                  ],
-                },
-              },
-            ]
-          : []),
-        // Max price line
-        ...(maxPrice !== undefined
-          ? [
-              {
-                name: 'Max Price',
-                type: 'line',
-                markLine: {
-                  symbol: 'none',
-                  data: [
+                  ]
+                : []),
+              // Max price line
+              ...(maxPrice !== undefined
+                ? [
                     {
                       yAxis: maxPrice,
                       lineStyle: {
@@ -210,22 +199,14 @@ export default function EChartsRangeChart({
                         color: '#16a34a',
                         fontFamily: 'Quicksand, sans-serif',
                         fontSize: 11,
+                        position: 'end' as const,
                       },
                     },
-                  ],
-                },
-              },
-            ]
-          : []),
-        // Current price line
-        ...(currentPrice !== undefined
-          ? [
-              {
-                name: 'Current Price',
-                type: 'line',
-                markLine: {
-                  symbol: 'none',
-                  data: [
+                  ]
+                : []),
+              // Current price line
+              ...(currentPrice !== undefined
+                ? [
                     {
                       yAxis: currentPrice,
                       lineStyle: {
@@ -239,13 +220,14 @@ export default function EChartsRangeChart({
                         fontFamily: 'Quicksand, sans-serif',
                         fontSize: 11,
                         fontWeight: 'bold',
+                        position: 'end' as const,
                       },
                     },
-                  ],
-                },
-              },
-            ]
-          : []),
+                  ]
+                : []),
+            ],
+          },
+        },
       ],
     };
   }, [priceHistory, minPrice, maxPrice, currentPrice]);

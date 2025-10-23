@@ -9,8 +9,8 @@ class MyDocument extends Document {
   }
 
   render() {
-    // Access nonce for inline scripts if needed (currently not used)
-    // const nonce = (this.props as any).nonce;
+    // Access nonce from props and pass to NextScript
+    const nonce = (this.props as any).nonce as string | undefined;
     
     return (
       <Html lang="en">
@@ -22,7 +22,7 @@ class MyDocument extends Document {
         </Head>
         <body className="antialiased">
           <Main />
-          <NextScript />
+          <NextScript nonce={nonce} />
         </body>
       </Html>
     );

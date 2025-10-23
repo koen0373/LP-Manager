@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev -H 127.0.0.1 -p 3000",
     "build": "prisma generate && prisma db push --accept-data-loss && next build",
-    "start": "next start -p ${PORT:-3000}",
+    "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
     "backfill": "tsx scripts/backfillLedger.ts",

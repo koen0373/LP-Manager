@@ -35,7 +35,7 @@ export async function syncPoolSwaps(
 
     // Fetch Swap events from pool in chunks (RPC limit is 30 blocks)
     // Swap event signature: Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick)
-    const SWAP_TOPIC: Hex = '0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67';
+    // Topic: 0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67
     
     const allLogs: Array<{
       address: Hex;

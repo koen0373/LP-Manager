@@ -100,21 +100,24 @@ export class RpcScanner {
 
     while (attempt < indexerConfig.retry.maxAttempts) {
       try {
-        // Get event topics
-        const topics = getEventTopics(indexerConfig.events);
+        // Get event topics - viem requires topics[0] to be an array for OR filtering
+        const eventTopics = getEventTopics(indexerConfig.events);
 
-        // Fetch logs
+        // Fetch logs - topics[0] as array means "match any of these event signatures"
         const logs = await this.client.getLogs({
           address: contractAddress as `0x${string}`,
           fromBlock: BigInt(from),
           toBlock: BigInt(to),
-          topics: [topics], // OR filter: any of these events
-        });
+        } as any); // Type assertion needed as viem's types don't expose raw topics filtering correctly
+        
+        // Manual filter by event topics (since we can't pass topics directly)
+        let filteredLogs = logs.filter(log => 
+          log.topics[0] && eventTopics.includes(log.topics[0] as string)
+        );
 
         // Filter by tokenId if specified (post-filter for events that index tokenId in topics[1])
-        let filteredLogs = logs;
         if (tokenIds && tokenIds.length > 0) {
-          filteredLogs = logs.filter((log) => {
+          filteredLogs = filteredLogs.filter((log) => {
             // tokenId is in topics[1] for IncreaseLiquidity, DecreaseLiquidity, Collect, Transfer
             const tokenIdHex = log.topics[1];
             if (!tokenIdHex) return false;

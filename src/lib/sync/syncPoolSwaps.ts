@@ -143,7 +143,7 @@ export async function syncPoolSwaps(
           if (verbose && swapsProcessed % 10 === 0) {
             console.log(`[SWAP_SYNC] Processed ${swapsProcessed}/${logs.length} swaps`);
           }
-        } catch (error) {
+        } catch {
           if (verbose) {
             console.warn(`[SWAP_SYNC] Could not decode log at ${log.transactionHash}:${log.logIndex}`);
           }

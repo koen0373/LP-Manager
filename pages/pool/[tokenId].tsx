@@ -77,7 +77,10 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     const mockReq = {
       method: 'GET',
       query: { tokenId },
-    } as NextApiRequest;
+      headers: {},
+      cookies: {},
+      body: undefined,
+    } as unknown as NextApiRequest;
     
     let responseData: PoolDetailVM | null = null;
     let responseError: string | null = null;

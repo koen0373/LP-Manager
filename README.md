@@ -1,5 +1,40 @@
 # LP Manager - Enosys V3 Liquidity Pool Manager
 
+## 🚀 Quick Start
+
+### Database Setup (Vercel Postgres)
+
+This app uses PostgreSQL via Vercel Postgres for production deployment.
+
+**For Vercel Deployment:**
+1. Create a [Vercel Postgres](https://vercel.com/storage/postgres) database (free tier available)
+2. Copy the `DATABASE_URL` from Vercel dashboard
+3. Add it to your Vercel project's Environment Variables:
+   - Key: `DATABASE_URL`
+   - Value: `postgres://...` (from Vercel)
+4. Deploy! Migrations run automatically during build
+
+**For Local Development:**
+```bash
+# Option A: Use Vercel Postgres (recommended)
+vercel env pull .env.local  # Pull DATABASE_URL from Vercel
+
+# Option B: Use local PostgreSQL
+# Add to .env.local:
+# DATABASE_URL="postgresql://user:password@localhost:5432/liqui?schema=public"
+
+# Option C: Use SQLite for quick testing
+# Update prisma/schema.prisma:
+# provider = "sqlite"
+# url = "file:./dev.db"
+
+# Then run:
+npm install
+npx prisma generate
+npx prisma migrate dev
+npm run dev
+```
+
 ## Wallet Summary API & Hook
 
 ### Overview

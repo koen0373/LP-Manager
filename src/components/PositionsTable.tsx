@@ -148,16 +148,9 @@ export default function PositionsTable({
               <FeeBadge feeBps={position.feeTierBps} />
             </div>
 
-                {/* TVL with pool share percentage */}
+                {/* TVL */}
                 <div className="text-left">
-                  <div className="text-white font-normal">
-                    ${formatUsd(position.tvlUsd || 0)}
-                    {position.poolSharePct && position.poolSharePct > 0 && (
-                      <span className="text-enosys-subtext text-xs ml-1">
-                        ({position.poolSharePct.toFixed(2)}%)
-                      </span>
-                    )}
-                  </div>
+                  <div className="text-white font-normal">${formatUsd(position.tvlUsd || 0)}</div>
                 </div>
 
                 {/* Pool Rewards */}

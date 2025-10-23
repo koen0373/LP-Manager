@@ -179,12 +179,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const poolRewards = (position.fee0 || 0) * currentPrice0Usd + (position.fee1 || 0) * currentPrice1Usd;
     const rflrRewards = (position.rflrAmount || 0) * currentRflrPriceUsd;
     
+    // APS removed for Phase 3 - will add back later when needed
     // Get APS rewards (parallel)
-    const [apsData, currentApsPriceUsd] = await Promise.all([
-      getApsRewardForPosition(tokenId),
-      getTokenPriceForRewards('APS'),
-    ]);
-    // APS removed for Phase 3 - will add back later
+    // const [apsData, currentApsPriceUsd] = await Promise.all([
+    //   getApsRewardForPosition(tokenId),
+    //   getTokenPriceForRewards('APS'),
+    // ]);
     // const apsAmount = apsData?.amount || 0;
     // const apsRewards = apsAmount * currentApsPriceUsd;
 

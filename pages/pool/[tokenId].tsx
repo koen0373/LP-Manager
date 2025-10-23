@@ -88,11 +88,11 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         responseStatus = code;
         return mockRes;
       },
-      json: (data: any) => {
+      json: (data: PoolDetailVM | { error: string }) => {
         if (responseStatus >= 400) {
-          responseError = data.error || 'Failed to load pool data';
+          responseError = (data as { error: string }).error || 'Failed to load pool data';
         } else {
-          responseData = data;
+          responseData = data as PoolDetailVM;
         }
         return mockRes;
       },

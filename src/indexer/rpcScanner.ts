@@ -100,17 +100,18 @@ export class RpcScanner {
 
     while (attempt < indexerConfig.retry.maxAttempts) {
       try {
-        // Get event topics - viem requires topics[0] to be an array for OR filtering
+        // Get event topics for filtering
         const eventTopics = getEventTopics(indexerConfig.events);
 
-        // Fetch logs - topics[0] as array means "match any of these event signatures"
+        // Fetch all logs for this contract in the block range
+        // We filter by event topics client-side since viem's getLogs doesn't support OR filtering on topics[0]
         const logs = await this.client.getLogs({
           address: contractAddress as `0x${string}`,
           fromBlock: BigInt(from),
           toBlock: BigInt(to),
-        } as any); // Type assertion needed as viem's types don't expose raw topics filtering correctly
+        });
         
-        // Manual filter by event topics (since we can't pass topics directly)
+        // Filter by event topics (topics[0] contains the event signature)
         let filteredLogs = logs.filter(log => 
           log.topics[0] && eventTopics.includes(log.topics[0] as string)
         );

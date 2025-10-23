@@ -1,7 +1,7 @@
 // Persist events to database with idempotent upserts
 
 import { db } from '../data/db';
-import type { PositionEventType } from '@prisma/client';
+import type { PositionEventType, Prisma } from '@prisma/client';
 
 export interface EventToPersist {
   tokenId: string;
@@ -23,7 +23,7 @@ export interface EventToPersist {
   sqrtPriceX96?: string;
   price1Per0?: number;
   usdValue?: number;
-  metadata?: Record<string, unknown>;
+  metadata?: Prisma.InputJsonValue;
 }
 
 export interface TransferToPersist {
@@ -34,7 +34,7 @@ export interface TransferToPersist {
   txHash: string;
   logIndex: number;
   timestamp: number;
-  metadata?: Record<string, unknown>;
+  metadata?: Prisma.InputJsonValue;
 }
 
 /**

@@ -9,16 +9,21 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'enosys-bg': 'var(--enosys-bg)',
-        'enosys-card': 'var(--enosys-card)',
-        'enosys-border': 'var(--enosys-border)',
-        'enosys-text': 'var(--enosys-text)',
-        'enosys-subtext': 'var(--enosys-subtext)',
-        'enosys-primary': 'var(--enosys-primary)',
-        'enosys-blue': 'var(--enosys-blue)',
-        'enosys-blueHover': 'var(--enosys-blueHover)',
-        'enosys-subcard': 'var(--enosys-subcard)',
-        'enosys-row-separator': 'var(--enosys-row-separator)',
+        'liqui-bg': 'var(--liqui-bg)',
+        'liqui-card': 'var(--liqui-card)',
+        'liqui-border': 'var(--liqui-border)',
+        'liqui-text': 'var(--liqui-text)',
+        'liqui-subtext': 'var(--liqui-subtext)',
+        'liqui-hover': 'var(--liqui-hover)',
+        'liqui-subcard': 'var(--liqui-subcard)',
+        // Legacy aliases for backwards compatibility
+        'enosys-bg': 'var(--liqui-bg)',
+        'enosys-card': 'var(--liqui-card)',
+        'enosys-border': 'var(--liqui-border)',
+        'enosys-text': 'var(--liqui-text)',
+        'enosys-subtext': 'var(--liqui-subtext)',
+        'enosys-hover': 'var(--liqui-hover)',
+        'enosys-subcard': 'var(--liqui-subcard)',
       },
       fontFamily: {
         'sans': ['Quicksand', 'ui-sans-serif', 'system-ui', 'sans-serif'],

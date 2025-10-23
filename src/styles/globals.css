@@ -29,15 +29,15 @@ body {
   box-sizing: border-box;
 }
 
-/* Enosys theme colors */
+/* Liqui theme colors */
 :root {
-  --enosys-bg: #0a0a0a;
-  --enosys-card: rgba(26, 26, 26, 0.85); /* Semi-transparent to show water background */
-  --enosys-subcard: rgba(42, 42, 42, 0.85); /* Semi-transparent */
-  --enosys-border: #3a3a3a;
-  --enosys-text: #ffffff;
-  --enosys-subtext: #888888;
-  --enosys-hover: rgba(51, 51, 51, 0.7); /* Semi-transparent */
+  --liqui-bg: #0a0a0a;
+  --liqui-card: rgba(26, 26, 26, 0.85); /* Semi-transparent to show water background */
+  --liqui-subcard: rgba(42, 42, 42, 0.85); /* Semi-transparent */
+  --liqui-border: #3a3a3a;
+  --liqui-text: #ffffff;
+  --liqui-subtext: #888888;
+  --liqui-hover: rgba(51, 51, 51, 0.7); /* Semi-transparent */
 }
 
 /* Custom animations */

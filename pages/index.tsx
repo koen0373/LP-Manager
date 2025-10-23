@@ -220,8 +220,8 @@ export default function LPManagerPage() {
   return (
     <>
       <Head>
-        <title>Enosys LP Manager</title>
-        <meta name="description" content="Manage your Enosys V3 liquidity positions on Flare Network" />
+        <title>Liqui LP Manager</title>
+        <meta name="description" content="Manage your Uniswap V3 liquidity positions on Flare Network" />
       </Head>
       <main className="pb-20">
         <Header 

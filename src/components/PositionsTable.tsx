@@ -215,9 +215,9 @@ export default function PositionsTable({
                     <div className="text-white text-xs text-left mb-2">
                       {formatPrice(current, current < 1 ? 5 : 3)}
                     </div>
-                    {/* Range bar - centered with 80% width */}
-                    <div className="relative w-full h-1 flex items-center justify-center">
-                      <div className="relative w-[80%] h-full bg-white rounded-full">
+                    {/* Range bar - left aligned with 80% width */}
+                    <div className="relative w-full flex items-center">
+                      <div className="relative w-[80%] h-0.5 bg-gray-500 rounded-full">
                         <div 
                           className={`absolute top-1/2 -translate-y-1/2 w-0.5 h-3 ${indicatorColor}`}
                           style={{ left: `${Math.max(0, Math.min(100, percentage))}%` }}

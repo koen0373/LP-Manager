@@ -3,7 +3,8 @@
 import { FlarescanTransfer, FlarescanLog } from './types';
 
 const FLARESCAN_API_BASE = process.env.FLARESCAN_API_BASE || 'https://flare-explorer.flare.network/api';
-const FLARESCAN_API_KEY = process.env.FLARESCAN_API_KEY || '';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const FLARESCAN_API_KEY = process.env.FLARESCAN_API_KEY || ''; // Reserved for future authenticated requests
 
 interface RetryOptions {
   maxRetries?: number;
@@ -62,7 +63,7 @@ async function rateLimitedFetch(url: string): Promise<Response> {
   const response = await fetch(url);
   
   if (!response.ok) {
-    const error: any = new Error(`HTTP ${response.status}: ${response.statusText}`);
+    const error = new Error(`HTTP ${response.status}: ${response.statusText}`) as Error & { status: number };
     error.status = response.status;
     throw error;
   }
@@ -115,7 +116,7 @@ export async function fetchPositionEvents(
     });
 
     if (!response.ok) {
-      const error: any = new Error(`HTTP ${response.status}: ${response.statusText}`);
+      const error = new Error(`HTTP ${response.status}: ${response.statusText}`) as Error & { status: number };
       error.status = response.status;
       throw error;
     }

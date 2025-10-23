@@ -1,7 +1,11 @@
-import Document, { Html, Head, Main, NextScript, DocumentContext } from 'next/document';
+import Document, { Html, Head, Main, NextScript, DocumentContext, DocumentInitialProps } from 'next/document';
 
-class MyDocument extends Document {
-  static async getInitialProps(ctx: DocumentContext) {
+interface MyDocumentProps extends DocumentInitialProps {
+  nonce?: string;
+}
+
+class MyDocument extends Document<MyDocumentProps> {
+  static async getInitialProps(ctx: DocumentContext): Promise<MyDocumentProps> {
     const initialProps = await Document.getInitialProps(ctx);
     // Read nonce from middleware
     const nonce = ctx.res?.getHeader('x-nonce') as string | undefined;
@@ -10,7 +14,7 @@ class MyDocument extends Document {
 
   render() {
     // Access nonce from props and pass to NextScript
-    const nonce = (this.props as any).nonce as string | undefined;
+    const { nonce } = this.props;
     
     return (
       <Html lang="en">

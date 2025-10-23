@@ -14,6 +14,7 @@
     "indexer:backfill": "tsx scripts/indexer-backfill.ts",
     "indexer:follow": "tsx scripts/indexer-follower.ts",
     "indexer:sanity": "tsx scripts/indexer-sanity.ts",
+    "railway:start": "bash scripts/railway-entrypoint.sh",
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy"
   },

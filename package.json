@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -H 127.0.0.1 -p 3000",
-    "build": "prisma generate && prisma db push --accept-data-loss && npm run backfill:railway && next build",
+    "build": "prisma generate && prisma db push --accept-data-loss && npx tsx scripts/backfillLedger.ts 22003 22326 20445 21866 && next build",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",

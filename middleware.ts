@@ -20,10 +20,11 @@ export function middleware(req: NextRequest) {
 
   // Strict CSP with nonce + strict-dynamic (no unsafe-eval needed)
   // strict-dynamic allows Next.js dynamic chunks without unsafe-inline
+  // Note: https: fallback for older browsers that don't support strict-dynamic
   const csp = [
     "default-src 'self'",
-    // Scripts: self + nonce for inline init, strict-dynamic for dynamic chunks
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    // Scripts: self + nonce for inline init, strict-dynamic for dynamic chunks, https: fallback
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https:`,
     // Connect: own API + external backends (server-side only)
     "connect-src 'self' https://flare-explorer.flare.network https://flarescan.com https://flare-api.flare.network https://api.coingecko.com wss://relay.walletconnect.com https://rpc.walletconnect.com",
     // Styles: self + unsafe-inline for Tailwind, Google Fonts

@@ -1,0 +1,12 @@
+# Don't upload development database to Vercel
+prisma/dev.db
+prisma/dev.db-journal
+
+# Don't upload large directories
+.next
+node_modules
+out
+
+# Don't upload local env
+.env.local
+

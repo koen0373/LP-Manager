@@ -352,7 +352,17 @@ devLog.log('Debug info'); // Only logs in development
 devLog.error('Error');     // Always logs
 ```
 
-### **2. Prisma Studio Error**
+### **2. FlareScan 403 Error (Contract Creation Date)**
+```
+[Flarescan] contract creation for 0x686f53...4DbE1 failed with status 403
+```
+**Status**: ✅ Fixed (graceful fallback)  
+**Oorzaak**: FlareScan API rate limiting or requires API key  
+**Impact**: Contract creation date not available (non-critical)  
+**Fix**: Wrapped in production-silent error handling, app continues normally  
+**Fallback**: Uses pool discovery date or current date as placeholder
+
+### **3. Prisma Studio Error**
 ```
 Error: uv_interface_addresses returned Unknown system error 1
 ```

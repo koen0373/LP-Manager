@@ -104,10 +104,13 @@ export async function getContractCreationDate(contractAddress: string): Promise<
         }
       }
   } catch (error) {
-    console.warn('[Flarescan] Blockscout contract creation failed, falling back to Flarescan API:', error);
+    // Silently fall through to fallback (Blockscout might be rate limiting)
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('[Flarescan] Blockscout contract creation failed, falling back to Flarescan API:', error);
+    }
   }
 
-  // Fallback to Flarescan API
+  // Fallback to Flarescan API (may also fail with 403)
   try {
     const creation = await getContractCreation(contractAddress);
     if (!creation?.txHash) {
@@ -133,7 +136,11 @@ export async function getContractCreationDate(contractAddress: string): Promise<
     const timestampMs = Number.parseInt(block.timestamp, 16) * 1000;
     return new Date(timestampMs);
   } catch (error) {
-    console.error('[FLARESCAN] Error fetching contract creation date:', error);
+    // Gracefully handle 403 or other API errors
+    // This is non-critical - app works fine without contract creation dates
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[FLARESCAN] Error fetching contract creation date:', error);
+    }
     return null;
   }
   }, 5 * 60 * 1000); // 5 minute cache

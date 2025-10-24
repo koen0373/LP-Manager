@@ -6,18 +6,28 @@ module.exports = {
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  darkMode: ['class'],
   theme: {
     extend: {
       colors: {
         liqui: {
-          deep: '#0B1A4A',    // primary brand color
-          mist: '#AFC4E5',    // accent color
-          ocean: '#8EB5D8',   // hover/active accent
-          night: '#0D0F13',   // base background
-          white: '#FFFFFF',   // pure white
-          success: '#3FC57D', // success states
-          card: '#15171D',    // card background
-          grid: '#1C2028',    // chart grid
+          // Brand
+          navy: '#0A1020',       // achtergrond / body
+          ink:  '#0F1324',       // kaarten
+          mist: '#B9C7DA',       // tagline / icoontjes / divider
+          aqua: '#75C4FF',       // interactieve highlight
+          // States
+          succ: '#2ECC71',
+          warn: '#F4B740',
+          err:  '#FF6B6B',
+          // Legacy (keep for backwards compat during migration)
+          deep: '#0B1A4A',
+          ocean: '#8EB5D8',
+          night: '#0D0F13',
+          white: '#FFFFFF',
+          success: '#3FC57D',
+          card: '#15171D',
+          grid: '#1C2028',
         },
         // Legacy aliases for backwards compatibility
         'liqui-bg': 'var(--liqui-bg)',
@@ -43,6 +53,9 @@ module.exports = {
         'normal': '400',
         'bold': '700',
       },
+      ringColor: ({ theme }) => ({
+        DEFAULT: theme('colors.liqui.aqua'),
+      }),
     },
   },
   plugins: [],

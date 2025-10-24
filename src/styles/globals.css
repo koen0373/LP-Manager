@@ -31,13 +31,15 @@ body {
 
 /* Liqui theme colors */
 :root {
-  --liqui-bg: #0a0a0a;
-  --liqui-card: #1a1a1a; /* Fully opaque - no transparency */
-  --liqui-subcard: #2a2a2a; /* Fully opaque */
-  --liqui-border: #3a3a3a;
+  color-scheme: dark;
+  
+  --liqui-bg: #0A1020;       /* liqui.navy */
+  --liqui-card: #0F1324;     /* liqui.ink */
+  --liqui-subcard: #2a2a2a;  /* Fully opaque */
+  --liqui-border: rgba(185, 199, 218, 0.06); /* liqui.mist 6% */
   --liqui-text: #ffffff;
-  --liqui-subtext: #888888;
-  --liqui-hover: #333333; /* Fully opaque */
+  --liqui-subtext: #B9C7DA;  /* liqui.mist */
+  --liqui-hover: rgba(117, 196, 255, 0.1); /* liqui.aqua 10% */
 }
 
 /* Hide water background on specific pages */
@@ -58,4 +60,22 @@ body.no-water-bg {
 
 .slow-pulse {
   animation: slow-pulse 2s ease-in-out infinite;
+}
+
+/* Liqui UI utility classes */
+.card {
+  background: #0F1324; /* liqui.ink */
+  border: 1px solid rgba(185, 199, 218, 0.06); /* liqui.mist 6% */
+}
+
+.divider {
+  background: rgba(185, 199, 218, 0.4); /* liqui.mist 40% */
+}
+
+.text-mist {
+  color: #B9C7DA; /* liqui.mist */
+}
+
+.text-aqua {
+  color: #75C4FF; /* liqui.aqua */
 }

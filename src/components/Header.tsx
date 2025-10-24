@@ -57,20 +57,29 @@ export default function Header({
   };
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto pt-6 pb-4">
-      <div className="flex w-full flex-col gap-4">
-        {/* Main header row */}
-        <div className="flex items-center justify-between gap-6">
-          <div className="flex items-center gap-6">
+    <header className="sticky top-0 z-40 w-full bg-transparent">
+      <div className="mx-auto w-full max-w-[1400px] px-4 sm:px-6 lg:px-8">
+        <div className="flex h-[84px] items-center justify-between">
+          {/* Brand */}
+          <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center">
               <LogoComponent />
             </Link>
+            <div className="hidden sm:flex flex-col leading-tight -mt-1">
+              <span className="text-mist text-[14px] font-medium tracking-wide">The</span>
+              <span className="text-mist text-[14px] font-medium tracking-wide">Liquidity Pool</span>
+              <span className="text-mist text-[14px] font-medium tracking-wide">Intelligence Platform</span>
+            </div>
+          </div>
+
+          {/* Navigation & Actions */}
+          <div className="flex items-center gap-3 sm:gap-6">
             <Link 
               href="/" 
               className={`text-sm transition-colors ${
                 currentPage === 'pools' 
                   ? 'font-bold text-white' 
-                  : 'font-normal text-liqui-subtext hover:text-white'
+                  : 'font-normal text-mist hover:text-white'
               }`}
             >
               My Pools
@@ -80,17 +89,15 @@ export default function Header({
               className={`text-sm transition-colors ${
                 currentPage === 'summary' 
                   ? 'font-bold text-white' 
-                  : 'font-normal text-liqui-subtext hover:text-white'
+                  : 'font-normal text-mist hover:text-white'
               }`}
             >
               Portfolio Performance
             </Link>
-          </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={handleRefresh}
-              className="flex items-center gap-2 px-3 py-2 text-liqui-subtext hover:text-white rounded-lg transition-all duration-200"
+              className="flex items-center gap-2 px-3 py-2 text-mist hover:text-white rounded-lg transition-all duration-200"
               title="Refresh data"
               type="button"
             >
@@ -116,17 +123,21 @@ export default function Header({
             />
           </div>
         </div>
+      </div>
 
-        {/* Tabs row */}
-        {showTabs && onTabChange && (
-        <div className="flex items-center justify-between mt-6">
+      {/* Divider */}
+      <div className="mx-auto h-[2px] w-full max-w-[1400px] divider" />
+
+      {/* Tabs row */}
+      {showTabs && onTabChange && (
+        <div className="mx-auto w-full max-w-[1400px] px-4 sm:px-6 lg:px-8 mt-6">
           <div className="flex space-x-1">
             <button
               onClick={() => onTabChange('active')}
               className={`px-4 py-2 rounded-lg transition-colors hover:font-bold ${
                 activeTab === 'active'
                   ? 'text-white font-bold'
-                  : 'text-liqui-subtext hover:text-liqui-text font-normal'
+                  : 'text-mist hover:text-white font-normal'
               }`}
             >
               Active ({activeCount})
@@ -136,7 +147,7 @@ export default function Header({
               className={`px-4 py-2 rounded-lg transition-colors hover:font-bold ${
                 activeTab === 'inactive'
                   ? 'text-white font-bold'
-                  : 'text-liqui-subtext hover:text-liqui-text font-normal'
+                  : 'text-mist hover:text-white font-normal'
               }`}
             >
               Inactive ({inactiveCount})
@@ -146,7 +157,7 @@ export default function Header({
               className={`px-4 py-2 rounded-lg transition-colors hover:font-bold ${
                 activeTab === 'all'
                   ? 'text-white font-bold'
-                  : 'text-liqui-subtext hover:text-liqui-text font-normal'
+                  : 'text-mist hover:text-white font-normal'
               }`}
             >
               Show All ({activeCount + inactiveCount})
@@ -154,7 +165,6 @@ export default function Header({
           </div>
         </div>
       )}
-      </div>
-    </div>
+    </header>
   );
 }

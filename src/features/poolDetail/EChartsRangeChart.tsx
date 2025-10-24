@@ -115,25 +115,84 @@ export default function EChartsRangeChart({
 
   /** Sort, normalize to [ms, price] */
   const seriesRaw = useMemo(() => {
-    const arr = [...priceHistory]
+    let arr = [...priceHistory]
       .filter(p => Number.isFinite(p.p) && p.p > 0) // Filter out invalid prices
       .map(p => [toMs(p.t), p.p] as [number, number])
       .sort((a, b) => a[0] - b[0]);
     
-    // Detect and filter outliers (prices that are >10x the median)
-    if (arr.length > 3) {
+    console.log('[OUTLIER] Initial data:', { 
+      total: arr.length, 
+      minPrice: Math.min(...arr.map(a => a[1])),
+      maxPrice: Math.max(...arr.map(a => a[1])),
+      sample: arr.slice(-5).map(a => a[1])
+    });
+    
+    if (arr.length === 0) return arr;
+    
+    const initialCount = arr.length;
+    
+    // Multiple-pass outlier detection for robust filtering
+    for (let pass = 0; pass < 3; pass++) {
       const prices = arr.map(a => a[1]).sort((a, b) => a - b);
-      const median = prices[Math.floor(prices.length / 2)];
+      const q1 = prices[Math.floor(prices.length * 0.25)];
+      const q3 = prices[Math.floor(prices.length * 0.75)];
+      const iqr = q3 - q1;
+      
+      // IQR method: filter values outside 1.5*IQR from Q1/Q3
+      const lowerBound = q1 - 1.5 * iqr;
+      const upperBound = q3 + 1.5 * iqr;
+      
       const filtered = arr.filter(([, price]) => {
-        const ratio = price / median;
-        return ratio > 0.1 && ratio < 10; // Within 10x of median
+        return price >= lowerBound && price <= upperBound;
       });
       
-      // Only use filtered data if we didn't remove everything
-      if (filtered.length > arr.length * 0.5) {
-        return filtered;
+      const removed = arr.filter(([, price]) => {
+        return price < lowerBound || price > upperBound;
+      });
+      
+      if (removed.length > 0) {
+        console.log(`[OUTLIER] Pass ${pass + 1} removed ${removed.length} points:`, {
+          bounds: [lowerBound, upperBound],
+          removedPrices: removed.map(a => a[1])
+        });
       }
+      
+      // Stop if we removed less than 10% (data is clean)
+      if (filtered.length >= arr.length * 0.9) {
+        arr = filtered;
+        break;
+      }
+      
+      // Stop if we would remove too much data
+      if (filtered.length < arr.length * 0.3) {
+        console.warn('[OUTLIER] Would remove too much data, stopping');
+        break;
+      }
+      
+      arr = filtered;
     }
+    
+    // Final sanity check: remove values >100x the median
+    if (arr.length > 1) {
+      const prices = arr.map(a => a[1]);
+      const median = prices.sort((a, b) => a - b)[Math.floor(prices.length / 2)];
+      const outliers = arr.filter(([, price]) => price >= median * 100);
+      if (outliers.length > 0) {
+        console.log('[OUTLIER] Final pass removing extreme outliers (>100x median):', {
+          median,
+          threshold: median * 100,
+          removed: outliers.map(a => a[1])
+        });
+      }
+      arr = arr.filter(([, price]) => price < median * 100);
+    }
+    
+    console.log('[OUTLIER] Final data:', { 
+      kept: arr.length, 
+      removed: initialCount - arr.length,
+      minPrice: Math.min(...arr.map(a => a[1])),
+      maxPrice: Math.max(...arr.map(a => a[1]))
+    });
     
     return arr;
   }, [priceHistory]);
@@ -186,6 +245,16 @@ export default function EChartsRangeChart({
     const dataMin = Math.min(...values);
     const dataMax = Math.max(...values);
     
+    // Debug logging
+    console.log('[CHART] Data range:', { 
+      dataMin, 
+      dataMax, 
+      minPrice, 
+      maxPrice,
+      dataPoints: values.length,
+      sampleValues: values.slice(0, 5)
+    });
+    
     // Include configured range boundaries
     const absoluteMin = Math.min(dataMin, minPrice);
     const absoluteMax = Math.max(dataMax, maxPrice);
@@ -194,10 +263,12 @@ export default function EChartsRangeChart({
     const range = absoluteMax - absoluteMin;
     const padding = range * 0.15; // 15% padding top and bottom
     
-    return [
-      Math.max(0, absoluteMin - padding),
-      absoluteMax + padding
-    ];
+    const finalYMin = Math.max(0, absoluteMin - padding);
+    const finalYMax = absoluteMax + padding;
+    
+    console.log('[CHART] Y-axis:', { finalYMin, finalYMax });
+    
+    return [finalYMin, finalYMax];
   }, [data, minPrice, maxPrice]);
 
   /** markLines: min/max (horizontal) + NOW (horizontal thick) + activity (vertical) */

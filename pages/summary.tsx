@@ -176,7 +176,7 @@ export default function SummaryPage() {
     });
 
   return (
-    <div className="min-h-screen bg-liqui-bg">
+    <div className="min-h-screen">
       <Header currentPage="summary" 
         showTabs={false}
         onWalletConnected={handleWalletConnected}

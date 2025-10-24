@@ -132,7 +132,7 @@ export function PoolPairDetail({
   }
 
   return (
-    <div className="min-h-screen bg-liqui-bg text-white">
+    <div className="min-h-screen text-white">
       <Header currentPage="pools"
         showTabs={false}
         onWalletConnected={onWalletConnected}

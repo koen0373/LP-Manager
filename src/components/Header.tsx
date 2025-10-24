@@ -45,9 +45,9 @@ export default function Header({
       <Image
         src="/icons/liqui_logo.webp"
         alt="Liqui Logo"
-        width={217}
-        height={72}
-        className="object-contain h-auto"
+        width={168}
+        height={56}
+        className="object-contain h-[56px] w-auto"
         onError={() => setLogoError(true)}
         priority
         unoptimized={true}
@@ -65,13 +65,15 @@ export default function Header({
             <Link href="/" className="flex items-center">
               <LogoComponent />
             </Link>
-            {/* Vertical divider */}
-            <div className="hidden sm:block h-12 w-[2px] bg-mist/40"></div>
-            {/* Tagline */}
-            <div className="hidden sm:flex flex-col leading-tight">
-              <span className="text-mist text-[14px] font-medium tracking-wide">The</span>
-              <span className="text-mist text-[14px] font-medium tracking-wide">Liquidity Pool</span>
-              <span className="text-mist text-[14px] font-medium tracking-wide">Intelligence Platform</span>
+            {/* Vertical divider - centered with tagline */}
+            <div className="hidden sm:flex items-center gap-4">
+              <div className="h-12 w-[2px] bg-mist/40"></div>
+              {/* Tagline */}
+              <div className="flex flex-col leading-tight">
+                <span className="text-mist text-[14px] font-medium tracking-wide">The</span>
+                <span className="text-mist text-[14px] font-medium tracking-wide">Liquidity Pool</span>
+                <span className="text-mist text-[14px] font-medium tracking-wide">Intelligence Platform</span>
+              </div>
             </div>
           </div>
 

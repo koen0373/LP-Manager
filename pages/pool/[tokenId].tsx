@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { GetServerSideProps, NextApiRequest, NextApiResponse } from 'next';
 import { PoolPairDetail } from '@/features/poolDetail/PoolPairDetail';
 import { PoolDetailVM } from '@/features/poolDetail/types';

@@ -531,6 +531,12 @@ async function parsePositionData(tokenId: number, positionData: string, factory:
 
     const rflrAmount = rflrAmountRaw ?? 0;
     const rflrUsd = rflrAmount * rflrPriceUsd;
+    
+    // Unclaimed fees (for inactive pools, fees should be 0)
+    const unclaimedFeesUsd = inRange ? rewardsUsd : 0;
+    
+    // Total rewards = unclaimed fees + RFLR (for active) or just RFLR (for inactive)
+    const totalRewardsUsd = inRange ? (unclaimedFeesUsd + rflrUsd) : rflrUsd;
 
     // Create position row with real data
     return {
@@ -540,7 +546,9 @@ async function parsePositionData(tokenId: number, positionData: string, factory:
       tickLowerLabel: formatPrice(lowerPrice),
       tickUpperLabel: formatPrice(upperPrice),
       tvlUsd,
-      rewardsUsd,
+      rewardsUsd: totalRewardsUsd,
+      unclaimedFeesUsd: unclaimedFeesUsd,
+      rflrRewardsUsd: rflrUsd,
       rflrAmount,
       rflrUsd,
       rflrPriceUsd,

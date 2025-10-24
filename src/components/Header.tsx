@@ -99,6 +99,16 @@ export default function Header({
             >
               Portfolio Performance
             </Link>
+            <Link 
+              href="/faq" 
+              className={`text-sm transition-colors ${
+                currentPage === 'faq' 
+                  ? 'font-bold text-white' 
+                  : 'font-normal text-mist hover:text-white'
+              }`}
+            >
+              FAQ
+            </Link>
 
             <button
               onClick={handleRefresh}

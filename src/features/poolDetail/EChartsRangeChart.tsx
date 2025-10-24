@@ -184,7 +184,10 @@ export default function EChartsRangeChart({
         total: arr.length, 
         minPrice: Math.min(...arr.map(a => a[1])),
         maxPrice: Math.max(...arr.map(a => a[1])),
-        lastFive: arr.slice(-5).map(([t, p]) => ({ time: new Date(t).toISOString(), price: p }))
+        lastFive: arr.slice(-5).map(([t, p]) => ({ 
+          time: Number.isFinite(t) ? new Date(t).toISOString() : String(t), 
+          price: p 
+        }))
       });
     }
     

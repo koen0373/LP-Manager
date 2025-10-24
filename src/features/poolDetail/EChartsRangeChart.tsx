@@ -1,16 +1,17 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import ReactECharts from 'echarts-for-react';
-import type { EChartsOption } from 'echarts';
 
-interface PricePoint {
-  t: number | string; // unix timestamp (can be string from API)
-  p: number; // price
+type TimeRange = '24h' | '7d' | '1m' | '1y';
+
+export interface PricePoint {
+  t: number | string; // unix seconds or ISO
+  p: number;
 }
 
-interface ActivityEvent {
-  timestamp: string; // ISO string
+export interface ActivityEvent {
+  timestamp: string; // ISO
   type: 'mint' | 'transfer' | 'increase' | 'decrease' | 'collect' | 'burn';
-  title: string;
+  title?: string;
 }
 
 interface EChartsRangeChartProps {
@@ -18,286 +19,285 @@ interface EChartsRangeChartProps {
   minPrice?: number;
   maxPrice?: number;
   currentPrice?: number;
-  height?: number;
   activity?: ActivityEvent[];
+  height?: number;
+  className?: string;
 }
 
-type TimeRange = '24h' | '7d' | '1m' | '1y' | 'all';
+/** --- Brand colors (Liqui) --- */
+const LIQUI = {
+  bg: 'transparent',
+  grid: 'rgba(255,255,255,0.06)',
+  line: '#3b82f6',     // blue for price
+  areaTop: 'rgba(59,130,246,0.28)',
+  areaBottom: 'rgba(59,130,246,0.00)',
+  mist: '#AFC4E5',     // labels/axes
+  aqua: '#75C4FF',     // highlights
+  green: '#3DEB88',    // activity lines
+  range: '#3FC57D',    // min/max lines
+  now: '#3b82f6',      // current price (thick)
+  crosshair: 'rgba(255,255,255,0.2)',
+};
+
+function toMs(t: number | string) {
+  if (typeof t === 'number') {
+    // assume unix seconds
+    return t < 10_000_000_000 ? t * 1000 : t;
+  }
+  // ISO
+  return new Date(t).getTime();
+}
+
+/** LTTB downsampling to max N points */
+function downsampleLTTB(points: [number, number][], threshold = 500) {
+  const n = points.length;
+  if (threshold >= n || threshold === 0) return points;
+  const sampled: [number, number][] = [];
+  let a = 0;
+  const bucket = (n - 2) / (threshold - 2);
+  sampled.push(points[a]);
+
+  for (let i = 0; i < threshold - 2; i++) {
+    const start = Math.floor((i + 1) * bucket) + 1;
+    const end = Math.floor((i + 2) * bucket) + 1;
+    const startClamped = Math.min(start, n - 1);
+    const endClamped = Math.min(end, n - 1);
+
+    // avg for bucket
+    let avgX = 0, avgY = 0, count = 0;
+    for (let j = startClamped; j < endClamped; j++) {
+      avgX += points[j][0];
+      avgY += points[j][1];
+      count++;
+    }
+    if (count === 0) {
+      sampled.push(points[startClamped]);
+      a = startClamped;
+      continue;
+    }
+    avgX /= count; avgY /= count;
+
+    // largest triangle
+    let maxArea = -1, maxIndex = -1;
+    for (let j = Math.floor(i * bucket) + 1; j < Math.floor((i + 1) * bucket) + 1; j++) {
+      const ax = points[a][0], ay = points[a][1];
+      const bx = points[j][0], by = points[j][1];
+      const area = Math.abs((ax - avgX) * (by - ay) - (ax - bx) * (avgY - ay));
+      if (area > maxArea) { maxArea = area; maxIndex = j; }
+    }
+    sampled.push(points[maxIndex]);
+    a = maxIndex;
+  }
+  sampled.push(points[n - 1]);
+  return sampled;
+}
+
+/** Formatters per timeframe */
+function timeFormatter(timeRange: TimeRange) {
+  return (val: number) => {
+    const d = new Date(val);
+    if (timeRange === '24h') return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (timeRange === '7d' || timeRange === '1m') return d.toLocaleDateString([], { month: '2-digit', day: '2-digit' });
+    return d.toLocaleDateString([], { month: 'short' }); // 1y
+  };
+}
 
 export default function EChartsRangeChart({
   priceHistory,
-  minPrice,
-  maxPrice,
-  currentPrice,
+  minPrice = 0,
+  maxPrice = 1,
+  currentPrice = 0.5,
   height = 400,
   activity = [],
+  className,
 }: EChartsRangeChartProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('7d');
-  const option = useMemo(() => {
-    // Calculate time filter
+
+  /** Sort, normalize to [ms, price] */
+  const seriesRaw = useMemo(() => {
+    const arr = [...priceHistory]
+      .filter(p => Number.isFinite(p.p))
+      .map(p => [toMs(p.t), p.p] as [number, number])
+      .sort((a, b) => a[0] - b[0]);
+    return arr;
+  }, [priceHistory]);
+
+  /** Compute time window */
+  const [fromTs, toTs] = useMemo(() => {
     const now = Date.now();
-    const timeFilters: Record<TimeRange, number> = {
-      '24h': now - 24 * 60 * 60 * 1000,
-      '7d': now - 7 * 24 * 60 * 60 * 1000,
-      '1m': now - 30 * 24 * 60 * 60 * 1000,
-      '1y': now - 365 * 24 * 60 * 60 * 1000,
-      'all': 0,
-    };
-    const cutoffTime = timeFilters[timeRange];
-
-    // Sort and format data with time filter
-    const allData = [...priceHistory]
-      .sort((a, b) => {
-        const timeA = typeof a.t === 'string' ? parseInt(a.t, 10) : a.t;
-        const timeB = typeof b.t === 'string' ? parseInt(b.t, 10) : b.t;
-        return timeA - timeB;
-      })
-      .map(point => {
-        const time = typeof point.t === 'string' ? parseInt(point.t, 10) : point.t;
-        return [time * 1000, point.p]; // Convert to milliseconds for ECharts
-      });
-    
-    const sortedData = allData.filter(([time]) => time >= cutoffTime);
-    
-    // Debug logging
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[EChartsRangeChart]', {
-        timeRange,
-        cutoffTime: new Date(cutoffTime).toISOString(),
-        totalPoints: allData.length,
-        filteredPoints: sortedData.length,
-        minPrice,
-        maxPrice,
-        currentPrice,
-      });
+    switch (timeRange) {
+      case '24h': return [now - 24 * 3600 * 1000, now];
+      case '7d':  return [now - 7  * 24 * 3600 * 1000, now];
+      case '1m':  return [now - 30 * 24 * 3600 * 1000, now];
+      case '1y':  return [now - 365* 24 * 3600 * 1000, now];
     }
+  }, [timeRange]);
 
-    // Filter activity events by time range
-    const filteredActivity = activity
-      .filter(event => {
-        const eventTime = new Date(event.timestamp).getTime();
-        return eventTime >= cutoffTime;
-      })
-      .map(event => ({
-        xAxis: new Date(event.timestamp).getTime(),
-        lineStyle: { color: 'rgba(61, 235, 136, 0.6)', type: 'solid' as const, width: 1 },
-        label: {
-          show: false, // Only show on hover
-        },
+  /** Filter to window (fallback if empty) */
+  const filtered = useMemo(() => {
+    const f = seriesRaw.filter(([t]) => t >= fromTs && t <= toTs);
+    if (f.length > 0) return f;
+    // Edge-case: no data → minimal fallback based on current/min/max over 24h
+    const now = Date.now();
+    return [
+      [now - 24 * 3600 * 1000, Math.min(currentPrice, minPrice)],
+      [now - 12 * 3600 * 1000, currentPrice],
+      [now, Math.max(currentPrice, maxPrice)],
+    ];
+  }, [seriesRaw, fromTs, toTs, currentPrice, minPrice, maxPrice]);
+
+  /** Downsample for performance */
+  const data = useMemo(() => downsampleLTTB(filtered, 500), [filtered]);
+
+  /** Activity vertical lines in window */
+  const activityLines = useMemo(() => {
+    const lines = activity
+      .map(a => toMs(a.timestamp))
+      .filter(ts => ts >= fromTs && ts <= toTs)
+      .map(ts => ({
+        xAxis: ts,
+        lineStyle: { color: LIQUI.green, width: 1, type: 'solid' as const, opacity: 0.6 },
       }));
+    return lines;
+  }, [activity, fromTs, toTs]);
 
-    // Calculate Y-axis range to scale min/max prices to 25%/75%
-    let yMin: number | undefined;
-    let yMax: number | undefined;
-    
-    if (minPrice !== undefined && maxPrice !== undefined && minPrice > 0 && maxPrice > 0) {
-      const range = maxPrice - minPrice;
-      yMin = Math.max(0, minPrice - range * 1.0); // More padding below (min at ~33%)
-      yMax = maxPrice + range * 1.0; // More padding above (max at ~66%)
-    } else {
-      // Auto-scale based on data if no range provided
-      yMin = undefined;
-      yMax = undefined;
-    }
+  /** Y padding so min/max sit visually centered-ish */
+  const [yMin, yMax] = useMemo(() => {
+    const values = data.map(d => d[1]);
+    if (values.length === 0) return [0, 1];
+    const localMin = Math.min(...values, minPrice);
+    const localMax = Math.max(...values, maxPrice);
+    const r = Math.max(1e-9, localMax - localMin);
+    return [Math.max(0, Math.min(localMin, minPrice) - r * 1.0), Math.max(localMax, maxPrice) + r * 1.0];
+  }, [data, minPrice, maxPrice]);
 
-    return {
-      backgroundColor: 'transparent',
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: {
-          type: 'cross',
-          lineStyle: {
-            color: 'rgba(255,255,255,0.2)',
-          },
-        },
-        backgroundColor: 'rgba(10, 10, 10, 0.95)',
-        borderColor: 'rgba(255,255,255,0.1)',
-        textStyle: {
-          color: '#fff',
-          fontFamily: 'Quicksand, sans-serif',
-        },
-        formatter: (params: unknown) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const typedParams = params as any;
-          if (!typedParams || !typedParams[0]) return '';
-          const date = new Date(typedParams[0].value[0]);
-          const price = typedParams[0].value[1].toFixed(6);
-          
-          // Use UTC to avoid hydration issues
-          const dateStr = `${date.getUTCDate()}/${date.getUTCMonth() + 1}/${date.getUTCFullYear()}`;
-          const timeStr = `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`;
-          
-          return `
-            <div style="font-size: 12px;">
-              <div style="color: #9CA3AF;">${dateStr} ${timeStr}</div>
-              <div style="margin-top: 4px;"><strong>Price: ${price}</strong></div>
-            </div>
-          `;
-        },
+  /** markLines: min/max (horizontal) + NOW (horizontal thick) + activity (vertical) */
+  const markLines = useMemo(() => {
+    const hLines = [
+      {
+        yAxis: minPrice,
+        lineStyle: { color: LIQUI.range, type: 'dashed' as const, width: 1.5 },
+        label: { formatter: 'Min', position: 'insideEndRight' as const, color: LIQUI.mist },
       },
-      grid: {
-        left: '3%',
-        right: '3%',
-        top: '10%',
-        bottom: '15%',
-        containLabel: true,
+      {
+        yAxis: maxPrice,
+        lineStyle: { color: LIQUI.range, type: 'dashed' as const, width: 1.5 },
+        label: { formatter: 'Max', position: 'insideEndRight' as const, color: LIQUI.mist },
       },
-      xAxis: {
-        type: 'time',
-        axisLine: {
-          lineStyle: {
-            color: 'rgba(255,255,255,0.1)',
-          },
-        },
-        axisLabel: {
-          color: '#9CA3AF',
-          fontFamily: 'Quicksand, sans-serif',
-          fontSize: 11,
-          formatter: (value: number) => {
-            const date = new Date(value);
-            return `${date.getMonth() + 1}/${date.getDate()}`;
-          },
-        },
-        splitLine: {
-          show: true,
-          lineStyle: {
-            color: 'rgba(255,255,255,0.03)',
-          },
-        },
+      {
+        yAxis: currentPrice,
+        lineStyle: { color: LIQUI.now, type: 'solid' as const, width: 2.5 },
+        label: { formatter: 'Now', position: 'insideEndRight' as const, color: LIQUI.mist, fontWeight: 'bold' as const },
       },
-      yAxis: {
-        type: 'value',
-        min: yMin,
-        max: yMax,
-        axisLine: {
-          show: false,
-        },
-        axisLabel: {
-          color: '#9CA3AF',
-          fontFamily: 'Quicksand, sans-serif',
-          fontSize: 11,
-          formatter: (value: number) => value.toFixed(4),
-        },
-        splitLine: {
-          lineStyle: {
-            color: 'rgba(255,255,255,0.06)',
-          },
-        },
+    ];
+    return [...hLines, ...activityLines];
+  }, [minPrice, maxPrice, currentPrice, activityLines]);
+
+  const xLabelFormatter = useMemo(() => timeFormatter(timeRange), [timeRange]);
+
+  const option = useMemo(() => ({
+    backgroundColor: LIQUI.bg,
+    animation: true,
+    grid: { left: 32, right: 24, top: 16, bottom: 28 },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'cross',
+        crossStyle: { color: LIQUI.crosshair },
+        lineStyle: { color: LIQUI.crosshair },
       },
-      series: [
-        // Main price line with all markLines
-        {
-          name: 'Price',
-          type: 'line',
-          data: sortedData,
-          smooth: true,
-          lineStyle: {
-            color: '#3b82f6',
-            width: 2,
-          },
-          areaStyle: {
-            color: {
-              type: 'linear',
-              x: 0,
-              y: 0,
-              x2: 0,
-              y2: 1,
-              colorStops: [
-                { offset: 0, color: 'rgba(59, 130, 246, 0.35)' },
-                { offset: 1, color: 'rgba(59, 130, 246, 0)' },
-              ],
-            },
-          },
-          symbol: 'none',
-          emphasis: {
-            focus: 'series',
-            lineStyle: {
-              width: 3,
-            },
-          },
-          markLine: {
-            symbol: 'none',
-            silent: false,
-            data: [
-              // Min price line
-              ...(minPrice !== undefined
-                ? [
-                    {
-                      yAxis: minPrice,
-                      lineStyle: {
-                        color: '#16a34a',
-                        type: 'dashed' as const,
-                        width: 1,
-                      },
-                      label: {
-                        formatter: 'Min',
-                        color: '#16a34a',
-                        fontFamily: 'Quicksand, sans-serif',
-                        fontSize: 11,
-                        position: 'end' as const,
-                      },
-                    },
-                  ]
-                : []),
-              // Max price line
-              ...(maxPrice !== undefined
-                ? [
-                    {
-                      yAxis: maxPrice,
-                      lineStyle: {
-                        color: '#16a34a',
-                        type: 'dashed' as const,
-                        width: 1,
-                      },
-                      label: {
-                        formatter: 'Max',
-                        color: '#16a34a',
-                        fontFamily: 'Quicksand, sans-serif',
-                        fontSize: 11,
-                        position: 'end' as const,
-                      },
-                    },
-                  ]
-                : []),
-              // Current price line
-              ...(currentPrice !== undefined
-                ? [
-                    {
-                      yAxis: currentPrice,
-                      lineStyle: {
-                        color: '#3b82f6',
-                        type: 'solid' as const,
-                        width: 2,
-                      },
-                      label: {
-                        formatter: 'Now',
-                        color: '#3b82f6',
-                        fontFamily: 'Quicksand, sans-serif',
-                        fontSize: 11,
-                        fontWeight: 'bold',
-                        position: 'end' as const,
-                      },
-                    },
-                  ]
-                : []),
-              // Activity event markers (vertical lines)
-              ...filteredActivity,
+      backgroundColor: '#0B1A4A',
+      borderColor: '#173064',
+      borderWidth: 1,
+      textStyle: { color: '#FFFFFF' },
+      valueFormatter: (v: unknown) => (typeof v === 'number' ? v.toFixed(6) : v),
+      formatter: (params: unknown) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const p = Array.isArray(params) ? params[0] : (params as any);
+        const ts = p?.axisValue ?? p?.data?.[0];
+        const price = p?.data?.[1];
+        const dt = new Date(ts);
+        const stamp = `${dt.toLocaleDateString()} ${dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        return `${stamp}<br/>Price: ${Number(price).toFixed(6)}`;
+      },
+    },
+    xAxis: {
+      type: 'time',
+      axisLabel: { color: LIQUI.mist, formatter: (val: number) => xLabelFormatter(val) },
+      axisLine: { lineStyle: { color: LIQUI.grid } },
+      splitLine: { show: true, lineStyle: { color: 'rgba(255,255,255,0.03)' } },
+      min: fromTs,
+      max: toTs,
+    },
+    yAxis: {
+      type: 'value',
+      min: yMin,
+      max: yMax,
+      axisLabel: { color: LIQUI.mist },
+      axisLine: { lineStyle: { color: LIQUI.grid } },
+      splitLine: { show: true, lineStyle: { color: LIQUI.grid } },
+    },
+    series: [
+      {
+        name: 'Price',
+        type: 'line',
+        showSymbol: false,
+        smooth: true,
+        lineStyle: { color: LIQUI.line, width: 2 },
+        areaStyle: {
+          color: {
+            type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: LIQUI.areaTop },
+              { offset: 1, color: LIQUI.areaBottom },
             ],
           },
         },
-      ],
-    };
-  }, [priceHistory, minPrice, maxPrice, currentPrice, timeRange, activity]);
+        data,
+        markLine: {
+          symbol: 'none',
+          silent: true,
+          precision: 6,
+          label: { color: LIQUI.mist },
+          data: markLines,
+        },
+      },
+    ],
+  }), [data, fromTs, toTs, xLabelFormatter, yMin, yMax, markLines]);
 
-  const timeRangeButtons: { label: string; value: TimeRange }[] = [
-    { label: '24h', value: '24h' },
-    { label: '7D', value: '7d' },
-    { label: '1M', value: '1m' },
-    { label: '1Y', value: '1y' },
-  ];
+  /** Time range buttons */
+  const Button = useCallback(({ label, value }: { label: string; value: TimeRange }) => {
+    const active = timeRange === value;
+    return (
+      <button
+        onClick={() => setTimeRange(value)}
+        className={`px-3 py-1.5 rounded-md text-sm transition
+          ${active ? 'bg-liqui-aqua text-white' : 'bg-liqui-card-hover text-liqui-subtext hover:text-white'}`}
+      >
+        {label}
+      </button>
+    );
+  }, [timeRange]);
+
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[EChartsRangeChart]', {
+      timeRange,
+      fromTs: new Date(fromTs).toISOString(),
+      toTs: new Date(toTs).toISOString(),
+      totalRawPoints: seriesRaw.length,
+      filteredPoints: filtered.length,
+      downsampledPoints: data.length,
+      minPrice,
+      maxPrice,
+      currentPrice,
+      yMin,
+      yMax,
+    });
+  }
 
   return (
-    <div className="bg-liqui-card rounded-lg border border-liqui-border p-6">
+    <div className={`bg-liqui-card rounded-lg border border-liqui-border p-6 ${className || ''}`}>
       <div className="mb-4 flex justify-between items-start">
         <div>
           <h2 className="text-lg font-bold text-white">Range & Price</h2>
@@ -305,32 +305,19 @@ export default function EChartsRangeChart({
         </div>
         {/* Time Range Selector */}
         <div className="flex gap-1">
-          {timeRangeButtons.map(({ label, value }) => (
-            <button
-              key={value}
-              onClick={() => setTimeRange(value)}
-              className={`
-                px-3 py-1.5 text-xs font-medium rounded transition-all
-                ${timeRange === value
-                  ? 'bg-liqui-aqua text-white'
-                  : 'bg-liqui-card-hover text-liqui-subtext hover:text-white'
-                }
-              `}
-            >
-              {label}
-            </button>
-          ))}
+          <Button label="24h" value="24h" />
+          <Button label="7D"  value="7d"  />
+          <Button label="1M"  value="1m"  />
+          <Button label="1Y"  value="1y"  />
         </div>
       </div>
+
       <ReactECharts
-        key={timeRange}
-        option={option as EChartsOption}
-        style={{ height: `${height}px`, width: '100%' }}
-        opts={{ renderer: 'canvas' }}
-        notMerge={true}
+        option={option}
+        notMerge
         lazyUpdate={false}
+        style={{ height: `${height}px`, width: '100%' }}
       />
     </div>
   );
 }
-

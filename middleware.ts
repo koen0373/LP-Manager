@@ -22,27 +22,33 @@ export function middleware(req: NextRequest) {
   // Store nonce for _document to use with inline scripts
   res.headers.set('x-nonce', nonce);
 
-  // CSP without strict-dynamic:
-  // - Inline scripts require nonce (secure)
-  // - Self-hosted external scripts (/_next/static/...) allowed without nonce (needed for Next.js)
-  // - No strict-dynamic = no accidental blocking of Next.js scripts
-  const csp = [
-    "default-src 'self'",
-    // Inline scripts only with nonce, external scripts from own domain allowed
-    `script-src 'self' 'nonce-${nonce}'`,
-    // Limit connect-src; external calls moved to server-side API routes
-    "connect-src 'self'",
-    // Fonts/styles for Google Fonts (adjust or remove if not used)
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com data:",
-    // Images and workers
-    "img-src 'self' data: blob:",
-    "worker-src 'self' blob:",
-    // Additional hardening
-    "frame-ancestors 'self'",
-    "base-uri 'self'",
-    "form-action 'self'",
-  ].join('; ');
+  // Development mode: relaxed CSP for React Fast Refresh
+  const isDev = process.env.NODE_ENV !== 'production';
+  
+  const csp = isDev
+    ? [
+        "default-src 'self'",
+        // Dev mode: allow unsafe-eval for React Fast Refresh
+        `script-src 'self' 'unsafe-eval' 'nonce-${nonce}'`,
+        "connect-src 'self' ws: wss:",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "font-src 'self' https://fonts.gstatic.com data:",
+        "img-src 'self' data: blob:",
+        "worker-src 'self' blob:",
+      ].join('; ')
+    : [
+        "default-src 'self'",
+        // Production: strict CSP
+        `script-src 'self' 'nonce-${nonce}'`,
+        "connect-src 'self'",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "font-src 'self' https://fonts.gstatic.com data:",
+        "img-src 'self' data: blob:",
+        "worker-src 'self' blob:",
+        "frame-ancestors 'self'",
+        "base-uri 'self'",
+        "form-action 'self'",
+      ].join('; ');
 
   res.headers.set('Content-Security-Policy', csp);
   res.headers.set('X-Content-Type-Options', 'nosniff');

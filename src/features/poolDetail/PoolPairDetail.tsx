@@ -427,7 +427,9 @@ export function PoolPairDetail({
               'text-red-400'
             }`}>
               {vm.il.ilPct !== undefined && isFinite(vm.il.ilPct) 
-                ? `${vm.il.ilPct >= 0 ? '+' : ''}${vm.il.ilPct.toFixed(2)}%` 
+                ? vm.il.ilPct >= 0 
+                  ? `No loss (+${vm.il.ilPct.toFixed(2)}%)`
+                  : `${vm.il.ilPct.toFixed(2)}%`
                 : '--%'}
             </div>
             <div className="text-liqui-subtext text-xs mt-1">

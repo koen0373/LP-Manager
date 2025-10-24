@@ -2,7 +2,7 @@
 FROM node:20-alpine AS builder
 
 # Cache buster - change this value to force rebuild
-ARG CACHE_BUST=v0.1.2
+ARG CACHE_BUST=v0.1.3
 
 WORKDIR /app
 

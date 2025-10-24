@@ -393,7 +393,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
         // If still no data, create a minimal chart with current price + range
         if (history.length === 0 && lowerPrice > 0 && currentPrice > 0) {
-          console.log('[API] No historical data, creating fallback chart with range visualization');
+          console.log('[API] No historical data, creating fallback chart with range visualization', {
+            lowerPrice,
+            upperPrice,
+            currentPrice,
+            token0: position.token0.symbol,
+            token1: position.token1.symbol,
+            currentTick,
+            price0Per1,
+          });
           const now = Math.floor(Date.now() / 1000);
           
           // Create a visual representation of the price range over 24h
@@ -410,10 +418,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             { t: now.toString(), p: currentPrice },                      // Now: current
           ].filter(p => p.p > 0 && !isNaN(p.p)); // Safety: remove invalid points
           
-          console.log(`[API] Created ${history.length} fallback price points`);
+          console.log(`[API] Created ${history.length} fallback price points for ${position.token0.symbol}/${position.token1.symbol}`);
         } else if (history.length === 0) {
           console.warn('[API] Cannot create fallback chart: missing price data', { lowerPrice, currentPrice });
         }
+        
+        // Debug: Log final priceHistory
+        console.log(`[API] Final priceHistory for ${position.token0.symbol}/${position.token1.symbol}:`, {
+          points: history.length,
+          first: history[0],
+          last: history[history.length - 1],
+          currentPrice,
+          lowerPrice,
+          upperPrice,
+        });
         
         return history;
       })()

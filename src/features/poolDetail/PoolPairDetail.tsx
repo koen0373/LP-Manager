@@ -287,17 +287,21 @@ export function PoolPairDetail({
                     </button>
                   </div>
                 </div>
-                <div className="pl-4 space-y-1 text-sm">
-                  {vm.rewards.feesToken0 > 0 && (
-                    <div className="text-liqui-subtext">
-                      {formatAmount(vm.rewards.feesToken0)} {vm.token0?.symbol}
-                    </div>
-                  )}
-                  {vm.rewards.feesToken1 > 0 && (
-                    <div className="text-liqui-subtext">
-                      {formatAmount(vm.rewards.feesToken1)} {vm.token1?.symbol}
-                    </div>
-                  )}
+                {/* Token amounts aligned with Claim button */}
+                <div className="flex justify-between items-start">
+                  <div className="pl-4 space-y-1 text-sm">
+                    {vm.rewards.feesToken0 > 0 && (
+                      <div className="text-liqui-subtext">
+                        {formatAmount(vm.rewards.feesToken0)} {vm.token0?.symbol}
+                      </div>
+                    )}
+                    {vm.rewards.feesToken1 > 0 && (
+                      <div className="text-liqui-subtext">
+                        {formatAmount(vm.rewards.feesToken1)} {vm.token1?.symbol}
+                      </div>
+                    )}
+                  </div>
+                  <div className="w-[80px]">{/* Spacer to align with button */}</div>
                 </div>
               </div>
               

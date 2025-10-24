@@ -392,19 +392,27 @@ export function PoolPairDetail({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <div className="text-liqui-subtext text-xs mb-1">24h</div>
-                <div className="text-white font-medium">--%</div>
+                <div className="text-white font-medium">
+                  {vm.tvl.apy24h !== undefined ? `${vm.tvl.apy24h.toFixed(2)}%` : '--%'}
+                </div>
               </div>
               <div>
                 <div className="text-liqui-subtext text-xs mb-1">7d</div>
-                <div className="text-white font-medium">--%</div>
+                <div className="text-white font-medium">
+                  {vm.tvl.apy7d !== undefined ? `${vm.tvl.apy7d.toFixed(2)}%` : '--%'}
+                </div>
               </div>
               <div>
                 <div className="text-liqui-subtext text-xs mb-1">1M</div>
-                <div className="text-white font-medium">--%</div>
+                <div className="text-white font-medium">
+                  {vm.tvl.apy1m !== undefined ? `${vm.tvl.apy1m.toFixed(2)}%` : '--%'}
+                </div>
               </div>
               <div>
-                <div className="text-liqui-subtext text-xs mb-1">1Y</div>
-                <div className="text-white font-medium">--%</div>
+                <div className="text-liqui-subtext text-xs mb-1">All-Time</div>
+                <div className="text-white font-medium">
+                  {vm.tvl.apyAllTime !== undefined ? `${vm.tvl.apyAllTime.toFixed(2)}%` : '--%'}
+                </div>
               </div>
             </div>
           </div>
@@ -412,8 +420,21 @@ export function PoolPairDetail({
           {/* Row 5: IL Loss */}
           <div>
             <div className="text-liqui-subtext text-sm mb-1">Impermanent Loss</div>
-            <div className="text-red-400 text-lg font-medium">--%</div>
-            <div className="text-liqui-subtext text-xs mt-1">Compared to holding tokens</div>
+            <div className={`text-lg font-medium ${
+              vm.il.ilPct >= 0 ? 'text-green-400' : 
+              vm.il.ilPct > -1 ? 'text-yellow-400' : 
+              vm.il.ilPct > -5 ? 'text-orange-400' : 
+              'text-red-400'
+            }`}>
+              {vm.il.ilPct !== undefined && isFinite(vm.il.ilPct) 
+                ? `${vm.il.ilPct >= 0 ? '+' : ''}${vm.il.ilPct.toFixed(2)}%` 
+                : '--%'}
+            </div>
+            <div className="text-liqui-subtext text-xs mt-1">
+              {vm.il.hodlValueUsd > 0 
+                ? `Hold value: ${formatUsd(vm.il.hodlValueUsd)} vs LP value: ${formatUsd(vm.il.lpValueUsd)}`
+                : 'Compared to holding tokens'}
+            </div>
           </div>
         </div>
 

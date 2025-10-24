@@ -10,7 +10,12 @@ export type TVLView = {
   amount0: number; 
   amount1: number; 
   feeApr: number; 
-  rflrApr?: number; 
+  rflrApr?: number;
+  apy24h?: number;
+  apy7d?: number;
+  apy1m?: number;
+  apy1y?: number;
+  apyAllTime?: number;
 };
 
 export type ILView = { 

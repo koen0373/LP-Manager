@@ -36,7 +36,7 @@ const toNumber = (value: string | number): number => {
 };
 
 export async function fetchLogsViaBlockscout(params: BlockscoutLogsParams): Promise<ExplorerLog[]> {
-  const { address, fromBlock, toBlock, topics = [], chunkSize = 3000 } = params;
+  const { address, fromBlock, toBlock, topics = [], chunkSize = 100 } = params; // Reduced from 3000 to 100 for Blockscout rate limit
   const collected: ExplorerLog[] = [];
 
   for (let start = fromBlock; start <= toBlock; start += chunkSize + 1) {

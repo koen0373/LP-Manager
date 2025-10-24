@@ -48,7 +48,7 @@ export interface RpcLogsParams {
 }
 
 export async function fetchLogsViaRpc(params: RpcLogsParams): Promise<ExplorerLog[]> {
-  const { address, fromBlock, toBlock, topics = [], chunkSize = 3000 } = params;
+  const { address, fromBlock, toBlock, topics = [], chunkSize = 30 } = params; // Reduced from 3000 to 30 (RPC limit)
   const collected: ExplorerLog[] = [];
 
   for (let start = fromBlock; start <= toBlock; start += chunkSize + 1) {

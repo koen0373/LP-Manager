@@ -219,8 +219,9 @@ export default function SummaryPage() {
             <div className="text-white text-2xl font-bold mb-1">
               {formatUsd(totals.rewardsUsd)}
             </div>
-            <div className="text-liqui-subtext text-xs">
-              RFLR rewards
+            <div className="text-liqui-subtext text-xs space-y-1">
+              <div>Unclaimed fees: {formatUsd(totals.unclaimedFeesUsd || 0)}</div>
+              <div>RFLR: {(totals.rflrAmount || 0).toFixed(2)} ({formatUsd(totals.rflrUsd || 0)})</div>
             </div>
           </div>
 

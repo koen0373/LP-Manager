@@ -7,6 +7,9 @@ export interface WalletSummaryResponse {
     tvlUsd: number;
     feesRealizedUsd: number;
     rewardsUsd: number;
+    unclaimedFeesUsd: number;
+    rflrAmount: number;
+    rflrUsd: number;
     capitalInvestedUsd: number;
     roiPct: number;
   };

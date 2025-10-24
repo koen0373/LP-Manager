@@ -251,6 +251,9 @@ async function parsePositionData(
     // Unclaimed fees are separate from RFLR rewards
     // For inactive pools, fees should be 0 as they don't generate swap fees
     const unclaimedFeesUsd = inRange ? rewardsUsd : 0;
+    
+    // Total rewards = unclaimed fees + RFLR (for active) or just RFLR (for inactive)
+    const totalRewardsUsd = inRange ? (unclaimedFeesUsd + rflrUsd) : rflrUsd;
 
     // Create position row
     return {
@@ -260,7 +263,9 @@ async function parsePositionData(
       tickLowerLabel: formatPrice(lowerPrice),
       tickUpperLabel: formatPrice(upperPrice),
       tvlUsd,
-      rewardsUsd: unclaimedFeesUsd,
+      rewardsUsd: totalRewardsUsd,
+      unclaimedFeesUsd: unclaimedFeesUsd,
+      rflrRewardsUsd: rflrUsd,
       rflrAmount,
       rflrUsd,
       rflrPriceUsd,

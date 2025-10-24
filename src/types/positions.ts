@@ -28,6 +28,8 @@ export interface PositionRow {
   tickUpperLabel: string;
   tvlUsd: number;
   rewardsUsd: number;
+  unclaimedFeesUsd: number;
+  rflrRewardsUsd: number;
   rflrAmount: number;
   rflrUsd: number;
   rflrPriceUsd: number;

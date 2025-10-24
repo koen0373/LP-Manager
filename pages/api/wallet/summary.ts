@@ -11,6 +11,9 @@ interface WalletSummaryResponse {
     tvlUsd: number;
     feesRealizedUsd: number;
     rewardsUsd: number;
+    unclaimedFeesUsd: number;
+    rflrAmount: number;
+    rflrUsd: number;
     capitalInvestedUsd: number;
     roiPct: number;
   };
@@ -81,14 +84,28 @@ export default async function handler(
     console.log(`[WALLET_SUMMARY] Fetching capital flows for ${address}`);
     const capitalStats = await getCapitalFlowStats(address);
 
-    // Step 4: Get COLLECT events for realized fees
-    console.log(`[WALLET_SUMMARY] Fetching COLLECT events for ${address}`);
-    const collectEvents = await getPositionEventsByWallet(address, {
-      eventTypes: [PositionEventType.COLLECT],
-      limit: 1000, // Get more to ensure we capture all
+    // Step 4: Get COLLECT and DECREASE events for realized fees filtering
+    console.log(`[WALLET_SUMMARY] Fetching COLLECT and DECREASE events for ${address}`);
+    const allEvents = await getPositionEventsByWallet(address, {
+      eventTypes: [PositionEventType.COLLECT, PositionEventType.DECREASE],
+      limit: 2000, // Get more to ensure we capture all
     });
 
-    // Calculate total realized fees from COLLECT events
+    // Filter out COLLECT events that are part of DECREASE transactions
+    // (Uniswap V3 auto-collects fees when decreasing liquidity)
+    const decreaseTxHashes = new Set(
+      allEvents
+        .filter((e) => e.eventType === PositionEventType.DECREASE)
+        .map((e) => e.txHash)
+    );
+
+    const collectEvents = allEvents.filter(
+      (event) => 
+        event.eventType === PositionEventType.COLLECT &&
+        !decreaseTxHashes.has(event.txHash)
+    );
+
+    // Calculate total realized fees from COLLECT events (excluding auto-collects)
     const feesRealizedUsd = collectEvents.reduce(
       (sum, event) => sum + (event.usdValue ?? 0),
       0
@@ -104,11 +121,26 @@ export default async function handler(
     // Calculate totals from live positions
     const totalTvlUsd = livePositions.reduce((sum, pos) => sum + pos.tvlUsd, 0);
 
-    // Calculate total rewards (RFLR + unclaimed fees) from positions
-    const totalRewardsUsd = livePositions.reduce(
+    // Calculate unclaimed fees (using unclaimedFeesUsd which was set by pmFallback)
+    const totalUnclaimedFeesUsd = livePositions.reduce(
+      (sum, pos) => sum + (pos.unclaimedFeesUsd || 0),
+      0
+    );
+
+    // Calculate total RFLR rewards
+    const totalRflrUsd = livePositions.reduce(
       (sum, pos) => sum + (pos.rflrUsd || 0),
       0
     );
+
+    // Calculate total RFLR amount
+    const totalRflrAmount = livePositions.reduce(
+      (sum, pos) => sum + (pos.rflrAmount || 0),
+      0
+    );
+
+    // Total rewards = unclaimed fees + RFLR rewards
+    const totalRewardsUsd = totalUnclaimedFeesUsd + totalRflrUsd;
 
     // Calculate capital invested
     // If we have capital flow data, use it. Otherwise, estimate from TVL + realized fees
@@ -209,6 +241,9 @@ export default async function handler(
         tvlUsd: totalTvlUsd,
         feesRealizedUsd,
         rewardsUsd: totalRewardsUsd,
+        unclaimedFeesUsd: totalUnclaimedFeesUsd,
+        rflrAmount: totalRflrAmount,
+        rflrUsd: totalRflrUsd,
         capitalInvestedUsd,
         roiPct,
       },

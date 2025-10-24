@@ -57,7 +57,7 @@ export default function Header({
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-transparent">
+    <header className="sticky top-0 z-40 w-full bg-liqui-bg/95 backdrop-blur-sm border-b border-liqui-border">
       <div className="mx-auto w-full max-w-[1400px] px-4 sm:px-6 lg:px-8">
         <div className="flex h-[84px] items-center justify-between">
           {/* Brand */}

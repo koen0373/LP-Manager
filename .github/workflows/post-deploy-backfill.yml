@@ -1,9 +1,9 @@
 name: Post-Deploy Backfill
 
 on:
-  workflow_dispatch:  # Allow manual triggering
-  push:
-    branches: [ main ]
+  workflow_dispatch:  # Allow manual triggering only (disabled on push)
+  # push:
+  #   branches: [ main ]
 
 jobs:
   backfill:

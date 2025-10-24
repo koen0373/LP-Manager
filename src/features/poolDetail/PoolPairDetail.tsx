@@ -388,6 +388,10 @@ export function PoolPairDetail({
               currentPrice={vm.range.current}
               activity={vm.activity}
               timeRange={timeRange}
+              poolAddress={vm.poolAddress}
+              decimals0={vm.token0?.decimals}
+              decimals1={vm.token1?.decimals}
+              enableLiveUpdates={true}
             />
           </div>
         </div>

@@ -80,8 +80,8 @@ export type PoolDetailVM = {
   feeTierBps: number; 
   createdAt: string;
   poolAddress?: string;
-  token0?: { symbol: string; priceUsd: number };
-  token1?: { symbol: string; priceUsd: number };
+  token0?: { symbol: string; priceUsd: number; decimals: number };
+  token1?: { symbol: string; priceUsd: number; decimals: number };
   range: RangeView; 
   tvl: TVLView; 
   il: ILView; 

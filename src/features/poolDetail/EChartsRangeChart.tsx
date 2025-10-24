@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import ReactECharts from 'echarts-for-react';
 import type { EChartsOption } from 'echarts';
 import { TimeRange, getWindowMs, normalizeTimestamp, getXAxisFormatter } from '@/lib/utils/time';
+import { getLivePoolPrice } from '@/lib/onchain/readers';
 
 interface PricePoint {
   t: number | string;
@@ -21,6 +22,10 @@ interface EChartsRangeChartProps {
   currentPrice?: number;
   activity?: ActivityEvent[];
   timeRange: TimeRange;
+  poolAddress?: string;
+  decimals0?: number;
+  decimals1?: number;
+  enableLiveUpdates?: boolean;
   height?: number;
 }
 
@@ -31,8 +36,46 @@ export default function EChartsRangeChart({
   currentPrice = 0.5,
   activity = [],
   timeRange,
+  poolAddress,
+  decimals0 = 18,
+  decimals1 = 18,
+  enableLiveUpdates = false,
   height = 400,
 }: EChartsRangeChartProps) {
+  const chartRef = useRef<ReactECharts | null>(null);
+  const [livePrice, setLivePrice] = useState<number | null>(null);
+
+  // Live price polling (every 30s)
+  useEffect(() => {
+    if (!enableLiveUpdates || !poolAddress || typeof decimals0 !== 'number' || typeof decimals1 !== 'number') {
+      return;
+    }
+
+    const pollPrice = async () => {
+      try {
+        const price = await getLivePoolPrice(poolAddress as `0x${string}`, decimals0, decimals1);
+        if (price !== null && Number.isFinite(price) && price > 0) {
+          setLivePrice(price);
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('[CHART] Failed to poll live price:', error);
+        }
+      }
+    };
+
+    // Initial fetch
+    pollPrice();
+
+    // Poll every 30s
+    const interval = setInterval(pollPrice, 30_000);
+    return () => clearInterval(interval);
+  }, [poolAddress, decimals0, decimals1, enableLiveUpdates]);
+
+  // Use live price if available, otherwise fall back to currentPrice prop
+  const effectiveCurrentPrice = useMemo(() => {
+    return livePrice !== null ? livePrice : currentPrice;
+  }, [livePrice, currentPrice]);
   // 1. Normalize and sort all price data
   const normalizedHistory = useMemo(() => {
     const normalized = priceHistory
@@ -90,19 +133,46 @@ export default function EChartsRangeChart({
   const cleanedData = useMemo(() => {
     if (filteredData.length === 0) return [];
 
+    // Calculate median for outlier detection
+    const prices = filteredData.map(p => p.p).sort((a, b) => a - b);
+    const median = prices[Math.floor(prices.length / 2)] || minPrice || 1;
+    const maxBand = Math.max(maxPrice * 5, median * 10);
+    const minBand = Math.max(0.00001, minPrice / 5, median * 0.1);
+
     const cleaned: Array<[number, number]> = [];
-    let lastValid = filteredData[0].p;
+    let lastValid = filteredData[0]?.p || median;
+    let outlierCount = 0;
 
     for (const point of filteredData) {
       const { tMs, p } = point;
 
-      // Skip outliers: > 50% deviation from previous OR > 3x minPrice OR > 2x last valid
-      const maxAllowed = Math.max(minPrice * 3, lastValid * 2);
+      // Multi-stage outlier filter
+      // 1) Band clamp: price must be within [minBand, maxBand]
+      if (p < minBand || p > maxBand) {
+        outlierCount++;
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn(`[OUTLIER] Price ${p.toFixed(6)} outside band [${minBand.toFixed(6)}, ${maxBand.toFixed(6)}]`);
+        }
+        continue;
+      }
+
+      // 2) Jump detection: >50% deviation from previous valid point
+      const maxAllowed = lastValid * 1.5;
       const minAllowed = lastValid * 0.5;
 
       if (p > maxAllowed || p < minAllowed) {
+        outlierCount++;
         if (process.env.NODE_ENV !== 'production') {
-          console.warn(`[CHART] Outlier filtered: ${p} (last: ${lastValid}, range: ${minAllowed}-${maxAllowed})`);
+          console.warn(`[OUTLIER] Jump detected: ${p.toFixed(6)} (last: ${lastValid.toFixed(6)}, allowed: ${minAllowed.toFixed(6)}-${maxAllowed.toFixed(6)})`);
+        }
+        continue;
+      }
+
+      // 3) Median deviation: >10x median is suspicious
+      if (p > median * 10 || p < median * 0.1) {
+        outlierCount++;
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn(`[OUTLIER] Median deviation: ${p.toFixed(6)} (median: ${median.toFixed(6)})`);
         }
         continue;
       }
@@ -111,16 +181,24 @@ export default function EChartsRangeChart({
       lastValid = p;
     }
 
-    // Warn if we dropped > 30%
-    const dropRate = 1 - (cleaned.length / filteredData.length);
-    if (dropRate > 0.3 && process.env.NODE_ENV !== 'production') {
-      console.warn(`[CHART] Dropped ${(dropRate * 100).toFixed(1)}% of points as outliers`);
+    if (outlierCount > 0 && process.env.NODE_ENV !== 'production') {
+      console.log(`[CHART] Filtered ${outlierCount} outliers (kept ${cleaned.length}/${filteredData.length} points)`);
     }
 
     return cleaned;
-  }, [filteredData, minPrice]);
+  }, [filteredData, minPrice, maxPrice]);
 
-  // 4. Filter activity markers to window
+  // 4. Downsample if > 500 points (simple step sampling, LTTB can be added later)
+  const downsampledData = useMemo(() => {
+    if (cleanedData.length <= 500) return cleanedData;
+    
+    const step = Math.ceil(cleanedData.length / 500);
+    const sampled = cleanedData.filter((_, i) => i % step === 0);
+    sampled.push(cleanedData[cleanedData.length - 1]); // Always keep last point
+    return sampled;
+  }, [cleanedData]);
+
+  // 5. Filter activity markers to window
   const filteredActivity = useMemo(() => {
     return activity
       .map(event => ({
@@ -130,28 +208,28 @@ export default function EChartsRangeChart({
       .filter(event => event.tMs >= startMs && event.tMs <= endMs);
   }, [activity, startMs, endMs]);
 
-  // 5. Calculate Y-axis range with padding
+  // 6. Calculate Y-axis range with padding (ensure min/max are visible)
   const [yMin, yMax] = useMemo(() => {
-    if (cleanedData.length === 0) {
+    if (downsampledData.length === 0) {
       const band = maxPrice - minPrice || 1;
       return [
-        Math.max(0, minPrice - band * 1.0),
-        maxPrice + band * 1.0,
+        Math.max(0, minPrice - band * 0.15),
+        maxPrice + band * 0.15,
       ];
     }
 
-    const prices = cleanedData.map(d => d[1]);
-    const dataMin = Math.min(...prices, minPrice);
-    const dataMax = Math.max(...prices, maxPrice);
+    const prices = downsampledData.map(d => d[1]);
+    const dataMin = Math.min(...prices, minPrice, effectiveCurrentPrice);
+    const dataMax = Math.max(...prices, maxPrice, effectiveCurrentPrice);
     const band = dataMax - dataMin || 1;
 
     return [
-      Math.max(0, dataMin - band * 1.0),
-      dataMax + band * 1.0,
+      Math.max(0, dataMin - band * 0.02),
+      dataMax + band * 0.02,
     ];
-  }, [cleanedData, minPrice, maxPrice]);
+  }, [downsampledData, minPrice, maxPrice, effectiveCurrentPrice]);
 
-  // 6. Build ECharts option
+  // 7. Build ECharts option
   const option = useMemo((): EChartsOption => {
     const xFormatter = getXAxisFormatter(timeRange);
 
@@ -170,7 +248,7 @@ export default function EChartsRangeChart({
         borderColor: '#173064',
         borderWidth: 1,
         textStyle: { color: '#FFFFFF' },
-        formatter: (params: any) => {
+        formatter: (params: unknown) => {
           const p = Array.isArray(params) ? params[0] : params;
           const ts = p?.axisValue ?? p?.data?.[0];
           const price = p?.data?.[1];
@@ -216,7 +294,7 @@ export default function EChartsRangeChart({
         {
           name: 'Price',
           type: 'line',
-          data: cleanedData.length > 0 ? cleanedData : [[startMs, currentPrice], [endMs, currentPrice]],
+          data: downsampledData.length > 0 ? downsampledData : [[startMs, effectiveCurrentPrice], [endMs, effectiveCurrentPrice]],
           showSymbol: false,
           smooth: true,
           lineStyle: { color: '#3b82f6', width: 2 },
@@ -254,8 +332,8 @@ export default function EChartsRangeChart({
             },
           },
         ] : []),
-        // Current price line
-        ...(currentPrice > 0 ? [
+        // Current price line (Now)
+        ...(effectiveCurrentPrice > 0 ? [
           {
             name: 'Current',
             type: 'line' as const,
@@ -264,7 +342,7 @@ export default function EChartsRangeChart({
               silent: true,
               data: [
                 {
-                  yAxis: currentPrice,
+                  yAxis: effectiveCurrentPrice,
                   lineStyle: { color: '#3b82f6', type: 'solid' as const, width: 2.5 },
                   label: { formatter: 'Now', color: '#3b82f6', fontWeight: 'bold' as const, fontSize: 11 },
                 },
@@ -290,9 +368,22 @@ export default function EChartsRangeChart({
         ] : []),
       ],
     };
-  }, [cleanedData, startMs, endMs, yMin, yMax, minPrice, maxPrice, currentPrice, filteredActivity, timeRange]);
+  }, [downsampledData, startMs, endMs, yMin, yMax, minPrice, maxPrice, effectiveCurrentPrice, filteredActivity, timeRange]);
 
-  // 7. Render with empty state fallback
+  // 8. Update "Now" line smoothly when livePrice changes (without full rerender)
+  useEffect(() => {
+    if (!chartRef.current || livePrice === null) return;
+    
+    const chartInstance = chartRef.current.getEchartsInstance();
+    if (!chartInstance) return;
+
+    // Update only the "Now" markLine
+    chartInstance.setOption({
+      series: option.series,
+    }, { replaceMerge: ['series'] });
+  }, [livePrice, option.series]);
+
+  // 9. Render with empty state fallback
   if (normalizedHistory.length === 0) {
     return (
       <div style={{ height, width: '100%' }} className="flex items-center justify-center text-liqui-subtext">
@@ -303,6 +394,7 @@ export default function EChartsRangeChart({
 
   return (
     <ReactECharts
+      ref={chartRef}
       option={option}
       style={{ height: `${height}px`, width: '100%' }}
       opts={{ renderer: 'canvas' }}

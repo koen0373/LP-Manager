@@ -2,7 +2,6 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getPositionById } from '@/services/pmFallback';
 import { PoolDetailVM, PoolActivityEntry } from '@/features/poolDetail/types';
 import { getTokenPriceForRewards } from '@/services/tokenPrices';
-import { getApsRewardForPosition } from '@/services/apsRewards';
 import { tickToPrice, bigIntToDecimal } from '@/utils/poolHelpers';
 import {
   getContractCreationDate,
@@ -16,6 +15,15 @@ import { clearCache } from '@/lib/util/memo';
 import { syncPositionLedger } from '@/services/positionLedger';
 import { PositionEventType } from '@prisma/client';
 import { buildPriceHistory, buildPriceHistoryFromSwaps } from '@/lib/data/priceHistory';
+
+// Increase timeout for initial sync (30s for blockchain data fetching)
+export const config = {
+  api: {
+    responseLimit: false,
+    externalResolver: true,
+  },
+  maxDuration: 60, // Vercel: 60s max for Hobby tier
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const startTime = Date.now();
@@ -81,22 +89,70 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ledgerEvents = syncResult.events;
       ledgerTransfers = syncResult.transfers;
     } else {
-      // Use database cache - much faster!
-      // Wrap in try-catch for when database is not available
+      // Use database cache with smart auto-sync for first-time users
       try {
-        console.log(`[API] Using cached ledger data for token ${tokenId}`);
+        console.log(`[API] Checking cached ledger data for token ${tokenId}`);
         const { getPositionEvents } = await import('@/lib/data/positionEvents');
         const { getPositionTransfers } = await import('@/lib/data/positionTransfers');
+        const { hasCachedData, isCacheStale } = await import('@/lib/data/syncMetadata');
         
-        [ledgerEvents, ledgerTransfers] = await Promise.all([
-          getPositionEvents(tokenId, { limit: 1000 }),
-          getPositionTransfers(tokenId, { limit: 100 }),
-        ]);
+        // Check cache status
+        const hasData = await hasCachedData(tokenId);
+        const isStale = await isCacheStale(tokenId, 5 * 60 * 1000); // 5 min threshold
+        
+        // If no data or stale, sync now (one-time 30s wait for new users)
+        if (!hasData || isStale) {
+          const reason = !hasData ? 'empty cache' : 'stale data';
+          console.log(`[API] ${reason} for token ${tokenId}, performing initial sync...`);
+          
+          let latestBlock = fromBlock;
+          try {
+            latestBlock = await fetchLatestBlockNumber();
+          } catch (_error) {
+            console.warn(`[API] Failed to fetch latest block, using fromBlock ${fromBlock}`);
+          }
+          
+          const syncResult = await syncPositionLedger({
+            tokenId,
+            poolAddress: position.poolAddress,
+            fromBlock,
+            toBlock: latestBlock,
+            refresh: true,
+            seedTransfers: transfers,
+          });
+          
+          ledgerEvents = syncResult.events;
+          ledgerTransfers = syncResult.transfers;
+          console.log(`[API] Sync complete for token ${tokenId}: ${ledgerEvents.length} events, ${ledgerTransfers.length} transfers`);
+        } else {
+          // Use cached data - instant response
+          console.log(`[API] Using fresh cached data for token ${tokenId}`);
+          [ledgerEvents, ledgerTransfers] = await Promise.all([
+            getPositionEvents(tokenId, { limit: 1000 }),
+            getPositionTransfers(tokenId, { limit: 100 }),
+          ]);
+        }
       } catch (dbError) {
-        console.warn(`[API] Database not available, continuing without ledger data:`, dbError);
-        // Continue with empty arrays - will use fallback data sources
-        ledgerEvents = [];
-        ledgerTransfers = [];
+        console.warn(`[API] Database error for token ${tokenId}, falling back to live sync:`, dbError);
+        // Fallback: sync directly without DB (works even if Prisma is down)
+        let latestBlock = fromBlock;
+        try {
+          latestBlock = await fetchLatestBlockNumber();
+        } catch (_error) {
+          console.warn(`[API] Failed to fetch latest block, using fromBlock ${fromBlock}`);
+        }
+        
+        const syncResult = await syncPositionLedger({
+          tokenId,
+          poolAddress: position.poolAddress,
+          fromBlock,
+          toBlock: latestBlock,
+          refresh: true,
+          seedTransfers: transfers,
+        });
+        
+        ledgerEvents = syncResult.events;
+        ledgerTransfers = syncResult.transfers;
       }
     }
 
@@ -186,14 +242,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     const poolRewards = (position.fee0 || 0) * currentPrice0Usd + (position.fee1 || 0) * currentPrice1Usd;
     const rflrRewards = (position.rflrAmount || 0) * currentRflrPriceUsd;
-    
-    // Get APS rewards (parallel)
-    const [apsData, currentApsPriceUsd] = await Promise.all([
-      getApsRewardForPosition(tokenId),
-      getTokenPriceForRewards('APS'),
-    ]);
-    const apsAmount = apsData?.amount || 0;
-    const apsRewards = apsAmount * currentApsPriceUsd;
 
     const blockTimestampCache = new Map<number, number>();
     const resolveTimestamp = async (blockNumber: number, fallback?: number) => {
@@ -341,7 +389,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const valueHistory: Array<{ t: string; v: number }> = [];
 
-    const totalRewardsUsd = totalClaimedFees + poolRewards + rflrRewards + apsRewards;
+    const totalRewardsUsd = totalClaimedFees + poolRewards + rflrRewards;
 
     const shortAddress = (address: string | undefined) =>
       address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '—';
@@ -502,11 +550,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       poolAddress: position.poolAddress,
       token0: {
         symbol: position.token0.symbol,
-        priceUsd: currentPrice0Usd
+        priceUsd: currentPrice0Usd,
+        decimals: position.token0.decimals
       },
       token1: {
         symbol: position.token1.symbol,
-        priceUsd: currentPrice1Usd
+        priceUsd: currentPrice1Usd,
+        decimals: position.token1.decimals
       },
       range: {
         min: lowerPrice,
@@ -532,8 +582,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         feesUsd: poolRewards,
         rflr: position.rflrAmount || 0,
         rflrUsd: rflrRewards,
-        aps: apsAmount || 0,
-        apsUsd: apsRewards,
         reinvestedUsd: 0, // TODO: Calculate reinvested amount
         claimedUsd: totalClaimedFees,
         totalUsd: totalRewardsUsd,

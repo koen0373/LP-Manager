@@ -322,3 +322,41 @@ export async function readBlockTimestamp(blockNumber: bigint): Promise<number | 
   }, CACHE_TTL.TOKEN_METADATA); // Long TTL since block timestamps don't change
 }
 
+/**
+ * Convert sqrtPriceX96 to human-readable price
+ * Formula: price = (sqrtPriceX96 / 2^96)^2 * 10^(decimals0 - decimals1)
+ */
+export function sqrtPriceX96ToPrice(
+  sqrtPriceX96: bigint,
+  decimals0: number,
+  decimals1: number
+): number {
+  const Q96 = BigInt(2 ** 96);
+  const sqrtPrice = Number(sqrtPriceX96) / Number(Q96);
+  const price = sqrtPrice ** 2;
+  const decimalAdjustment = 10 ** (decimals0 - decimals1);
+  const adjustedPrice = price * decimalAdjustment;
+  
+  // Clamp to avoid extreme values
+  if (!Number.isFinite(adjustedPrice) || adjustedPrice <= 0) {
+    console.warn('[ONCHAIN] Invalid price calculated:', { sqrtPriceX96, adjustedPrice });
+    return 0;
+  }
+  
+  return adjustedPrice;
+}
+
+/**
+ * Get live pool price from slot0
+ */
+export async function getLivePoolPrice(
+  poolAddress: Address,
+  decimals0: number,
+  decimals1: number
+): Promise<number | null> {
+  const slot0 = await readPoolSlot0(poolAddress);
+  if (!slot0) return null;
+  
+  return sqrtPriceX96ToPrice(slot0.sqrtPriceX96, decimals0, decimals1);
+}
+

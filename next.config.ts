@@ -5,6 +5,14 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   productionBrowserSourceMaps: false, // No eval-like sourcemaps in production
   
+  // API Routes configuration
+  api: {
+    responseLimit: false, // Allow large responses for pool data
+    bodyParser: {
+      sizeLimit: '1mb',
+    },
+  },
+  
   // Optimize build for Docker
   experimental: {
     workerThreads: false,

@@ -27,13 +27,8 @@ export default function SummaryPage() {
   const [walletAddress, setWalletAddress] = React.useState<string>('');
   const { data, isLoading, isError, refetch } = useWalletSummary(walletAddress);
 
-  // Hide water background on this page
-  React.useEffect(() => {
-    document.body.classList.add('no-water-bg');
-    return () => {
-      document.body.classList.remove('no-water-bg');
-    };
-  }, []);
+  // Water background is now visible on all pages
+  // Removed the no-water-bg class toggle
 
   // Check if wallet is already connected on mount
   React.useEffect(() => {

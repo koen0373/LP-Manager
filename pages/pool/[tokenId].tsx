@@ -14,13 +14,8 @@ export default function PoolPage({ tokenId, initialData, error: serverError }: P
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>(serverError);
 
-  // Hide water background on this page
-  useEffect(() => {
-    document.body.classList.add('no-water-bg');
-    return () => {
-      document.body.classList.remove('no-water-bg');
-    };
-  }, []);
+  // Water background is now visible on all pages
+  // Removed the no-water-bg class toggle
 
   const handleRefresh = async () => {
     setLoading(true);

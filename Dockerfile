@@ -1,6 +1,9 @@
 # Build stage
 FROM node:20-alpine AS builder
 
+# Cache buster - change this value to force rebuild
+ARG CACHE_BUST=v0.1.2
+
 WORKDIR /app
 
 # Copy package files
@@ -14,6 +17,9 @@ RUN npm install
 
 # Copy rest of source code
 COPY . .
+
+# FORCE clean build - remove any cached .next folder
+RUN rm -rf .next
 
 # Build Next.js app (Prisma Client already generated via postinstall hook)
 # Set NODE_OPTIONS to increase memory limit and disable parallelism

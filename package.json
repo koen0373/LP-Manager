@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -H 127.0.0.1 -p 3001",
-    "build": "rm -rf .next && prisma generate && next build",
+    "build": "prisma generate && next build",
     "build:worker": "prisma migrate deploy && prisma generate && tsc --project tsconfig.worker.json && tsc-alias -p tsconfig.worker.json",
     "build:worker:local": "prisma generate && tsc --project tsconfig.worker.json && tsc-alias -p tsconfig.worker.json",
     "start": "./start.sh",

@@ -365,9 +365,14 @@ export function PoolPairDetail({
         </div>
 
         {/* Activity */}
-        {vm.activity && vm.activity.length > 0 && (
-          <div className="mt-6 bg-liqui-card rounded-lg p-6">
-            <h2 className="text-lg font-bold mb-4">Recent Activity</h2>
+        <div className="mt-6 bg-liqui-card rounded-lg p-6">
+          <h2 className="text-lg font-bold mb-4">
+            Recent Activity
+            <span className="ml-2 text-sm text-liqui-subtext font-normal">
+              ({vm.activity?.length || 0} events)
+            </span>
+          </h2>
+          {vm.activity && vm.activity.length > 0 ? (
             <div className="space-y-3">
               {vm.activity.slice(0, 5).map((entry) => (
                 <div key={entry.id} className="flex items-center justify-between py-2 border-b border-liqui-border last:border-b-0">
@@ -383,8 +388,12 @@ export function PoolPairDetail({
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="text-liqui-subtext text-center py-8">
+              No activity recorded yet. Events will appear here once the position is synced.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

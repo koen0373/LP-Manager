@@ -16,6 +16,8 @@ import { clearCache } from '@/lib/util/memo';
 import { syncPositionLedger } from '@/lib/sync/syncPositionLedger';
 import { PositionEventType } from '@prisma/client';
 import { buildPriceHistory, buildPriceHistoryFromSwaps } from '@/lib/data/priceHistory';
+import { calculateApy } from '@/lib/calculations/apy';
+import { calculateImpermanentLoss } from '@/lib/calculations/impermanentLoss';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const startTime = Date.now();
@@ -618,6 +620,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     activityEntries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     console.log(`[API] Total activity entries: ${activityEntries.length} (${ledgerEvents.length} events + transfers)`);
 
+    // ========================================
+    // APY Calculation
+    // ========================================
+    const apyResult = calculateApy(
+      totalClaimedFees,      // Total fees earned
+      totalValue,            // Current TVL
+      poolCreationDate,      // Pool creation date
+      undefined,             // TODO: fees last 24h
+      undefined,             // TODO: fees last 7d
+      undefined,             // TODO: fees last 30d
+      undefined              // TODO: fees last 365d
+    );
+
+    // ========================================
+    // Impermanent Loss Calculation
+    // ========================================
+    // For IL, we need initial prices at deposit time
+    // For now, we use current prices as approximation (will be inaccurate if prices changed significantly)
+    // TODO: Get actual initial prices from MINT event timestamp
+    const initialPrice0Usd = currentPrice0Usd; // TODO: Get from historical data
+    const initialPrice1Usd = currentPrice1Usd; // TODO: Get from historical data
+    
+    const ilResult = calculateImpermanentLoss({
+      initialAmount0,
+      initialAmount1,
+      initialPrice0Usd,
+      initialPrice1Usd,
+      currentPrice0Usd,
+      currentPrice1Usd,
+      currentTvlUsd: totalValue,
+    });
+
     const vm: PoolDetailVM = {
       pairLabel: `${position.token0.symbol}/${position.token1.symbol}`,
       poolId: parseInt(position.id, 10),
@@ -644,11 +678,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         amount1: token1Amount,
         feeApr: 0.12, // TODO: Calculate actual fee APR
         rflrApr: 0.08, // TODO: Calculate actual RFLR APR
+        apy24h: apyResult.apy24h,
+        apy7d: apyResult.apy7d,
+        apy1m: apyResult.apy1m,
+        apy1y: apyResult.apy1y,
+        apyAllTime: apyResult.apyAllTime,
       },
       il: {
-        ilPct: 0, // TODO: Calculate impermanent loss percentage
-        hodlValueUsd: totalValue, // TODO: Calculate HODL value
-        lpValueUsd: totalValue,
+        ilPct: ilResult.ilPercentage,
+        hodlValueUsd: ilResult.valueIfHeld,
+        lpValueUsd: ilResult.valueAsLp,
       },
       rewards: {
         feesToken0: position.fee0 || 0,

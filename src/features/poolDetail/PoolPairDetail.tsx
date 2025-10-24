@@ -357,6 +357,7 @@ export function PoolPairDetail({
             minPrice={vm.range.min}
             maxPrice={vm.range.max}
             currentPrice={vm.range.current}
+            activity={vm.activity}
           />
         </div>
 

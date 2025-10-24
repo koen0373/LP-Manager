@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import type { EChartsOption } from 'echarts';
 
@@ -7,13 +7,22 @@ interface PricePoint {
   p: number; // price
 }
 
+interface ActivityEvent {
+  timestamp: string; // ISO string
+  type: 'mint' | 'transfer' | 'increase' | 'decrease' | 'collect' | 'burn';
+  title: string;
+}
+
 interface EChartsRangeChartProps {
   priceHistory: PricePoint[];
   minPrice?: number;
   maxPrice?: number;
   currentPrice?: number;
   height?: number;
+  activity?: ActivityEvent[];
 }
+
+type TimeRange = '24h' | '7d' | '1m' | '1y' | 'all';
 
 export default function EChartsRangeChart({
   priceHistory,
@@ -21,9 +30,22 @@ export default function EChartsRangeChart({
   maxPrice,
   currentPrice,
   height = 400,
+  activity = [],
 }: EChartsRangeChartProps) {
+  const [timeRange, setTimeRange] = useState<TimeRange>('7d');
   const option = useMemo(() => {
-    // Sort and format data
+    // Calculate time filter
+    const now = Date.now();
+    const timeFilters: Record<TimeRange, number> = {
+      '24h': now - 24 * 60 * 60 * 1000,
+      '7d': now - 7 * 24 * 60 * 60 * 1000,
+      '1m': now - 30 * 24 * 60 * 60 * 1000,
+      '1y': now - 365 * 24 * 60 * 60 * 1000,
+      'all': 0,
+    };
+    const cutoffTime = timeFilters[timeRange];
+
+    // Sort and format data with time filter
     const sortedData = [...priceHistory]
       .sort((a, b) => {
         const timeA = typeof a.t === 'string' ? parseInt(a.t, 10) : a.t;
@@ -33,7 +55,22 @@ export default function EChartsRangeChart({
       .map(point => {
         const time = typeof point.t === 'string' ? parseInt(point.t, 10) : point.t;
         return [time * 1000, point.p]; // Convert to milliseconds for ECharts
-      });
+      })
+      .filter(([time]) => time >= cutoffTime);
+
+    // Filter activity events by time range
+    const filteredActivity = activity
+      .filter(event => {
+        const eventTime = new Date(event.timestamp).getTime();
+        return eventTime >= cutoffTime;
+      })
+      .map(event => ({
+        xAxis: new Date(event.timestamp).getTime(),
+        lineStyle: { color: 'rgba(61, 235, 136, 0.6)', type: 'solid' as const, width: 1 },
+        label: {
+          show: false, // Only show on hover
+        },
+      }));
 
     // Calculate Y-axis range to scale min/max prices to 25%/75%
     let yMin = 0;
@@ -225,18 +262,47 @@ export default function EChartsRangeChart({
                     },
                   ]
                 : []),
+              // Activity event markers (vertical lines)
+              ...filteredActivity,
             ],
           },
         },
       ],
     };
-  }, [priceHistory, minPrice, maxPrice, currentPrice]);
+  }, [priceHistory, minPrice, maxPrice, currentPrice, timeRange, activity]);
+
+  const timeRangeButtons: { label: string; value: TimeRange }[] = [
+    { label: '24h', value: '24h' },
+    { label: '7D', value: '7d' },
+    { label: '1M', value: '1m' },
+    { label: '1Y', value: '1y' },
+  ];
 
   return (
     <div className="bg-liqui-card rounded-lg border border-liqui-border p-6">
-      <div className="mb-4">
-        <h2 className="text-lg font-bold text-white">Range & Price</h2>
-        <p className="text-sm text-liqui-subtext">Track live price vs your range</p>
+      <div className="mb-4 flex justify-between items-start">
+        <div>
+          <h2 className="text-lg font-bold text-white">Range & Price</h2>
+          <p className="text-sm text-liqui-subtext">Track live price vs your range</p>
+        </div>
+        {/* Time Range Selector */}
+        <div className="flex gap-1">
+          {timeRangeButtons.map(({ label, value }) => (
+            <button
+              key={value}
+              onClick={() => setTimeRange(value)}
+              className={`
+                px-3 py-1.5 text-xs font-medium rounded transition-all
+                ${timeRange === value
+                  ? 'bg-liqui-aqua text-white'
+                  : 'bg-liqui-card-hover text-liqui-subtext hover:text-white'
+                }
+              `}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
       <ReactECharts
         option={option as EChartsOption}

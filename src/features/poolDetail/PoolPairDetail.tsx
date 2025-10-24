@@ -133,8 +133,8 @@ export function PoolPairDetail({
 
   return (
     <div className="min-h-screen text-white relative">
-      {/* Dark overlay to reduce water background intensity */}
-      <div className="fixed inset-0 bg-liqui-bg/85 pointer-events-none z-0"></div>
+      {/* Anthracite overlay (85% opacity) to reduce water background distraction */}
+      <div className="fixed inset-0 bg-[#0D0F13]/85 pointer-events-none z-0"></div>
       <div className="relative z-10">
       <Header currentPage="pools"
         showTabs={false}

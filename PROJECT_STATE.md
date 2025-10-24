@@ -4,7 +4,7 @@
 ## 1. AI SYSTEM HEADER
 All AI agents must read this document before performing any action.
 
-**Purpose:** Establish a unified understanding of Liqui’s brand, architecture, and collaborative workflow.
+**Purpose:** Establish a unified understanding of Liqui's brand, architecture, and collaborative workflow.
 **Applies to:** Cursor, Codex, Claude, ChatGPT.
 
 ### Behavior Rules
@@ -19,7 +19,7 @@ All AI agents must read this document before performing any action.
 
 **Brand Name:** Liqui  
 **Category:** DeFi Liquidity Pool Intelligence Platform  
-**Tagline:** “Master your liquidity.”  
+**Tagline:** "Master your liquidity."  
 **Essence:** Precision • Transparency • Control  
 
 Liqui helps DeFi liquidity providers monitor, manage, and optimize their Uniswap v3-style positions across multiple DEXes (currently Enosys, SparkDEX, and BlazeFlare).  
@@ -43,11 +43,71 @@ Empower liquidity providers with clear, actionable intelligence.
 **DEX Adapters:**  
 - Enosys (v3 NFT positions)  
 - SparkDEX (v2 LP ERC20)  
-- BlazeFlare (v3 NFT positions)  
+- BlazeFlare (v3 NFT positions)
 
 ---
 
-## 4. DESIGN SYSTEM
+## 4. TECHNICAL ARCHITECTURE
+
+### Stack Overview
+**Framework:** Next.js 15.5.6 (Pages Router)  
+**Language:** TypeScript  
+**Database:** PostgreSQL (Railway)  
+**ORM:** Prisma 6.18.0  
+**Blockchain:** Flare Network (EVM)  
+**Web3:** Viem 2.38.3 + Wagmi 2.18.1  
+**Charts:** ECharts 5.6.0  
+**Styling:** Tailwind CSS 3.4.0  
+
+### Deployment
+**Production Host:** Railway  
+**URL:** https://liquilab.up.railway.app  
+**Environment:** Node.js 20  
+**Database:** PostgreSQL (Railway managed)  
+**Deployment:** Git push to `main` → auto-deploy  
+
+### Data Architecture: RPC-First Strategy
+
+**Primary Data Source: Direct JSON-RPC via Viem**  
+✅ **Why:** Fast, permissionless, no rate-limit surprises, source of truth  
+✅ **Used for:** Live prices (slot0), events (eth_getLogs), position data  
+
+```typescript
+// src/lib/viemClient.ts
+publicClient.readContract()  // slot0, positions, balances
+publicClient.getLogs()       // Transfer, Mint, Collect events (30-block chunks)
+```
+
+**Fallback Cascade (Only for Edge Cases):**
+1. Blockscout API → contract creation dates, historical data
+2. FlareScan API → last resort, non-critical metadata
+
+**Key Parameters:**
+- RPC chunk size: **30 blocks** (respects RPC limits)
+- Blockscout chunk size: **100 blocks** (rate limit friendly)
+- Cache strategy: Prisma database (PostgreSQL)
+- Sync strategy: Smart auto-sync on first request, instant on subsequent
+
+### Performance Optimization
+**Logging:**
+- Production: ~5 compact logs per API request
+- Format: `[API] pool/22003 - OK (2361ms)`
+- Development verbose logs: `DEBUG_LOGS=true`
+
+**Caching:**
+- First load: ~2-3s (sync from blockchain + cache to DB)
+- Subsequent: <1s (served from PostgreSQL cache)
+- Multi-wallet: Generic sync supports any wallet address
+- Stale threshold: 5 minutes (auto-refresh)
+
+**API Response:**
+- Single JSON guarantee via `sendResponse()` guard
+- Response guard prevents duplicate responses
+- All routes return via controlled exit points
+
+---
+
+## 5. DESIGN SYSTEM
 
 ### Brand Colors (Digital)
 | Element | HEX | Description |
@@ -83,7 +143,7 @@ Empower liquidity providers with clear, actionable intelligence.
 
 ---
 
-## 5. COMPONENT MAPPING (UI + BEHAVIOR)
+## 6. COMPONENT MAPPING (UI + BEHAVIOR)
 
 ### Global
 - **Header:** Logo (72px) + Tagline + Nav links (Portfolio, Pools, Activity)
@@ -91,10 +151,10 @@ Empower liquidity providers with clear, actionable intelligence.
 
 ### Home Page
 - Hero banner with key metric cards (TVL, APR, Pools managed)
-- CTA button → “Connect Wallet”
+- CTA button → "Connect Wallet"
 
 ### Portfolio Page
-- Grid view of user’s LP positions (active + inactive)
+- Grid view of user's LP positions (active + inactive)
 - Filters: DEX (Enosys / SparkDEX / BlazeFlare), status, range strategy
 - Each position links to detailed pool page
 
@@ -104,6 +164,7 @@ Empower liquidity providers with clear, actionable intelligence.
   - Time selector (24h, 7D, 1M, 1Y)
   - Blue line (price history), Green dashed lines (min/max), Blue solid (current)
   - Vertical event markers for Mint, Collect, Burn
+  - Live price updates every 30s via slot0() polling
 - **Activity Log Block:** chronological transaction list
 - **Claim Button:**  
   - Grey (too early) → `#1E2533`  
@@ -112,7 +173,64 @@ Empower liquidity providers with clear, actionable intelligence.
 
 ---
 
-## 6. AI COLLABORATION GUIDELINES
+## 7. KEY API ENDPOINTS
+
+### `/api/positions` (GET)
+**Purpose:** Fetch all LP positions for a wallet  
+**Query params:** `?wallet=0x...`  
+**Returns:** Array of positions with TVL, rewards, status  
+**Cache:** 2 minutes  
+
+### `/api/pool/[tokenId]` (GET)
+**Purpose:** Detailed pool data with price history and activity  
+**Params:** tokenId (position NFT ID)  
+**Returns:** PoolDetailVM with charts, ranges, rewards  
+**Performance:** First load 2-3s (sync), subsequent <1s (cached)  
+**Smart sync:** Auto-detects stale data (>5min) and refreshes  
+
+### `/api/wallet/summary` (GET)
+**Purpose:** Portfolio overview with aggregated metrics  
+**Query params:** `?wallet=0x...`  
+**Returns:** Total TVL, rewards, position count  
+
+---
+
+## 8. RECENT TECHNICAL IMPROVEMENTS (Oct 2024)
+
+### ✅ Response Guard Implementation
+- Added `sendResponse()` guard to prevent duplicate JSON responses
+- All API endpoints now guarantee single response
+- Fixes "headers already sent" errors
+
+### ✅ Log Optimization
+- Reduced from 18 → 5 logs per API request
+- Compact format: `[API] pool/22003 - OK (2361ms)`
+- Added `DEBUG_LOGS=true` flag for development verbose logging
+- Railway rate limit issue resolved (was hitting 500 logs/sec)
+
+### ✅ RPC Chunk Size Fix
+- RPC chunk size: 3000 → **30 blocks** (respects eth_getLogs limit)
+- Blockscout chunk size: 3000 → **100 blocks**
+- Eliminates "requested too many blocks" errors
+- Improves reliability for historical data sync
+
+### ✅ Smart Auto-Sync
+- Multi-wallet support via generic position sync
+- Database-backed cache with Prisma
+- First load: auto-sync + cache (20-30s)
+- Subsequent: instant from cache (<1s)
+- Stale detection: auto-refresh after 5 minutes
+
+### ✅ Railway Production Deployment
+- PostgreSQL database (managed by Railway)
+- Prisma migrations on deploy
+- Environment: `NODE_ENV=production`
+- Port: 8080 (Railway default)
+- HTTPS enforced (308 redirect from HTTP)
+
+---
+
+## 9. AI COLLABORATION GUIDELINES
 
 | AI | Role | Responsibilities |
 |----|------|------------------|
@@ -124,25 +242,60 @@ Empower liquidity providers with clear, actionable intelligence.
 **Workflow Principle:**  
 > All agents collaborate through a shared understanding of this document before performing edits.
 
+**Communication Protocol:**
+- Major changes: Always consult PROJECT_STATE.md first
+- Architecture decisions: Update this document
+- Performance changes: Document in commit messages
+- API changes: Update endpoint documentation above
+
 ---
 
-## 7. VERSIONING & COMMIT RULES
+## 10. VERSIONING & COMMIT RULES
 
 **Branching:**
-- `main`: stable production
+- `main`: stable production (auto-deploys to Railway)
 - `dev`: integration and testing
 - feature branches per module (`feature/chart-range-filter`)
 
 **Commit Guidelines:**
-- Follow Conventional Commits (`feat:`, `fix:`, `docs:`)
+- Follow Conventional Commits (`feat:`, `fix:`, `docs:`, `perf:`)
 - Include `[state:sync]` if commit affects design or brand consistency
 - Update `PROJECT_STATE.md` when adding new components or visual tokens
+- Performance fixes: use `perf:` prefix
 
 **Release Tags:**
 - `vX.Y.Z` format (semantic versioning)
 - Include changelog summary in `/docs/CHANGELOG.md`
 
+**Recent Commits:**
+```
+perf: Optimize logging to prevent Railway rate limit
+fix: Add response guard to prevent duplicate JSON responses  
+fix: Reduce RPC/Blockscout chunk sizes to respect API limits
+```
+
+---
+
+## 11. ENVIRONMENT VARIABLES
+
+**Required:**
+```bash
+DATABASE_URL=postgresql://...  # Railway PostgreSQL
+NEXT_PUBLIC_RPC_URL=https://flare.flr.finance/ext/bc/C/rpc
+NODE_ENV=production
+```
+
+**Optional:**
+```bash
+DEBUG_LOGS=true                # Enable verbose logging in production
+FLARESCAN_API_KEY=...          # Optional: reduces 403 errors (not required with RPC-first)
+```
+
 ---
 
 **Liqui — DeFi Liquidity Intelligence**  
 _Precision • Transparency • Control_
+
+**Last Updated:** October 24, 2025  
+**Version:** 0.1.3  
+**Production URL:** https://liquilab.up.railway.app

@@ -13,6 +13,10 @@ import {
 } from '@/lib/data/positionTransfers';
 import { PositionEventType } from '@prisma/client';
 import { bigIntToDecimal, tickToPrice } from '@/utils/poolHelpers';
+import { 
+  fetchPositionEventsViaFlarescan,
+  type NormalizedLog 
+} from '@/lib/adapters/flarescanLogs';
 
 const POSITION_MANAGER_ADDRESS = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657';
 const MAX_BLOCK_RANGE = 30; // Flare RPC strict limit - cannot be higher
@@ -92,18 +96,48 @@ export async function syncPositionLedger(
 
     const positionEvents: PositionEventData[] = [];
 
-    // Fetch events from TWO sources:
-    // 1. Position Manager contract (IncreaseLiquidity, DecreaseLiquidity, Collect filtered by tokenId)
-    // 2. Pool contract (Mint, Burn, Collect filtered by tick range)
-
-    // Use larger chunks for faster syncing (Flare RPC can handle up to ~10k blocks)
-    const blockRange = Number(toBlock - fromBlock);
-    const chunkSize = BigInt(Math.min(blockRange, MAX_BLOCK_RANGE));
-    
     // PART 1: Fetch Position Manager events (filtered by tokenId)
+    // Try Flarescan API first (fast), fallback to RPC if it fails
     if (verbose) {
       console.log(`[SYNC] Fetching Position Manager events for tokenId ${tokenId}...`);
     }
+
+    let allPmLogs: Array<{ address: Hex; topics: [Hex, ...Hex[]]; data: Hex; blockNumber: bigint; transactionHash: Hex; logIndex: number; timestamp?: number }> = [];
+    let usedFlarescan = false;
+
+    try {
+      // Try Flarescan API first (FAST - no block limits)
+      const flarescanLogs = await fetchPositionEventsViaFlarescan(
+        tokenId,
+        Number(fromBlock),
+        Number(toBlock)
+      );
+      
+      // Convert NormalizedLog to format compatible with RPC logs
+      allPmLogs = flarescanLogs.map(log => ({
+        address: log.address,
+        topics: log.topics,
+        data: log.data,
+        blockNumber: log.blockNumber,
+        transactionHash: log.transactionHash,
+        logIndex: log.logIndex,
+        timestamp: log.timestamp, // Bonus: timestamp included!
+      }));
+      
+      usedFlarescan = true;
+      if (verbose) {
+        console.log(`[SYNC] ✅ Fetched ${allPmLogs.length} events via Flarescan API (fast method)`);
+      }
+    } catch (flarescanError) {
+      // Fallback to RPC if Flarescan fails
+      console.warn(`[SYNC] Flarescan API failed, falling back to RPC:`, flarescanError);
+      
+      const blockRange = Number(toBlock - fromBlock);
+      const chunkSize = BigInt(Math.min(blockRange, MAX_BLOCK_RANGE));
+      
+      if (verbose) {
+        console.log(`[SYNC] Using RPC fallback with ${chunkSize}-block chunks (slow method)`);
+      }
 
     for (let currentBlock = fromBlock; currentBlock <= toBlock; currentBlock += chunkSize) {
       const chunkEnd = currentBlock + chunkSize - 1n < toBlock 
@@ -163,27 +197,55 @@ export async function syncPositionLedger(
           },
         });
 
-        const allPmLogs = [...pmLogs, ...pmDecreaseLogs, ...pmCollectLogs];
+        const chunkPmLogs = [...pmLogs, ...pmDecreaseLogs, ...pmCollectLogs];
 
-        if (verbose && allPmLogs.length > 0) {
-          console.log(`[SYNC] Found ${allPmLogs.length} Position Manager logs in block range ${currentBlock}-${chunkEnd}`);
+        if (verbose && chunkPmLogs.length > 0) {
+          console.log(`[SYNC] Found ${chunkPmLogs.length} Position Manager logs in block range ${currentBlock}-${chunkEnd}`);
         }
 
-        // Process Position Manager logs
-        for (const log of allPmLogs) {
-          try {
-            const decoded = decodeEventLog({
-              abi: POSITION_MANAGER_EVENTS_ABI,
-              data: log.data,
-              topics: log.topics,
-            });
+        // Add to allPmLogs for processing after loop
+        allPmLogs.push(...chunkPmLogs.map(log => ({
+          address: log.address,
+          topics: log.topics as [Hex, ...Hex[]],
+          data: log.data,
+          blockNumber: log.blockNumber,
+          transactionHash: log.transactionHash,
+          logIndex: Number(log.logIndex || 0),
+        })));
+      } catch (chunkError) {
+        // Only log in verbose mode to reduce Railway log spam
+        if (verbose) {
+          console.error(`[SYNC] Error fetching chunk ${currentBlock}-${chunkEnd}:`, chunkError);
+        }
+      }
+    }
+    } // End of Flarescan fallback (RPC loop)
+    
+    // Process all collected logs (from Flarescan or RPC)
+    if (verbose) {
+      console.log(`[SYNC] Processing ${allPmLogs.length} Position Manager events...`);
+    }
 
-            const eventType = mapEventType(decoded.eventName);
-            if (!eventType) continue;
+    // Process Position Manager logs
+    for (const log of allPmLogs) {
+      try {
+        const decoded = decodeEventLog({
+          abi: POSITION_MANAGER_EVENTS_ABI,
+          data: log.data,
+          topics: log.topics,
+        });
 
-            // Get block timestamp
-            const block = await publicClient.getBlock({ blockNumber: log.blockNumber });
-            const timestamp = Number(block.timestamp);
+        const eventType = mapEventType(decoded.eventName);
+        if (!eventType) continue;
+
+        // Get block timestamp (use Flarescan timestamp if available, otherwise fetch from RPC)
+        let timestamp: number;
+        if (usedFlarescan && log.timestamp) {
+          timestamp = log.timestamp;
+        } else {
+          const block = await publicClient.getBlock({ blockNumber: log.blockNumber });
+          timestamp = Number(block.timestamp);
+        }
 
             // Extract position metadata for calculations
             const price0Usd = position.price0Usd || 0;
@@ -269,6 +331,12 @@ export async function syncPositionLedger(
           console.error(`[SYNC] Error fetching chunk ${currentBlock}-${chunkEnd}:`, chunkError);
         }
       }
+    }
+    } // End of Flarescan fallback (RPC loop)
+    
+    // Process all collected logs (from Flarescan or RPC)
+    if (verbose) {
+      console.log(`[SYNC] Processing ${allPmLogs.length} Position Manager events...`);
     }
 
     // Step 4: Bulk insert into database (optional - gracefully handle failures)

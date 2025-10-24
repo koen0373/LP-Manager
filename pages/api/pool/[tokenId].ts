@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getPositionById } from '@/services/pmFallback';
 import { PoolDetailVM, PoolActivityEntry } from '@/features/poolDetail/types';
 import { getTokenPriceForRewards } from '@/services/tokenPrices';
-// import { getApsRewardForPosition } from '@/services/apsRewards';
+import { getApsRewardForPosition } from '@/services/apsRewards';
 import { tickToPrice, bigIntToDecimal } from '@/utils/poolHelpers';
 import {
   getContractCreationDate,
@@ -13,11 +13,9 @@ import { decodeEventLog, Hex } from 'viem';
 import { UNISWAP_V3_POOL_ABI } from '@/abis/UniswapV3Pool';
 import { fetchLatestBlockNumber } from '@/lib/adapters/rpcLogs';
 import { clearCache } from '@/lib/util/memo';
-import { syncPositionLedger } from '@/lib/sync/syncPositionLedger';
+import { syncPositionLedger } from '@/services/positionLedger';
 import { PositionEventType } from '@prisma/client';
 import { buildPriceHistory, buildPriceHistoryFromSwaps } from '@/lib/data/priceHistory';
-import { calculateApy } from '@/lib/calculations/apy';
-import { calculateImpermanentLoss } from '@/lib/calculations/impermanentLoss';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const startTime = Date.now();
@@ -72,110 +70,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.warn(`[API] Failed to fetch latest block number for token ${tokenId}:`, error);
         latestBlock = Math.max(fromBlock, 0);
       }
-      const syncResult = await syncPositionLedger(tokenId, {
+      const syncResult = await syncPositionLedger({
+        tokenId,
+        poolAddress: position.poolAddress,
         fromBlock,
         toBlock: latestBlock,
-        verbose: true,
+        refresh: forceRefresh,
+        seedTransfers: transfers,
       });
-      if (syncResult.success) {
-        ledgerEvents = syncResult.events;
-        ledgerTransfers = syncResult.transfers;
-      } else {
-        console.error(`[API] Sync failed for token ${tokenId}:`, syncResult.error);
-      }
+      ledgerEvents = syncResult.events;
+      ledgerTransfers = syncResult.transfers;
     } else {
       // Use database cache - much faster!
-      // Wrap in try-catch for production (Vercel) where database might not be available
-      try {
-        console.log(`[API] Using cached ledger data for token ${tokenId}`);
-        const { getPositionEvents } = await import('@/lib/data/positionEvents');
-        const { getPositionTransfers } = await import('@/lib/data/positionTransfers');
-        
-        const [dbEvents, dbTransfers] = await Promise.all([
-          getPositionEvents(tokenId, { limit: 1000 }),
-          getPositionTransfers(tokenId, { limit: 100 }),
-        ]);
-        
-        // Convert Prisma null to undefined for TypeScript compatibility
-        ledgerEvents = dbEvents.map(e => ({
-          ...e,
-          sender: e.sender ?? undefined,
-          owner: e.owner ?? undefined,
-          recipient: e.recipient ?? undefined,
-          tickLower: e.tickLower ?? undefined,
-          tickUpper: e.tickUpper ?? undefined,
-          tick: e.tick ?? undefined,
-          liquidityDelta: e.liquidityDelta ?? undefined,
-          amount0: e.amount0 ?? undefined,
-          amount1: e.amount1 ?? undefined,
-          sqrtPriceX96: e.sqrtPriceX96 ?? undefined,
-          price1Per0: e.price1Per0 ?? undefined,
-          usdValue: e.usdValue ?? undefined,
-          metadata: e.metadata as Record<string, unknown> | undefined,
-        }));
-        
-        ledgerTransfers = dbTransfers.map(t => ({
-          ...t,
-          metadata: t.metadata as Record<string, unknown> | undefined,
-        }));
-        
-        console.log(`[API] Retrieved ${ledgerEvents.length} events and ${ledgerTransfers.length} transfers from database for token ${tokenId}`);
-        
-        // If no events found in database (only transfers), force sync to get Position Manager events
-        if (ledgerEvents.length === 0) {
-          console.log(`[API] No cached data found for token ${tokenId}, syncing from blockchain...`);
-          let latestBlock = fromBlock;
-          try {
-            latestBlock = await fetchLatestBlockNumber();
-          } catch (error) {
-            console.warn(`[API] Failed to fetch latest block number for token ${tokenId}:`, error);
-            latestBlock = Math.max(fromBlock, 0);
-          }
-          const syncResult = await syncPositionLedger(tokenId, {
-            fromBlock,
-            toBlock: latestBlock,
-            verbose: true,
-          });
-          if (syncResult.success) {
-            ledgerEvents = syncResult.events;
-            ledgerTransfers = syncResult.transfers;
-            console.log(`[API] Synced ${ledgerEvents.length} events and ${ledgerTransfers.length} transfers for token ${tokenId}`);
-          } else {
-            console.error(`[API] Sync failed for token ${tokenId}:`, syncResult.error);
-          }
-        }
-      } catch (dbError) {
-        console.error(`[API] Database error for token ${tokenId}:`, dbError);
-        // Try to sync from blockchain as fallback
-        console.log(`[API] Falling back to blockchain sync for token ${tokenId}`);
-        let latestBlock = fromBlock;
-        try {
-          latestBlock = await fetchLatestBlockNumber();
-        } catch (error) {
-          console.warn(`[API] Failed to fetch latest block number for token ${tokenId}:`, error);
-          latestBlock = Math.max(fromBlock, 0);
-        }
-        try {
-          const syncResult = await syncPositionLedger(tokenId, {
-            fromBlock,
-            toBlock: latestBlock,
-            verbose: true,
-          });
-          if (syncResult.success) {
-            ledgerEvents = syncResult.events;
-            ledgerTransfers = syncResult.transfers;
-            console.log(`[API] Synced ${ledgerEvents.length} events and ${ledgerTransfers.length} transfers for token ${tokenId} after DB error`);
-          } else {
-            console.error(`[API] Sync failed for token ${tokenId}:`, syncResult.error);
-            ledgerEvents = [];
-            ledgerTransfers = [];
-          }
-        } catch (syncError) {
-          console.error(`[API] Failed to sync from blockchain for token ${tokenId}:`, syncError);
-          ledgerEvents = [];
-          ledgerTransfers = [];
-        }
-      }
+      console.log(`[API] Using cached ledger data for token ${tokenId}`);
+      const { getPositionEvents } = await import('@/lib/data/positionEvents');
+      const { getPositionTransfers } = await import('@/lib/data/positionTransfers');
+      
+      [ledgerEvents, ledgerTransfers] = await Promise.all([
+        getPositionEvents(tokenId, { limit: 1000 }),
+        getPositionTransfers(tokenId, { limit: 100 }),
+      ]);
     }
 
     // Get current prices for accurate rewards calculation
@@ -265,14 +179,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const poolRewards = (position.fee0 || 0) * currentPrice0Usd + (position.fee1 || 0) * currentPrice1Usd;
     const rflrRewards = (position.rflrAmount || 0) * currentRflrPriceUsd;
     
-    // APS removed for Phase 3 - will add back later when needed
     // Get APS rewards (parallel)
-    // const [apsData, currentApsPriceUsd] = await Promise.all([
-    //   getApsRewardForPosition(tokenId),
-    //   getTokenPriceForRewards('APS'),
-    // ]);
-    // const apsAmount = apsData?.amount || 0;
-    // const apsRewards = apsAmount * currentApsPriceUsd;
+    const [apsData, currentApsPriceUsd] = await Promise.all([
+      getApsRewardForPosition(tokenId),
+      getTokenPriceForRewards('APS'),
+    ]);
+    const apsAmount = apsData?.amount || 0;
+    const apsRewards = apsAmount * currentApsPriceUsd;
 
     const blockTimestampCache = new Map<number, number>();
     const resolveTimestamp = async (blockNumber: number, fallback?: number) => {
@@ -309,25 +222,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let firstClaimDate: Date | null = null;
     let lastClaimDate: Date | null = null;
     
-    // Get all DECREASE tx hashes to filter out auto-collects
-    // (Uniswap V3 auto-collects fees when decreasing liquidity)
-    const decreaseTxHashes = new Set(
-      ledgerEvents
-        .filter((e) => e.eventType === PositionEventType.DECREASE)
-        .map((e) => e.txHash)
-    );
-
     const collectEvents = ledgerEvents.filter(
       (event) => event.eventType === PositionEventType.COLLECT
     );
 
     for (const event of collectEvents) {
-      // Skip COLLECT events that are part of a DECREASE transaction
-      // (DECREASE automatically collects fees as part of removing liquidity)
-      if (decreaseTxHashes.has(event.txHash)) {
-        continue;
-      }
-
       const rawAmount0 = event.amount0 ? BigInt(event.amount0) : 0n;
       const rawAmount1 = event.amount1 ? BigInt(event.amount1) : 0n;
       const amount0 = bigIntToDecimal(rawAmount0, position.token0.decimals);
@@ -393,15 +292,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
         // If still no data, create a minimal chart with current price + range
         if (history.length === 0 && lowerPrice > 0 && currentPrice > 0) {
-          console.log('[API] No historical data, creating fallback chart with range visualization', {
-            lowerPrice,
-            upperPrice,
-            currentPrice,
-            token0: position.token0.symbol,
-            token1: position.token1.symbol,
-            currentTick,
-            price0Per1,
-          });
+          console.log('[API] No historical data, creating fallback chart with range visualization');
           const now = Math.floor(Date.now() / 1000);
           
           // Create a visual representation of the price range over 24h
@@ -418,20 +309,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             { t: now.toString(), p: currentPrice },                      // Now: current
           ].filter(p => p.p > 0 && !isNaN(p.p)); // Safety: remove invalid points
           
-          console.log(`[API] Created ${history.length} fallback price points for ${position.token0.symbol}/${position.token1.symbol}`);
+          console.log(`[API] Created ${history.length} fallback price points`);
         } else if (history.length === 0) {
           console.warn('[API] Cannot create fallback chart: missing price data', { lowerPrice, currentPrice });
         }
-        
-        // Debug: Log final priceHistory
-        console.log(`[API] Final priceHistory for ${position.token0.symbol}/${position.token1.symbol}:`, {
-          points: history.length,
-          first: history[0],
-          last: history[history.length - 1],
-          currentPrice,
-          lowerPrice,
-          upperPrice,
-        });
         
         return history;
       })()
@@ -439,8 +320,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const contractCreationDate = contractCreationDateResult.status === 'fulfilled' 
       ? contractCreationDateResult.value 
-      : (console.warn('[API] Failed to fetch contract creation date, using mint timestamp as fallback:', 
-          contractCreationDateResult.reason?.message), null);
+      : null;
     
     const priceHistory = priceHistoryResult.status === 'fulfilled' 
       ? priceHistoryResult.value 
@@ -453,7 +333,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const valueHistory: Array<{ t: string; v: number }> = [];
 
-    const totalRewardsUsd = totalClaimedFees + poolRewards + rflrRewards; // + apsRewards (removed for Phase 3)
+    const totalRewardsUsd = totalClaimedFees + poolRewards + rflrRewards + apsRewards;
 
     const shortAddress = (address: string | undefined) =>
       address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '—';
@@ -515,8 +395,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    console.log(`[API] Processing ${ledgerEvents.length} ledger events for activity timeline`);
-    
     for (const event of ledgerEvents) {
       const ts = await resolveTimestamp(event.blockNumber, event.timestamp);
       const amount0 = bigIntToDecimal(
@@ -578,12 +456,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           });
           break;
         case PositionEventType.COLLECT:
-          // Skip COLLECT events that are part of a DECREASE transaction
-          // (DECREASE automatically collects fees, don't show as separate claim)
-          if (decreaseTxHashes.has(event.txHash)) {
-            break; // Skip this event
-          }
-          
           activityEntries.push({
             id: `collect-${event.txHash}-${event.blockNumber}`,
             type: 'collect',
@@ -606,29 +478,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             ],
           });
           break;
-        case PositionEventType.BURN:
-          activityEntries.push({
-            id: `burn-${event.txHash}-${event.blockNumber}`,
-            type: 'burn',
-            timestamp: iso,
-            txHash: event.txHash,
-            title: 'Position Burned',
-            subtitle: 'Liquidity completely removed',
-            metrics: [
-              {
-                label: position.token0.symbol,
-                value: formatTokenDelta(amount0, position.token0.symbol, 'negative'),
-                accent: 'token0',
-              },
-              {
-                label: position.token1.symbol,
-                value: formatTokenDelta(amount1, position.token1.symbol, 'negative'),
-                accent: 'token1',
-              },
-              { label: 'USD Delta', value: formatUsd(usdValue), accent: 'negative' },
-            ],
-          });
-          break;
         default:
           break;
       }
@@ -636,42 +485,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Final sort of activity entries by timestamp (most recent first)
     activityEntries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    console.log(`[API] Total activity entries: ${activityEntries.length} (${ledgerEvents.length} events + transfers)`);
-
-    // ========================================
-    // APY Calculation
-    // ========================================
-    // Total fees = claimed fees + unclaimed fees (poolRewards)
-    const totalFeesEarned = totalClaimedFees + poolRewards;
-    
-    const apyResult = calculateApy(
-      totalFeesEarned,       // Total fees earned (claimed + unclaimed)
-      totalValue,            // Current TVL
-      poolCreationDate,      // Pool creation date
-      undefined,             // TODO: fees last 24h
-      undefined,             // TODO: fees last 7d
-      undefined,             // TODO: fees last 30d
-      undefined              // TODO: fees last 365d
-    );
-
-    // ========================================
-    // Impermanent Loss Calculation
-    // ========================================
-    // For IL, we need initial prices at deposit time
-    // For now, we use current prices as approximation (will be inaccurate if prices changed significantly)
-    // TODO: Get actual initial prices from MINT event timestamp
-    const initialPrice0Usd = currentPrice0Usd; // TODO: Get from historical data
-    const initialPrice1Usd = currentPrice1Usd; // TODO: Get from historical data
-    
-    const ilResult = calculateImpermanentLoss({
-      initialAmount0,
-      initialAmount1,
-      initialPrice0Usd,
-      initialPrice1Usd,
-      currentPrice0Usd,
-      currentPrice1Usd,
-      currentTvlUsd: totalValue,
-    });
 
     const vm: PoolDetailVM = {
       pairLabel: `${position.token0.symbol}/${position.token1.symbol}`,
@@ -699,16 +512,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         amount1: token1Amount,
         feeApr: 0.12, // TODO: Calculate actual fee APR
         rflrApr: 0.08, // TODO: Calculate actual RFLR APR
-        apy24h: apyResult.apy24h,
-        apy7d: apyResult.apy7d,
-        apy1m: apyResult.apy1m,
-        apy1y: apyResult.apy1y,
-        apyAllTime: apyResult.apyAllTime,
       },
       il: {
-        ilPct: ilResult.ilPercentage,
-        hodlValueUsd: ilResult.valueIfHeld,
-        lpValueUsd: ilResult.valueAsLp,
+        ilPct: 0, // TODO: Calculate impermanent loss percentage
+        hodlValueUsd: totalValue, // TODO: Calculate HODL value
+        lpValueUsd: totalValue,
       },
       rewards: {
         feesToken0: position.fee0 || 0,
@@ -716,7 +524,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         feesUsd: poolRewards,
         rflr: position.rflrAmount || 0,
         rflrUsd: rflrRewards,
-        // APS removed for Phase 3 - will add back later
+        aps: apsAmount || 0,
+        apsUsd: apsRewards,
         reinvestedUsd: 0, // TODO: Calculate reinvested amount
         claimedUsd: totalClaimedFees,
         totalUsd: totalRewardsUsd,

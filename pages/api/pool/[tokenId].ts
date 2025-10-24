@@ -307,11 +307,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let firstClaimDate: Date | null = null;
     let lastClaimDate: Date | null = null;
     
+    // Get all DECREASE tx hashes to filter out auto-collects
+    // (Uniswap V3 auto-collects fees when decreasing liquidity)
+    const decreaseTxHashes = new Set(
+      ledgerEvents
+        .filter((e) => e.eventType === PositionEventType.DECREASE)
+        .map((e) => e.txHash)
+    );
+
     const collectEvents = ledgerEvents.filter(
       (event) => event.eventType === PositionEventType.COLLECT
     );
 
     for (const event of collectEvents) {
+      // Skip COLLECT events that are part of a DECREASE transaction
+      if (decreaseTxHashes.has(event.txHash)) {
+        continue;
+      }
+
       const rawAmount0 = event.amount0 ? BigInt(event.amount0) : 0n;
       const rawAmount1 = event.amount1 ? BigInt(event.amount1) : 0n;
       const amount0 = bigIntToDecimal(rawAmount0, position.token0.decimals);

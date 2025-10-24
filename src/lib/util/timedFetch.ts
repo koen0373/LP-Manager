@@ -23,7 +23,10 @@ export function logFetchStart(url: string, method: string = 'GET'): string {
   };
   
   activeRequests.set(requestId, timing);
-  console.log(`[FETCH START] ${method} ${url}`);
+  // Only log in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[FETCH START] ${method} ${url}`);
+  }
   
   return requestId;
 }
@@ -31,7 +34,9 @@ export function logFetchStart(url: string, method: string = 'GET'): string {
 export function logFetchEnd(requestId: string, status?: number, error?: string): void {
   const timing = activeRequests.get(requestId);
   if (!timing) {
-    console.warn(`[FETCH END] Unknown request ID: ${requestId}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`[FETCH END] Unknown request ID: ${requestId}`);
+    }
     return;
   }
   
@@ -40,10 +45,12 @@ export function logFetchEnd(requestId: string, status?: number, error?: string):
   timing.status = status;
   timing.error = error;
   
-  const statusText = status ? ` ${status}` : '';
-  const errorText = error ? ` ERROR: ${error}` : '';
-  
-  console.log(`[FETCH END] ${timing.method} ${timing.url}${statusText} - ${timing.duration}ms${errorText}`);
+  // Only log errors in production, everything in development
+  if (process.env.NODE_ENV === 'development' || error || (status && status >= 400)) {
+    const statusText = status ? ` ${status}` : '';
+    const errorText = error ? ` ERROR: ${error}` : '';
+    console.log(`[FETCH END] ${timing.method} ${timing.url}${statusText} - ${timing.duration}ms${errorText}`);
+  }
   
   activeRequests.delete(requestId);
 }

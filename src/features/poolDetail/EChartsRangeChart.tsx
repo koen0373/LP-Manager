@@ -262,7 +262,17 @@ export default function EChartsRangeChart({
       type: 'value',
       min: yMin,
       max: yMax,
-      axisLabel: { color: LIQUI.mist },
+      axisLabel: { 
+        color: LIQUI.mist,
+        formatter: (value: number) => {
+          // Smart formatting based on price magnitude
+          if (value >= 1000) return value.toFixed(0);
+          if (value >= 10) return value.toFixed(2);
+          if (value >= 1) return value.toFixed(3);
+          if (value >= 0.01) return value.toFixed(4);
+          return value.toFixed(6);
+        }
+      },
       axisLine: { lineStyle: { color: LIQUI.grid } },
       splitLine: { show: true, lineStyle: { color: LIQUI.grid } },
     },

@@ -27,20 +27,31 @@ export const config = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const startTime = Date.now();
+  let responded = false;
+  
+  // Guard against duplicate responses
+  const sendResponse = (status: number, body: unknown) => {
+    if (!responded) {
+      responded = true;
+      return res.status(status).json(body);
+    }
+  };
   
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return sendResponse(405, { error: 'Method not allowed' });
   }
 
   const { tokenId } = req.query;
   const forceRefresh = req.query.refresh === '1';
 
   if (!tokenId || typeof tokenId !== 'string') {
-    return res.status(400).json({ error: 'Token ID is required' });
+    return sendResponse(400, { error: 'Token ID is required' });
   }
 
+  const startLog = `[API] pool/${tokenId}`;
+
   try {
-    console.log(`[API] Fetching pool data for token ID: ${tokenId}`);
+    console.log(`${startLog} - Start`);
     
     // Clear caches if refresh is requested
     if (forceRefresh) {
@@ -50,7 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Get position data
     const position = await getPositionById(tokenId);
     if (!position) {
-      return res.status(404).json({ error: 'Position not found' });
+      return sendResponse(404, { error: 'Position not found' });
     }
 
     const POSITION_MANAGER_ADDRESS = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657';
@@ -70,12 +81,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let ledgerTransfers: Awaited<ReturnType<typeof syncPositionLedger>>['transfers'] = [];
     
     if (forceRefresh) {
-      console.log(`[API] Force refresh - syncing ledger for token ${tokenId}`);
       let latestBlock = fromBlock;
       try {
         latestBlock = await fetchLatestBlockNumber();
-      } catch (error) {
-        console.warn(`[API] Failed to fetch latest block number for token ${tokenId}:`, error);
+      } catch {
         latestBlock = Math.max(fromBlock, 0);
       }
       const syncResult = await syncPositionLedger({
@@ -91,7 +100,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } else {
       // Use database cache with smart auto-sync for first-time users
       try {
-        console.log(`[API] Checking cached ledger data for token ${tokenId}`);
         const { getPositionEvents } = await import('@/lib/data/positionEvents');
         const { getPositionTransfers } = await import('@/lib/data/positionTransfers');
         const { hasCachedData, isCacheStale } = await import('@/lib/data/syncMetadata');
@@ -102,14 +110,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
         // If no data or stale, sync now (one-time 30s wait for new users)
         if (!hasData || isStale) {
-          const reason = !hasData ? 'empty cache' : 'stale data';
-          console.log(`[API] ${reason} for token ${tokenId}, performing initial sync...`);
+          const syncReason = !hasData ? 'initial' : 'refresh';
           
           let latestBlock = fromBlock;
           try {
             latestBlock = await fetchLatestBlockNumber();
-          } catch (_error) {
-            console.warn(`[API] Failed to fetch latest block, using fromBlock ${fromBlock}`);
+          } catch {
+            latestBlock = fromBlock;
           }
           
           const syncResult = await syncPositionLedger({
@@ -123,23 +130,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           
           ledgerEvents = syncResult.events;
           ledgerTransfers = syncResult.transfers;
-          console.log(`[API] Sync complete for token ${tokenId}: ${ledgerEvents.length} events, ${ledgerTransfers.length} transfers`);
+          console.log(`${startLog} - Sync (${syncReason}): ${ledgerEvents.length}e/${ledgerTransfers.length}t`);
         } else {
           // Use cached data - instant response
-          console.log(`[API] Using fresh cached data for token ${tokenId}`);
           [ledgerEvents, ledgerTransfers] = await Promise.all([
             getPositionEvents(tokenId, { limit: 1000 }),
             getPositionTransfers(tokenId, { limit: 100 }),
           ]);
         }
-      } catch (dbError) {
-        console.warn(`[API] Database error for token ${tokenId}, falling back to live sync:`, dbError);
+      } catch {
         // Fallback: sync directly without DB (works even if Prisma is down)
+        console.error(`${startLog} - DB error, using fallback`);
         let latestBlock = fromBlock;
         try {
           latestBlock = await fetchLatestBlockNumber();
-        } catch (_error) {
-          console.warn(`[API] Failed to fetch latest block, using fromBlock ${fromBlock}`);
+        } catch {
+          latestBlock = fromBlock;
         }
         
         const syncResult = await syncPositionLedger({
@@ -226,8 +232,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           initialAmount0 = bigIntToDecimal(args.amount0, position.token0.decimals);
           initialAmount1 = bigIntToDecimal(args.amount1, position.token1.decimals);
         }
-      } catch (error) {
-        console.warn('[API] Failed to decode mint event for initial snapshot', error);
+        } catch {
+        // Silently skip failed mint decode
       }
     }
 
@@ -256,8 +262,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const ts = Number(block.timestamp);
         blockTimestampCache.set(blockNumber, ts);
         return ts;
-      } catch (error) {
-        console.warn(`[API] Failed to resolve block timestamp for ${blockNumber}:`, error);
+      } catch {
         const fallbackTs = Math.floor(Date.now() / 1000);
         blockTimestampCache.set(blockNumber, fallbackTs);
         return fallbackTs;
@@ -333,7 +338,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Fallback to pool swaps if no position event data
         if (history.length === 0) {
-          console.log('[API] No price history from position events, trying pool swaps...');
           history = await buildPriceHistoryFromSwaps(
             position.poolAddress,
             position.token0.decimals,
@@ -348,7 +352,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
         // If still no data, create a minimal chart with current price + range
         if (history.length === 0 && lowerPrice > 0 && currentPrice > 0) {
-          console.log('[API] No historical data, creating fallback chart with range visualization');
           const now = Math.floor(Date.now() / 1000);
           
           // Create a visual representation of the price range over 24h
@@ -364,10 +367,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             { t: (now - interval).toString(), p: currentPrice },        // Recent: current
             { t: now.toString(), p: currentPrice },                      // Now: current
           ].filter(p => p.p > 0 && !isNaN(p.p)); // Safety: remove invalid points
-          
-          console.log(`[API] Created ${history.length} fallback price points`);
         } else if (history.length === 0) {
-          console.warn('[API] Cannot create fallback chart: missing price data', { lowerPrice, currentPrice });
+          // No price data available - chart will show empty
         }
         
         return history;
@@ -381,8 +382,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const priceHistory = priceHistoryResult.status === 'fulfilled' 
       ? priceHistoryResult.value 
       : [];
-    
-    console.log(`[API] Built price history with ${priceHistory.length} points`);
 
     // Determine pool creation date
     const poolCreationDate = initialTimestamp || contractCreationDate || new Date();
@@ -542,6 +541,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Final sort of activity entries by timestamp (most recent first)
     activityEntries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
+    // Summary log with key metrics
+    console.log(`${startLog} - Data ready: ${priceHistory.length}p, ${activityEntries.length}a`);
+
     const vm: PoolDetailVM = {
       pairLabel: `${position.token0.symbol}/${position.token1.symbol}`,
       poolId: parseInt(position.id, 10),
@@ -605,12 +607,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     const duration = Date.now() - startTime;
-    console.log(`[API] /api/pool/${tokenId} - Success - ${duration}ms`);
-    res.status(200).json(vm);
+    console.log(`${startLog} - OK (${duration}ms)`);
+    return sendResponse(200, vm);
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error(`[API] /api/pool/${tokenId} - Failed - ${duration}ms:`, error);
-    res.status(500).json({ 
+    console.error(`${startLog} - FAIL (${duration}ms):`, error instanceof Error ? error.message : error);
+    return sendResponse(500, { 
       error: error instanceof Error ? error.message : 'Failed to load pool data' 
     });
   }

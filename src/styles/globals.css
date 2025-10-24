@@ -17,7 +17,7 @@ body {
   /* Water splash at bottom (50% of screen) with dark overlay at top */
   background-image: 
     linear-gradient(to bottom, rgba(10,10,10,1) 0%, rgba(10,10,10,0.95) 40%, rgba(10,10,10,0.7) 50%, rgba(10,10,10,0.4) 70%, transparent 100%),
-    url('/water-splash.jpg');
+    url('/water-splash.webp');
   background-size: 100% 100%, cover;
   background-position: center top, center bottom;
   background-repeat: no-repeat, no-repeat;

@@ -1,0 +1,77 @@
+name: Fetch Railway Deployment Logs
+
+on:
+  workflow_dispatch:  # Manual trigger
+    inputs:
+      deployment_id:
+        description: 'Railway Deployment ID (optional)'
+        required: false
+        type: string
+
+jobs:
+  fetch-logs:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+      
+      - name: Fetch Railway deployment logs
+        run: |
+          echo "🚂 Fetching Railway deployment logs..."
+          
+          # Create logs directory
+          mkdir -p railway-logs
+          
+          # Export Railway token
+          export RAILWAY_TOKEN="${{ secrets.RAILWAY_API_TOKEN }}"
+          
+          # Fetch logs (last 500 lines)
+          railway logs \
+            --project ${{ secrets.RAILWAY_PROJECT_ID }} \
+            --environment production \
+            --json \
+            > railway-logs/deployment-logs.json || true
+          
+          # Also get plain text version
+          railway logs \
+            --project ${{ secrets.RAILWAY_PROJECT_ID }} \
+            --environment production \
+            > railway-logs/deployment-logs.txt || true
+          
+          echo "📋 Latest 50 log lines:"
+          tail -n 50 railway-logs/deployment-logs.txt || echo "No logs found"
+          
+          # Get deployment status
+          railway status > railway-logs/deployment-status.txt || true
+          
+          echo "✅ Logs fetched successfully"
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
+      
+      - name: Upload logs as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: railway-deployment-logs-${{ github.run_number }}
+          path: railway-logs/
+          retention-days: 7
+      
+      - name: Display log summary
+        run: |
+          echo "📊 Log Summary:"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          
+          if [ -f railway-logs/deployment-logs.txt ]; then
+            echo "Total lines: $(wc -l < railway-logs/deployment-logs.txt)"
+            echo ""
+            echo "🔍 Recent errors/warnings:"
+            grep -iE "(error|warning|failed|exception)" railway-logs/deployment-logs.txt | tail -n 20 || echo "No errors found"
+          else
+            echo "⚠️  No logs file created"
+          fi
+          
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+

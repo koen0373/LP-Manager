@@ -124,7 +124,7 @@ export default function FAQ() {
         <div className="mt-12 p-6 bg-liqui-card border border-liqui-border rounded-lg">
           <h2 className="text-xl font-bold text-white mb-3">Still have questions?</h2>
           <p className="text-liqui-subtext mb-4">
-            If you can't find the answer you're looking for, feel free to reach out:
+            If you can&apos;t find the answer you&apos;re looking for, feel free to reach out:
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
             <a

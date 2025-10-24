@@ -235,7 +235,7 @@ export default function EChartsRangeChart({
     return lines;
   }, [activity, fromTs, toTs]);
 
-  /** Y padding so min/max sit visually centered-ish */
+  /** Y-axis auto-scaling based ONLY on actual price data */
   const [yMin, yMax] = useMemo(() => {
     const values = data.map(d => d[1]).filter(v => Number.isFinite(v) && v > 0);
     if (values.length === 0) return [0, 1];
@@ -244,41 +244,23 @@ export default function EChartsRangeChart({
     const dataMin = Math.min(...values);
     const dataMax = Math.max(...values);
     
-    // Include configured range boundaries
-    const absoluteMin = Math.min(dataMin, minPrice);
-    const absoluteMax = Math.max(dataMax, maxPrice);
-    
-    // Calculate range with padding
-    const range = absoluteMax - absoluteMin;
+    // Calculate range with padding for visual breathing room
+    const range = dataMax - dataMin;
     const padding = range * 0.15; // 15% padding top and bottom
     
     return [
-      Math.max(0, absoluteMin - padding),
-      absoluteMax + padding
+      Math.max(0, dataMin - padding),
+      dataMax + padding
     ];
-  }, [data, minPrice, maxPrice]);
+  }, [data]);
 
-  /** markLines: min/max (horizontal) + NOW (horizontal thick) + activity (vertical) */
+  /** markLines: DISABLED for now - will add step by step */
   const markLines = useMemo(() => {
-    const hLines = [
-      {
-        yAxis: minPrice,
-        lineStyle: { color: LIQUI.range, type: 'dashed' as const, width: 1.5 },
-        label: { formatter: 'Min', position: 'insideEndRight' as const, color: LIQUI.mist },
-      },
-      {
-        yAxis: maxPrice,
-        lineStyle: { color: LIQUI.range, type: 'dashed' as const, width: 1.5 },
-        label: { formatter: 'Max', position: 'insideEndRight' as const, color: LIQUI.mist },
-      },
-      {
-        yAxis: currentPrice,
-        lineStyle: { color: LIQUI.now, type: 'solid' as const, width: 2.5 },
-        label: { formatter: 'Now', position: 'insideEndRight' as const, color: LIQUI.mist, fontWeight: 'bold' as const },
-      },
-    ];
-    return [...hLines, ...activityLines];
-  }, [minPrice, maxPrice, currentPrice, activityLines]);
+    // TODO: Step 2 - Add min/max range lines
+    // TODO: Step 3 - Add current price line
+    // TODO: Step 4 - Add activity event lines
+    return [];
+  }, []);
 
   const xLabelFormatter = useMemo(() => timeFormatter(timeRange), [timeRange]);
 

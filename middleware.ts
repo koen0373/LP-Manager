@@ -38,8 +38,8 @@ export function middleware(req: NextRequest) {
       ].join('; ')
     : [
         "default-src 'self'",
-        // Production: strict CSP
-        `script-src 'self' 'nonce-${nonce}'`,
+        // Production: allow unsafe-eval for ECharts (chart library requires it)
+        `script-src 'self' 'unsafe-eval' 'nonce-${nonce}'`,
         "connect-src 'self'",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "font-src 'self' https://fonts.gstatic.com data:",

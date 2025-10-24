@@ -65,7 +65,10 @@ export default function Header({
             <Link href="/" className="flex items-center">
               <LogoComponent />
             </Link>
-            <div className="hidden sm:flex flex-col leading-tight -mt-1">
+            {/* Vertical divider */}
+            <div className="hidden sm:block h-12 w-[2px] bg-mist/40"></div>
+            {/* Tagline */}
+            <div className="hidden sm:flex flex-col leading-tight">
               <span className="text-mist text-[14px] font-medium tracking-wide">The</span>
               <span className="text-mist text-[14px] font-medium tracking-wide">Liquidity Pool</span>
               <span className="text-mist text-[14px] font-medium tracking-wide">Intelligence Platform</span>

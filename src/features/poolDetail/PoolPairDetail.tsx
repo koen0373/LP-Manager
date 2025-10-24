@@ -375,16 +375,34 @@ export function PoolPairDetail({
           {vm.activity && vm.activity.length > 0 ? (
             <div className="space-y-3">
               {vm.activity.slice(0, 5).map((entry) => (
-                <div key={entry.id} className="flex items-center justify-between py-2 border-b border-liqui-border last:border-b-0">
-                  <div>
-                    <div className="text-white font-medium">{entry.title}</div>
-                    {entry.subtitle && (
-                      <div className="text-liqui-subtext text-sm">{entry.subtitle}</div>
-                    )}
+                <div key={entry.id} className="py-3 border-b border-liqui-border last:border-b-0">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <div className="text-white font-medium">{entry.title}</div>
+                      {entry.subtitle && (
+                        <div className="text-liqui-subtext text-sm">{entry.subtitle}</div>
+                      )}
+                    </div>
+                    <div className="text-liqui-subtext text-sm">
+                      {formatDateShort(entry.timestamp)}
+                    </div>
                   </div>
-                  <div className="text-liqui-subtext text-sm">
-                    {formatDateShort(entry.timestamp)}
-                  </div>
+                  {entry.metrics && entry.metrics.length > 0 && (
+                    <div className="flex gap-4 mt-2">
+                      {entry.metrics.map((metric, idx) => (
+                        <div key={idx} className="text-sm">
+                          <span className="text-liqui-subtext">{metric.label}: </span>
+                          <span className={`font-medium ${
+                            metric.accent === 'positive' ? 'text-green-400' :
+                            metric.accent === 'negative' ? 'text-red-400' :
+                            'text-white'
+                          }`}>
+                            {metric.value}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

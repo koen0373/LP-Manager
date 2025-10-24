@@ -8,8 +8,8 @@ import { WaterSpinner } from '@/components/WaterSpinner';
 import { formatDateShort } from '@/lib/formatDate';
 
 // Dynamic import - pure client-side (no SSR)
-const PriceChart = dynamic(
-  () => import('./PriceChart'),
+const EChartsRangeChart = dynamic(
+  () => import('./EChartsRangeChart'),
   { 
     ssr: false,
     loading: () => (
@@ -352,11 +352,12 @@ export function PoolPairDetail({
 
         {/* Range & Price Chart */}
         <div className="mt-6">
-          <PriceChart
+          <EChartsRangeChart
             priceHistory={vm.priceHistory}
-            token0Symbol={vm.token0?.symbol}
-            token1Symbol={vm.token1?.symbol}
-            height={400}
+            minPrice={vm.range.min}
+            maxPrice={vm.range.max}
+            currentPrice={vm.range.current}
+            activity={vm.activity}
           />
         </div>
 

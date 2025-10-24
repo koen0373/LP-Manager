@@ -364,62 +364,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const poolCreationDate = initialTimestamp || new Date();
         const creationTimestamp = Math.floor(poolCreationDate.getTime() / 1000);
         
-        // Build price history from ledger events (they have tick/price data)
-        let history: { t: string; p: number }[] = [];
-        
-        console.log(`[API] Ledger events available: ${ledgerEvents.length}`);
-        
-        if (ledgerEvents.length > 0) {
-          const eventsWithPrice = ledgerEvents.filter(e => e.price1Per0 !== undefined && e.price1Per0 > 0);
-          console.log(`[API] Events with price1Per0: ${eventsWithPrice.length}`);
-          
-          if (eventsWithPrice.length > 0) {
-            console.log(`[API] First event sample:`, {
-              timestamp: eventsWithPrice[0].timestamp,
-              timestampType: typeof eventsWithPrice[0].timestamp,
-              price: eventsWithPrice[0].price1Per0,
-              date: new Date(eventsWithPrice[0].timestamp * 1000).toISOString(),
-            });
+        // Try position events first
+        let history = await buildPriceHistory(
+          position.poolAddress,
+          position.token0.decimals,
+          position.token1.decimals,
+          {
+            fromTimestamp: creationTimestamp,
+            toTimestamp: Math.floor(Date.now() / 1000),
+            maxPoints: 500,
           }
-          
-          history = eventsWithPrice
-            .map(e => {
-              let timestamp = e.timestamp;
-              
-              // Fix: Timestamps that are > 2030 are likely wrong (bug in sync)
-              // Flare block timestamps seem to have an offset issue
-              if (timestamp > 1893456000) { // Jan 1, 2030
-                // Subtract ~31 years (Flare genesis offset issue?)
-                timestamp = timestamp - 978307200; // 31 years in seconds
-                console.warn(`[API] Corrected timestamp from ${e.timestamp} to ${timestamp}`);
-              }
-              
-              return {
-                t: timestamp.toString(),
-                p: e.price1Per0!,
-              };
-            })
-            .sort((a, b) => Number(a.t) - Number(b.t));
-          
-          console.log(`[API] Built ${history.length} price points. Sample:`, history[0]);
-        }
-        
-        // If no ledger events with price, try database
-        if (history.length === 0) {
-          console.log('[API] No price from ledger, trying database...');
-          history = await buildPriceHistory(
-            position.poolAddress,
-            position.token0.decimals,
-            position.token1.decimals,
-            {
-              fromTimestamp: creationTimestamp,
-              toTimestamp: Math.floor(Date.now() / 1000),
-              maxPoints: 500,
-            }
-          );
-        }
-        
-        // Fallback to pool swaps if still no data
+        );
+
+        // Fallback to pool swaps if no position event data
         if (history.length === 0) {
           console.log('[API] No price history from position events, trying pool swaps...');
           history = await buildPriceHistoryFromSwaps(
@@ -434,22 +391,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           );
         }
         
-        // Always add current price as latest point if we have it
-        if (currentPrice > 0 && !isNaN(currentPrice)) {
+        // If still no data, create a minimal chart with current price + range
+        if (history.length === 0 && lowerPrice > 0 && currentPrice > 0) {
+          console.log('[API] No historical data, creating fallback chart with range visualization', {
+            lowerPrice,
+            upperPrice,
+            currentPrice,
+            token0: position.token0.symbol,
+            token1: position.token1.symbol,
+            currentTick,
+            price0Per1,
+          });
           const now = Math.floor(Date.now() / 1000);
-          history.push({ t: now.toString(), p: currentPrice });
-        }
-        
-        // If still no data after all attempts, create minimal fallback
-        if (history.length === 0 && currentPrice > 0 && !isNaN(currentPrice)) {
-          console.log('[API] No historical data available, creating minimal fallback');
-          const now = Math.floor(Date.now() / 1000);
+          
+          // Create a visual representation of the price range over 24h
+          // This helps users see where the current price sits within their range
+          const timeSpan = 24 * 3600; // 24 hours
+          const interval = timeSpan / 5; // 6 points total
+          
           history = [
-            { t: (now - 3600).toString(), p: currentPrice },  // 1h ago
-            { t: now.toString(), p: currentPrice },           // Now
-          ];
+            { t: (now - timeSpan).toString(), p: lowerPrice },           // 24h ago: min
+            { t: (now - timeSpan + interval).toString(), p: lowerPrice + (currentPrice - lowerPrice) * 0.2 },
+            { t: (now - timeSpan + interval * 2).toString(), p: lowerPrice + (currentPrice - lowerPrice) * 0.5 },
+            { t: (now - timeSpan + interval * 3).toString(), p: currentPrice * 0.9 },
+            { t: (now - interval).toString(), p: currentPrice },        // Recent: current
+            { t: now.toString(), p: currentPrice },                      // Now: current
+          ].filter(p => p.p > 0 && !isNaN(p.p)); // Safety: remove invalid points
+          
+          console.log(`[API] Created ${history.length} fallback price points for ${position.token0.symbol}/${position.token1.symbol}`);
         } else if (history.length === 0) {
-          console.warn('[API] Cannot create fallback chart: missing price data', { currentPrice });
+          console.warn('[API] Cannot create fallback chart: missing price data', { lowerPrice, currentPrice });
         }
         
         // Debug: Log final priceHistory

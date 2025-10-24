@@ -29,6 +29,10 @@ const faqData: FAQItem[] = [
     answer: "RFLR (Reward FLR) are incentive rewards distributed by the Flare Network to liquidity providers. These rewards are separate from trading fees and are designed to incentivize liquidity provision. RFLR rewards accrue over time and are shown in the 'Incentives' column. They can be claimed via the Flare Portal at the end of each month."
   },
   {
+    question: "When should I claim my fees?",
+    answer: "The optimal time to claim fees depends on gas costs vs accumulated fees. Liqui shows a green 'Claim' button when your unclaimed fees exceed $5 USD (recommended threshold) and a yellow button for $1-$5 (marginal). Below $1, the button is disabled (grey) as gas costs likely exceed the value. For maximum efficiency, claim when fees are >$5 or when you're removing liquidity anyway (which auto-collects fees). Remember: fees are already earning yield in the pool, so there's no urgency unless you need the funds."
+  },
+  {
     question: "What&apos;s the difference between Active and Inactive pools?",
     answer: "Active pools have their current price within the set price range, meaning they actively provide liquidity for trades and earn swap fees. Inactive (Out of Range) pools have their current price outside the set range, so they don&apos;t earn swap fees but may still earn RFLR incentive rewards."
   },

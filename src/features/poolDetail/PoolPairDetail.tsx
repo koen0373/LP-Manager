@@ -259,7 +259,32 @@ export function PoolPairDetail({
               {/* Unclaimed Fees */}
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-liqui-subtext">Unclaimed fees:</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-liqui-subtext">Unclaimed fees:</span>
+                    {/* Claim button with smart threshold logic */}
+                    <button
+                      onClick={onClaimFees}
+                      disabled={vm.rewards.feesUsd < 1}
+                      className={`
+                        text-xs px-3 py-1 rounded font-medium transition-all
+                        ${vm.rewards.feesUsd >= 5 
+                          ? 'bg-green-600 hover:bg-green-700 text-white cursor-pointer' 
+                          : vm.rewards.feesUsd >= 1
+                          ? 'bg-yellow-600 hover:bg-yellow-700 text-white cursor-pointer'
+                          : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                        }
+                      `}
+                      title={
+                        vm.rewards.feesUsd >= 5 
+                          ? '✅ Optimal to claim (>$5)'
+                          : vm.rewards.feesUsd >= 1
+                          ? '⚠️ Marginal ($1-$5, gas costs may be high)'
+                          : '🚫 Too low to claim (<$1, wait for more fees)'
+                      }
+                    >
+                      Claim
+                    </button>
+                  </div>
                   <span className="text-white">{formatUsd(vm.rewards.feesUsd)}</span>
                 </div>
                 <div className="pl-4 space-y-1 text-sm">
@@ -286,15 +311,6 @@ export function PoolPairDetail({
                   {formatAmount(vm.rewards.rflr)} RFLR
                 </div>
               </div>
-              
-              {onClaimFees && (
-                <button
-                  onClick={onClaimFees}
-                  className="w-full mt-3 px-4 py-2 bg-liqui-primary text-white rounded hover:bg-liqui-blueHover font-medium"
-                >
-                  Claim Rewards
-                </button>
-              )}
             </div>
           </div>
 

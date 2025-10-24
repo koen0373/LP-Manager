@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { PoolDetailVM } from './types';
 import Header from '@/components/Header';
 import { WaterSpinner } from '@/components/WaterSpinner';
-import { formatDate, formatDateShort } from '@/lib/formatDate';
+import { formatDateShort } from '@/lib/formatDate';
 
 // Dynamic import - pure client-side (no SSR)
 const EChartsRangeChart = dynamic(
@@ -344,26 +344,76 @@ export function PoolPairDetail({
 
         {/* Pool Earnings */}
         <div className="mt-6 card rounded-xl p-6 hover:ring-1 hover:ring-liqui-aqua/40 transition">
-          <h2 className="text-mist text-sm font-semibold uppercase tracking-wide mb-4">Pool Earnings</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <h2 className="text-mist text-sm font-semibold uppercase tracking-wide mb-6">Pool Earnings</h2>
+          
+          {/* Row 1: TVL */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <div className="text-liqui-subtext text-sm">Creation Date</div>
-              <div className="text-white">
-                {formatDate(vm.createdAt)}
+              <div className="text-liqui-subtext text-sm mb-1">Initial TVL</div>
+              <div className="text-white text-lg font-medium">{formatUsd(vm.funding.usdValue)}</div>
+            </div>
+            <div>
+              <div className="text-liqui-subtext text-sm mb-1">Actual TVL</div>
+              <div className="text-white text-lg font-medium">{formatUsd(vm.tvl.tvlUsd)}</div>
+            </div>
+          </div>
+
+          {/* Row 2: Collected */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <div className="text-liqui-subtext text-sm mb-1">Collected Fees</div>
+              <div className="text-white text-lg font-medium">{formatUsd(vm.rewards.claimedUsd || 0)}</div>
+            </div>
+            <div>
+              <div className="text-liqui-subtext text-sm mb-1">Collected Incentives</div>
+              <div className="text-white text-lg font-medium">
+                {vm.rewards.rflr ? `${formatAmount(vm.rewards.rflr)} RFLR (${formatUsd(vm.rewards.rflrUsd || 0)})` : '$0.00'}
               </div>
             </div>
+          </div>
+
+          {/* Row 3: Unclaimed */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <div className="text-liqui-subtext text-sm">Initial TVL</div>
-              <div className="text-white">{formatUsd(vm.funding.usdValue)}</div>
+              <div className="text-liqui-subtext text-sm mb-1">Unclaimed Fees</div>
+              <div className="text-white text-lg font-medium">{formatUsd(vm.rewards.totalUsd - (vm.rewards.rflrUsd || 0))}</div>
             </div>
             <div>
-              <div className="text-liqui-subtext text-sm">Current TVL</div>
-              <div className="text-white">{formatUsd(vm.tvl.tvlUsd)}</div>
+              <div className="text-liqui-subtext text-sm mb-1">Unclaimed Incentives</div>
+              <div className="text-white text-lg font-medium">
+                {vm.rewards.rflr ? `${formatAmount(vm.rewards.rflr)} RFLR (${formatUsd(vm.rewards.rflrUsd || 0)})` : '$0.00'}
+              </div>
             </div>
-            <div>
-              <div className="text-liqui-subtext text-sm">Total Claimed</div>
-              <div className="text-white">{formatUsd(vm.rewards.claimedUsd)}</div>
+          </div>
+
+          {/* Row 4: APY */}
+          <div className="mb-6">
+            <div className="text-liqui-subtext text-sm mb-2">APY</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <div className="text-liqui-subtext text-xs mb-1">24h</div>
+                <div className="text-white font-medium">--%</div>
+              </div>
+              <div>
+                <div className="text-liqui-subtext text-xs mb-1">7d</div>
+                <div className="text-white font-medium">--%</div>
+              </div>
+              <div>
+                <div className="text-liqui-subtext text-xs mb-1">1M</div>
+                <div className="text-white font-medium">--%</div>
+              </div>
+              <div>
+                <div className="text-liqui-subtext text-xs mb-1">1Y</div>
+                <div className="text-white font-medium">--%</div>
+              </div>
             </div>
+          </div>
+
+          {/* Row 5: IL Loss */}
+          <div>
+            <div className="text-liqui-subtext text-sm mb-1">Impermanent Loss</div>
+            <div className="text-red-400 text-lg font-medium">--%</div>
+            <div className="text-liqui-subtext text-xs mt-1">Compared to holding tokens</div>
           </div>
         </div>
 

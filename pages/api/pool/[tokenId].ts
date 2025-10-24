@@ -383,10 +383,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
           
           history = eventsWithPrice
-            .map(e => ({
-              t: e.timestamp.toString(),
-              p: e.price1Per0!,
-            }))
+            .map(e => {
+              let timestamp = e.timestamp;
+              
+              // Fix: Timestamps that are > 2030 are likely wrong (bug in sync)
+              // Flare block timestamps seem to have an offset issue
+              if (timestamp > 1893456000) { // Jan 1, 2030
+                // Subtract ~31 years (Flare genesis offset issue?)
+                timestamp = timestamp - 978307200; // 31 years in seconds
+                console.warn(`[API] Corrected timestamp from ${e.timestamp} to ${timestamp}`);
+              }
+              
+              return {
+                t: timestamp.toString(),
+                p: e.price1Per0!,
+              };
+            })
             .sort((a, b) => Number(a.t) - Number(b.t));
           
           console.log(`[API] Built ${history.length} price points. Sample:`, history[0]);

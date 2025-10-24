@@ -3,397 +3,74 @@
 import React from 'react';
 import Head from 'next/head';
 import Header from '../src/components/Header';
-import PositionsTable from '../src/components/PositionsTable';
-import type { PositionRow } from '../src/types/positions';
+import { WaitlistHero } from '@/components/waitlist/WaitlistHero';
+import { WaitlistForm } from '@/components/waitlist/WaitlistForm';
+import { FastTrackModal } from '@/components/waitlist/FastTrackModal';
 
-export default function LPManagerPage() {
-  const [tab, setTab] = React.useState<'active' | 'inactive' | 'all'>('active');
-  const [walletAddress, setWalletAddress] = React.useState<string>('');
-  const [positions, setPositions] = React.useState<PositionRow[]>([]);
-  const [loading, setLoading] = React.useState(false);
-  const [syncing, setSyncing] = React.useState(false);
-  const [error, setError] = React.useState<string>('');
-  const [isClient, setIsClient] = React.useState(true);
-
-  // Ensure client-side rendering
-  React.useEffect(() => {
-    console.log('Setting isClient to true');
-    setIsClient(true);
-  }, []);
-
-  // Auto-sync trigger
-  const triggerAutoSync = async (tokenIds: number[]) => {
-    try {
-      console.log('[AUTO-SYNC] Triggering sync for positions:', tokenIds);
-      setSyncing(true);
-
-      const response = await fetch('/api/backfill/auto', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tokenIds }),
-      });
-
-      const result = await response.json();
-      console.log('[AUTO-SYNC] Response:', result);
-
-      if (result.syncing) {
-        // Start polling for completion
-        startSyncPolling(tokenIds);
-      } else {
-        setSyncing(false);
-      }
-    } catch (err) {
-      console.error('[AUTO-SYNC] Error:', err);
-      setSyncing(false);
-    }
-  };
-
-  // Poll sync status
-  const startSyncPolling = (tokenIds: number[]) => {
-    let attempts = 0;
-    const maxAttempts = 60; // 5 minutes max (5s intervals)
-
-    const interval = setInterval(async () => {
-      attempts++;
-
-      try {
-        const response = await fetch(`/api/backfill/status?tokenIds=${tokenIds.join(',')}`);
-        const status = await response.json();
-
-        console.log(`[POLLING] Attempt ${attempts}/${maxAttempts}:`, status);
-
-        if (status.allFresh) {
-          console.log('[POLLING] ✅ All positions synced!');
-          clearInterval(interval);
-          setSyncing(false);
-          
-          // Refresh positions with full data
-          if (walletAddress) {
-            fetchPositions(walletAddress, true);
-          }
-        } else if (attempts >= maxAttempts) {
-          console.log('[POLLING] ⏱️ Timeout reached');
-          clearInterval(interval);
-          setSyncing(false);
-        }
-      } catch (err) {
-        console.error('[POLLING] Error:', err);
-        clearInterval(interval);
-        setSyncing(false);
-      }
-    }, 5000); // Poll every 5 seconds
-  };
-
-  // Fetch positions when wallet connects
-  const TVL_ACTIVE_THRESHOLD = 0.01; // USD
-
-  const fetchPositions = React.useCallback(
-    async (address: string, refresh = false) => {
-      setLoading(true);
-      setError('');
-      try {
-        console.log('[HOME] Fetching positions for address:', address);
-        
-        // Use API route for Vercel compatibility
-        const url = `/api/positions?address=${address}${refresh ? '&refresh=1' : ''}`;
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        });
-        
-        console.log('[HOME] Response status:', response.status);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('[HOME] Error response:', errorText);
-          throw new Error(`API returned ${response.status}`);
-        }
-
-        const data = await response.json();
-        if (!Array.isArray(data)) {
-          throw new Error('Invalid response format');
-        }
-
-        const walletPositions = data;
-        console.log('[HOME] Received positions:', walletPositions.length);
-        
-        const normalizedPositions = walletPositions.map((position: PositionRow) => {
-          const tvlUsd = Number(position.tvlUsd ?? 0);
-          const rewardsUsd = Number(position.rewardsUsd ?? 0);
-          const status = tvlUsd > TVL_ACTIVE_THRESHOLD ? 'Active' : 'Inactive';
-          return {
-            ...position,
-            tvlUsd,
-            rewardsUsd,
-            status: status as 'Active' | 'Inactive',
-          };
-        });
-        setPositions(normalizedPositions);
-        setLastUpdated(new Date().toLocaleTimeString());
-
-        // Trigger auto-sync for pool history
-        if (walletPositions.length > 0) {
-          triggerAutoSync(walletPositions.map(p => p.tokenId));
-        }
-      } catch (err) {
-        console.error('[HOME] Error fetching positions:', err);
-        setError(`Failed to fetch positions: ${err instanceof Error ? err.message : 'Unknown error'}`);
-        setPositions([]);
-        setLastUpdated("");
-      } finally {
-        setLoading(false);
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
-
-  // Handle wallet connection
-  const handleWalletConnected = (address: string) => {
-    setWalletAddress(address);
-    fetchPositions(address, true);
-  };
-
-  // Handle wallet disconnection
-  const handleWalletDisconnected = () => {
-    setWalletAddress('');
-    setPositions([]);
-    setError('');
-    setLastUpdated('');
-  };
-
-  const [lastUpdated, setLastUpdated] = React.useState<string>('');
-
-  // Update timestamp when positions change
-  React.useEffect(() => {
-    if (positions.length > 0) {
-      setLastUpdated(new Date().toLocaleTimeString());
-    }
-  }, [positions.length]);
-
-  const handleRefresh = () => {
-    if (walletAddress) {
-      fetchPositions(walletAddress, true);
-    }
-  };
-
-  // Utility function for robust sorting by rewards
-  const sortByRewards = React.useCallback((a: PositionRow, b: PositionRow): number => {
-    // Convert to numbers with fallback
-    const aRewards = parseFloat(String(a.rewardsUsd || 0));
-    const bRewards = parseFloat(String(b.rewardsUsd || 0));
-    
-    // Handle NaN cases - put them at the end
-    if (isNaN(aRewards) && isNaN(bRewards)) return 0;
-    if (isNaN(aRewards)) return 1;
-    if (isNaN(bRewards)) return -1;
-    
-    // Sort high to low (descending)
-    return bRewards - aRewards;
-  }, []);
-
-  // Calculate counts for active/inactive positions with robust sorting
-  const activePositions = positions
-    .filter((p) => p.status === 'Active')
-    .sort(sortByRewards);
-    
-  const inactivePositions = positions
-    .filter((p) => {
-      // Only show inactive positions if they have rewards (RFLR, fees, etc.)
-      const hasRewards = (p.rflrUsd && p.rflrUsd > 0) || 
-                        (p.rewardsUsd && p.rewardsUsd > 0);
-      return p.status === 'Inactive' && hasRewards;
-    })
-    .sort(sortByRewards);
-
-  const activeCount = activePositions.length;
-  const inactiveCount = inactivePositions.length;
-
-  const activeHeaderNote =
-    isClient && walletAddress
-      ? `Data from: On-chain Wallet Positions | ${activePositions.length} active pools | Updated: ${lastUpdated}`
-      : 'Connect your wallet to view LP positions';
-
-  const inactiveHeaderNote = 'Inactive positions (TVL ≈ 0)';
-
+export default function LiquiLabHomepage() {
+  const [fastTrackOpen, setFastTrackOpen] = React.useState(false);
 
   return (
     <>
       <Head>
-        <title>Liqui LP Manager</title>
-        <meta name="description" content="Manage your Uniswap V3 liquidity positions on Flare Network" />
-      </Head>
-      <main className="pb-20">
-        <Header 
-          onRefresh={handleRefresh}
-          activeCount={activeCount}
-          inactiveCount={inactiveCount}
-          onTabChange={setTab}
-          activeTab={tab}
-          onWalletConnected={handleWalletConnected}
-          onWalletDisconnected={handleWalletDisconnected}
-          showTabs={true}
-          currentPage="pools"
+        <title>LiquiLab · The Liquidity Pool Intelligence Platform</title>
+        <meta
+          name="description"
+          content="LiquiLab - The Liquidity Pool Intelligence Platform. Master your liquidity on Flare Network. Get real-time insights into your LP positions."
         />
-        
-        {!isClient ? (
-          <div className="w-full max-w-[1200px] mx-auto text-center py-20">
-            <div className="text-liqui-subtext text-lg">
-              Loading...
-            </div>
-          </div>
-        ) : !walletAddress ? (
-          <div className="w-full max-w-[1200px] mx-auto text-center py-20">
-            <div className="text-liqui-subtext text-lg">
-              Connect your wallet to view your LP positions
-            </div>
-          </div>
-        ) : loading ? (
-          <div className="w-full max-w-[1200px] mx-auto text-center py-20">
-            <div className="text-liqui-subtext text-lg">
-              Loading positions...
-            </div>
-          </div>
-        ) : syncing ? (
-          <div className="w-full max-w-[1200px] mx-auto">
-            {/* Show positions immediately if available */}
-            {positions.length > 0 && (
-              <div className="space-y-12">
-                {/* Syncing loader banner */}
-                <div className="rounded-lg border border-blue-500/30 bg-blue-900/10 px-6 py-8 text-center">
-                  <div className="flex items-center justify-center space-x-3 mb-2">
-                    <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-lg font-medium text-blue-400">
-                      Collecting your pooldata from the blockchain
-                    </span>
-                  </div>
-                  <p className="text-sm text-liqui-subtext">
-                    This may take up to 30 seconds...
-                  </p>
-                </div>
+      </Head>
+      <main className="pb-24">
+        <Header showTabs={false} showWalletActions={false} />
 
-                {/* Show positions while syncing */}
-                {tab === 'active' && activePositions.length > 0 && (
-                  <PositionsTable 
-                    positions={activePositions} 
-                    headerNote={activeHeaderNote} 
-                    showTotalsRow={false}
-                  />
-                )}
+        <div className="mx-auto flex w-full max-w-4xl flex-col gap-12 px-6 py-12">
+          <WaitlistHero onFastTrackClick={() => setFastTrackOpen(true)} />
 
-                {tab === 'inactive' && inactivePositions.length > 0 && (
-                  <PositionsTable 
-                    positions={inactivePositions} 
-                    headerNote={inactiveHeaderNote} 
-                    showTotalsRow={false}
-                  />
-                )}
-
-                {tab === 'all' && (
-                  <div className="space-y-12">
-                    {activePositions.length > 0 && (
-                      <PositionsTable 
-                        positions={activePositions} 
-                        headerNote={activeHeaderNote} 
-                        showTotalsRow={false}
-                      />
-                    )}
-                    {inactivePositions.length > 0 && (
-                      <PositionsTable 
-                        positions={inactivePositions} 
-                        headerNote={inactiveHeaderNote} 
-                        showTotalsRow={false}
-                      />
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        ) : error ? (
-          <div className="w-full max-w-[1200px] mx-auto text-center py-20">
-            <div className="text-red-400 text-lg">
-              {error}
+          <section
+            id="waitlist"
+            className="flex flex-col gap-8 rounded-3xl border border-liqui-border bg-liqui-card/60 p-8 md:p-12"
+          >
+            <div className="space-y-2">
+              <h2 className="text-2xl font-semibold text-white md:text-3xl">Join de LiquiLab wachtlijst</h2>
+              <p className="text-liqui-subtext md:text-lg">
+                We rollen LiquiLab gefaseerd uit. Schrijf je in voor de wachtlijst of kies fast-track om direct
+                toegang te krijgen tot de pool detail beta. De eerste 50 leden ontvangen een gratis maand.
+              </p>
             </div>
-          </div>
-        ) : positions.length === 0 ? (
-          <div className="w-full max-w-[1200px] mx-auto text-center py-20">
-            <div className="text-liqui-subtext text-lg">
-              No LP positions found for this wallet
-            </div>
-          </div>
-        ) : (
-          <div className="w-full max-w-[1200px] mx-auto space-y-12">
-            {tab === 'active' && (
-              activePositions.length > 0 ? (
-                <PositionsTable 
-                  positions={activePositions} 
-                  headerNote={activeHeaderNote} 
-                  showTotalsRow={false}
-                />
-              ) : (
-                <div className="rounded-lg border border-liqui-border bg-liqui-card px-6 py-10 text-center text-liqui-subtext">
-                  <p className="text-lg">No active LP positions with TVL &gt; $0.01</p>
-                </div>
-              )
-            )}
+            <WaitlistForm />
+          </section>
 
-            {tab === 'inactive' && (
-              inactivePositions.length > 0 ? (
-                <PositionsTable 
-                  positions={inactivePositions} 
-                  headerNote={inactiveHeaderNote} 
-                  showTotalsRow={false}
-                />
-              ) : (
-                <div className="rounded-lg border border-liqui-border bg-liqui-card px-6 py-10 text-center text-liqui-subtext">
-                  <p className="text-lg">No inactive LP positions</p>
-                </div>
-              )
-            )}
-
-            {tab === 'all' && (
-              positions.length > 0 ? (
-                <div className="space-y-12">
-                  {activePositions.length > 0 && (
-                    <PositionsTable 
-                      positions={activePositions} 
-                      headerNote={activeHeaderNote} 
-                      showTotalsRow={false}
-                    />
-                  )}
-                  {inactivePositions.length > 0 && (
-                    <PositionsTable 
-                      positions={inactivePositions} 
-                      headerNote={inactiveHeaderNote} 
-                      showTotalsRow={false}
-                    />
-                  )}
-                </div>
-              ) : (
-                <div className="rounded-lg border border-liqui-border bg-liqui-card px-6 py-10 text-center text-liqui-subtext">
-                  <p className="text-lg">No LP positions found</p>
-                </div>
-              )
-            )}
-          </div>
-        )}
-        
-        {/* Disclaimer */}
-        <div className="w-full max-w-[1200px] mx-auto px-4 py-8">
-          <div className="p-6">
-            <h3 className="text-liqui-text font-semibold mb-3">Disclaimer</h3>
-            <p className="text-liqui-subtext text-sm leading-relaxed">
-              The information displayed on this application is provided for informational purposes only and may not be accurate or up-to-date. 
-              Data may vary from actual on-chain values due to network conditions, caching, or other technical factors. 
-              This application is not financial advice and should not be used as the sole basis for making investment decisions. 
-              Users are responsible for verifying all information independently and no rights can be derived from the data presented herein. 
-              Always conduct your own research and consult with qualified professionals before making any financial decisions.
-            </p>
-          </div>
+          <section className="grid gap-6 rounded-3xl border border-liqui-border bg-liqui-card/60 p-8 md:grid-cols-3 md:p-10">
+            <FeatureCard
+              title="Realtime FLARE data"
+              description="Live prijsrange, fee accrual en pool health. Gebouwd op viem + Prisma voor snelle refreshes."
+            />
+            <FeatureCard
+              title="Community first"
+              description="De beta wordt samen met de eerste 50 gebruikers vormgegeven. Deel feedback en zie het terug."
+            />
+            <FeatureCard
+              title="Wallet-native toegang"
+              description="Betaal via USDT of WFLR om je plek in de rij te versnellen. Geen accounts, alleen je wallet."
+            />
+          </section>
         </div>
+
+        <FastTrackModal open={fastTrackOpen} onClose={() => setFastTrackOpen(false)} />
       </main>
     </>
   );
 }
-// Force deployment Mon Oct 20 16:00:00 CEST 2025 - Wallet connect + FlareScan
+
+interface FeatureCardProps {
+  title: string;
+  description: string;
+}
+
+function FeatureCard({ title, description }: FeatureCardProps) {
+  return (
+    <div className="rounded-2xl border border-liqui-border bg-liqui-card-hover/50 p-6">
+      <h3 className="text-lg font-semibold text-white">{title}</h3>
+      <p className="mt-2 text-sm text-liqui-subtext">{description}</p>
+    </div>
+  );
+}

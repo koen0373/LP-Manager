@@ -14,6 +14,7 @@ interface HeaderProps {
   onWalletConnected?: (address: string) => void;
   onWalletDisconnected?: () => void;
   showTabs?: boolean;
+  showWalletActions?: boolean;
   currentPage?: 'pools' | 'summary' | 'faq';
 }
 
@@ -26,6 +27,7 @@ export default function Header({
   onWalletConnected,
   onWalletDisconnected,
   showTabs = true,
+  showWalletActions = true,
   currentPage = 'pools',
 }: HeaderProps) {
   const [logoError, setLogoError] = useState(false);
@@ -36,15 +38,15 @@ export default function Header({
       // Fallback to text if logo fails to load
       return (
         <div className="flex items-center h-16">
-          <span className="text-white text-2xl font-bold">Liqui</span>
+          <span className="text-white text-2xl font-bold">LiquiLab</span>
         </div>
       );
     }
 
     return (
       <Image
-        src="/icons/liqui_logo.webp"
-        alt="Liqui Logo"
+        src="/icons/liquilab_logo.png"
+        alt="LiquiLab Logo"
         width={168}
         height={56}
         className="object-contain h-[56px] w-auto"
@@ -110,32 +112,36 @@ export default function Header({
               FAQ
             </Link>
 
-            <button
-              onClick={handleRefresh}
-              className="flex items-center gap-2 px-3 py-2 text-mist hover:text-white rounded-lg transition-all duration-200"
-              title="Refresh data"
-              type="button"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="transition-colors duration-200"
-                aria-hidden
-              >
-                <path
-                  d="M4 12a8 8 0 0 1 8-8V2l4 4-4 4V6a6 6 0 1 0 6 6h2a8 8 0 0 1-16 0z"
-                  fill="currentColor"
+            {showWalletActions && (
+              <>
+                <button
+                  onClick={handleRefresh}
+                  className="flex items-center gap-2 px-3 py-2 text-mist hover:text-white rounded-lg transition-all duration-200"
+                  title="Refresh data"
+                  type="button"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="transition-colors duration-200"
+                    aria-hidden
+                  >
+                    <path
+                      d="M4 12a8 8 0 0 1 8-8V2l4 4-4 4V6a6 6 0 1 0 6 6h2a8 8 0 0 1-16 0z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  <span className="text-sm font-normal transition-all duration-200">Refresh</span>
+                </button>
+                <WalletConnect
+                  onWalletConnected={onWalletConnected}
+                  onWalletDisconnected={onWalletDisconnected}
                 />
-              </svg>
-              <span className="text-sm font-normal transition-all duration-200">Refresh</span>
-            </button>
-            <WalletConnect
-              onWalletConnected={onWalletConnected}
-              onWalletDisconnected={onWalletDisconnected}
-            />
+              </>
+            )}
           </div>
         </div>
       </div>

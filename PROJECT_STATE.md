@@ -1,10 +1,10 @@
 
-# 🧠 PROJECT_STATE.md — Liqui
+# 🧠 PROJECT_STATE.md — LiquiLab
 
 ## 1. AI SYSTEM HEADER
 All AI agents must read this document before performing any action.
 
-**Purpose:** Establish a unified understanding of Liqui's brand, architecture, and collaborative workflow.
+**Purpose:** Establish a unified understanding of LiquiLab's brand, architecture, and collaborative workflow.
 **Applies to:** Cursor, Codex, Claude, ChatGPT.
 
 ### Behavior Rules
@@ -15,16 +15,16 @@ All AI agents must read this document before performing any action.
 
 ---
 
-## 2. LIQUI BRAND DEFINITION
+## 2. LIQUILAB BRAND DEFINITION
 
-**Brand Name:** Liqui  
+**Brand Name:** LiquiLab  
 **Category:** DeFi Liquidity Pool Intelligence Platform  
-**Tagline:** "Master your liquidity."  
+**Tagline:** "The Liquidity Pool Intelligence Platform"  
 **Essence:** Precision • Transparency • Control  
 
-Liqui helps DeFi liquidity providers monitor, manage, and optimize their Uniswap v3-style positions across multiple DEXes (currently Enosys, SparkDEX, and BlazeFlare).  
+LiquiLab helps DeFi liquidity providers monitor, manage, and optimize their Uniswap v3-style positions across multiple DEXes (currently Enosys, SparkDEX, and BlazeFlare).  
 
-Liqui simplifies complex liquidity data into human-readable insights and AI-assisted strategies.
+LiquiLab simplifies complex liquidity data into human-readable insights and AI-assisted strategies.
 
 ---
 
@@ -293,9 +293,10 @@ FLARESCAN_API_KEY=...          # Optional: reduces 403 errors (not required with
 
 ---
 
-**Liqui — DeFi Liquidity Intelligence**  
-_Precision • Transparency • Control_
+**LiquiLab — DeFi Liquidity Intelligence**  
+_The Liquidity Pool Intelligence Platform_
 
 **Last Updated:** October 24, 2025  
 **Version:** 0.1.3  
-**Production URL:** https://liquilab.up.railway.app
+**Production URL:** https://liquilab.up.railway.app  
+**Domain:** https://liquilab.io

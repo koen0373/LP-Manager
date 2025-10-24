@@ -46,7 +46,7 @@ export default function EChartsRangeChart({
     const cutoffTime = timeFilters[timeRange];
 
     // Sort and format data with time filter
-    const sortedData = [...priceHistory]
+    const allData = [...priceHistory]
       .sort((a, b) => {
         const timeA = typeof a.t === 'string' ? parseInt(a.t, 10) : a.t;
         const timeB = typeof b.t === 'string' ? parseInt(b.t, 10) : b.t;
@@ -55,8 +55,22 @@ export default function EChartsRangeChart({
       .map(point => {
         const time = typeof point.t === 'string' ? parseInt(point.t, 10) : point.t;
         return [time * 1000, point.p]; // Convert to milliseconds for ECharts
-      })
-      .filter(([time]) => time >= cutoffTime);
+      });
+    
+    const sortedData = allData.filter(([time]) => time >= cutoffTime);
+    
+    // Debug logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[EChartsRangeChart]', {
+        timeRange,
+        cutoffTime: new Date(cutoffTime).toISOString(),
+        totalPoints: allData.length,
+        filteredPoints: sortedData.length,
+        minPrice,
+        maxPrice,
+        currentPrice,
+      });
+    }
 
     // Filter activity events by time range
     const filteredActivity = activity
@@ -73,13 +87,17 @@ export default function EChartsRangeChart({
       }));
 
     // Calculate Y-axis range to scale min/max prices to 25%/75%
-    let yMin = 0;
-    let yMax = 100;
+    let yMin: number | undefined;
+    let yMax: number | undefined;
     
     if (minPrice !== undefined && maxPrice !== undefined && minPrice > 0 && maxPrice > 0) {
       const range = maxPrice - minPrice;
-      yMin = Math.max(0, minPrice - range * 0.5); // Min at 25% → add 50% padding below
-      yMax = maxPrice + range * 0.5; // Max at 75% → add 50% padding above
+      yMin = Math.max(0, minPrice - range * 1.0); // More padding below (min at ~33%)
+      yMax = maxPrice + range * 1.0; // More padding above (max at ~66%)
+    } else {
+      // Auto-scale based on data if no range provided
+      yMin = undefined;
+      yMax = undefined;
     }
 
     return {
@@ -305,11 +323,12 @@ export default function EChartsRangeChart({
         </div>
       </div>
       <ReactECharts
+        key={timeRange}
         option={option as EChartsOption}
         style={{ height: `${height}px`, width: '100%' }}
         opts={{ renderer: 'canvas' }}
         notMerge={true}
-        lazyUpdate={true}
+        lazyUpdate={false}
       />
     </div>
   );

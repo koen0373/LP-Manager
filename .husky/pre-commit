@@ -1,0 +1,11 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Auto-update Docker CACHE_BUST with git commit SHA
+COMMIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "dev")
+sed -i.bak "s/ARG CACHE_BUST=.*/ARG CACHE_BUST=${COMMIT_SHA}/" Dockerfile
+rm -f Dockerfile.bak
+git add Dockerfile
+
+echo "✅ Docker CACHE_BUST updated to: ${COMMIT_SHA}"
+

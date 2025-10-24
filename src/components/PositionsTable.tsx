@@ -96,13 +96,13 @@ export default function PositionsTable({
     setRflrDeltas(nextDeltas);
   }, [positions]);
 
-  const totals = positions    .reduce(
+  const totals = positions.reduce(
       (acc, pos) => ({
         tvl: acc.tvl + (pos.tvlUsd || 0),
-        rewards: acc.rewards + (pos.rewardsUsd || 0),
+        fees: acc.fees + (pos.inRange ? (pos.unclaimedFeesUsd || 0) : 0),
         rflr: acc.rflr + (pos.rflrUsd || 0),
       }),
-      { tvl: 0, rewards: 0, rflr: 0 }
+      { tvl: 0, fees: 0, rflr: 0 }
     );
 
   return (
@@ -148,15 +148,22 @@ export default function PositionsTable({
               <FeeBadge feeBps={position.feeTierBps} />
             </div>
 
-                {/* TVL */}
+                {/* Liquidity */}
                 <div className="text-left">
                   <div className="text-white font-normal">${formatUsd(position.tvlUsd || 0)}</div>
+                  {position.poolSharePct !== undefined && position.poolSharePct > 0 && (
+                    <div className="text-liqui-subtext text-xs text-left">
+                      ({position.poolSharePct.toFixed(2)}%)
+                    </div>
+                  )}
                 </div>
 
-                {/* Pool Rewards */}
+                {/* Fees (Unclaimed fees only, $0 for inactive) */}
                 <div className="text-left">
-                  <div className="text-white font-normal">${formatUsd(position.rewardsUsd || 0)}</div>
-                  {position.rewardsUsd > 0 && (
+                  <div className="text-white font-normal">
+                    ${formatUsd(position.inRange ? (position.unclaimedFeesUsd || 0) : 0)}
+                  </div>
+                  {position.inRange && position.unclaimedFeesUsd > 0 && (
                     <div className="text-liqui-subtext text-xs text-left">
                       Unclaimed fees
                     </div>
@@ -247,7 +254,7 @@ export default function PositionsTable({
               <div className="text-white font-normal">${fmtUsd(totals.tvl)}</div>
             </div>
             <div className="text-left">
-              <div className="text-white font-normal">${fmtUsd(totals.rewards)}</div>
+              <div className="text-white font-normal">${fmtUsd(totals.fees)}</div>
             </div>
             <div className="text-left">
               <div className="text-white font-normal">${fmtUsd(totals.rflr)}</div>

@@ -9,52 +9,52 @@ interface FAQItem {
 
 const faqData: FAQItem[] = [
   {
-    question: "What is Liquidity Removed?",
+    question: "What is Liqui LP Manager?",
+    answer: "Liqui is a liquidity pool intelligence platform specifically built for Uniswap V3 positions on the Flare Network. It provides real-time tracking of your LP positions, automatic calculations of fees and rewards (including RFLR incentives), and comprehensive analytics to help you make informed decisions about your liquidity provision strategy."
+  },
+  {
+    question: "How do I connect my wallet?",
+    answer: "Click the 'Connect Wallet' button in the top right corner of the page. We support MetaMask and WalletConnect. Make sure you're connected to the Flare Network. Once connected, the app will automatically discover all your Uniswap V3 LP positions."
+  },
+  {
+    question: "What does 'Liquidity Removed' mean?",
     answer: "When you decrease or remove liquidity from your position, this is shown as 'Liquidity Removed'. This action automatically collects any pending fees and returns them along with your liquidity. The collected fees are included in the USD Delta shown for the transaction, but are not displayed as a separate 'Fees Claimed' event."
   },
   {
-    question: "What is Fees Claimed?",
+    question: "What does 'Fees Claimed' mean?",
     answer: "Fees Claimed refers to standalone fee collection events where you explicitly claim accumulated fees and incentives (like RFLR rewards) WITHOUT removing liquidity. This is different from the automatic fee collection that happens when you decrease liquidity."
   },
   {
-    question: "Why do I see 'Liquidity Removed' but no separate 'Fees Claimed'?",
-    answer: "When you remove liquidity from a Uniswap V3 position, the protocol automatically collects any pending fees as part of the same transaction. This is an efficiency feature - you don't need to claim fees separately before removing liquidity. The fees are included in the 'USD Delta' value shown for the Liquidity Removed event."
+    question: "What are RFLR Incentives?",
+    answer: "RFLR (Reward FLR) are incentive rewards distributed by the Flare Network to liquidity providers. These rewards are separate from trading fees and are designed to incentivize liquidity provision. RFLR rewards accrue over time and are shown in the 'Incentives' column. They can be claimed via the Flare Portal at the end of each month."
   },
   {
-    question: "What is Impermanent Loss (IL)?",
-    answer: "Impermanent Loss occurs when the price ratio of your deposited tokens changes compared to when you deposited them. If you had simply held the tokens instead of providing liquidity, you might have more value. The loss is 'impermanent' because it only becomes permanent when you withdraw your liquidity. IL is calculated by comparing your current position value to what you would have if you had just held the tokens."
+    question: "What&apos;s the difference between Active and Inactive pools?",
+    answer: "Active pools have their current price within the set price range, meaning they actively provide liquidity for trades and earn swap fees. Inactive (Out of Range) pools have their current price outside the set range, so they don&apos;t earn swap fees but may still earn RFLR incentive rewards."
   },
   {
-    question: "How is APY calculated?",
-    answer: "APY (Annual Percentage Yield) is calculated based on the fees earned divided by your Total Value Locked (TVL), annualized. Formula: APY = (Total Fees Earned / TVL) × (365 / Days Active) × 100. This shows you the projected yearly return if fee generation continues at the current rate."
+    question: "What does In Range vs Out of Range mean?",
+    answer: "In Range means the current market price falls within your position&apos;s price range, so your liquidity is being used for swaps and earning fees. Out of Range means the price has moved outside your range - your position is entirely in one token and not earning swap fees. You&apos;ll see a green blinking indicator for In Range and a red indicator for Out of Range."
   },
   {
-    question: "What does 'USD Value/Delta' mean?",
-    answer: "USD Value represents the current dollar value of your position or a transaction. USD Delta shows the change in dollar value for a specific action (positive for gains, negative for losses). For example, when removing liquidity, the USD Delta includes both the liquidity value and any automatically collected fees."
+    question: "Why don&apos;t Inactive pools show any Fees?",
+    answer: "Inactive (Out of Range) pools don&apos;t earn trading fees because their liquidity isn&apos;t being used for swaps. The Fees column will show $0.00 for inactive pools. However, these pools may still earn RFLR incentive rewards, which are shown in the Incentives column."
   },
   {
-    question: "What are RFLR Rewards?",
-    answer: "RFLR (Reward FLR) are incentive rewards distributed by the Flare Network to liquidity providers. These rewards are separate from trading fees and are designed to incentivize liquidity provision. RFLR rewards accrue over time and can be claimed via the Flare Portal at the end of each month."
+    question: "How is the USD value calculated?",
+    answer: "USD values are calculated using real-time token prices from CoinGecko and on-chain sources. For your LP positions, we calculate the total value of both tokens in your position at current market prices. The USD Delta shows the change in dollar value for specific actions like adding or removing liquidity."
   },
   {
-    question: "What's the difference between Active and Inactive pools?",
-    answer: "Active pools have their current price within the set price range, meaning they actively provide liquidity for trades and earn swap fees. Inactive (Out of Range) pools have their current price outside the set range, so they don't earn swap fees but may still earn RFLR incentive rewards. You can see which pools are active on the homepage under the 'Active' tab."
+    question: "What happens when I remove liquidity?",
+    answer: "When you decrease (remove) liquidity, Uniswap V3 automatically collects all pending fees and returns them along with your liquidity tokens in a single transaction. This is more gas-efficient than claiming fees separately first. The total value (liquidity + fees) is shown in the USD Delta for the Liquidity Removed event."
   },
   {
-    question: "What does 'In Range' vs 'Out of Range' mean?",
-    answer: "In Range means the current market price falls within your position's price range, so your liquidity is being used for swaps and earning fees. Out of Range means the price has moved outside your range - your position is entirely in one token and not earning swap fees. You'll see a green blinking indicator for In Range and a red indicator for Out of Range."
+    question: "How do I view my pool&apos;s performance?",
+    answer: "Click on any pool from your homepage to view detailed performance metrics including total liquidity, accumulated fees, RFLR rewards, pool earnings history, and recent activity. You can also view your overall portfolio performance by clicking 'Portfolio Performance' in the header."
   },
   {
-    question: "How do I claim my fees?",
-    answer: "You have two options: 1) Click the 'Claim' button on a specific pool's detail page to claim fees from that position only, or 2) Remove liquidity, which automatically claims all pending fees in the same transaction. Note that very small fee amounts (less than $1) may not be worth claiming due to gas costs."
-  },
-  {
-    question: "Why don't Inactive pools show any Fees?",
-    answer: "Inactive (Out of Range) pools don't earn trading fees because their liquidity isn't being used for swaps. The 'Fees' column will show $0.00 for inactive pools. However, these pools may still earn RFLR incentive rewards, which are shown in the 'Incentives' column."
-  },
-  {
-    question: "What happens to fees when I decrease liquidity?",
-    answer: "When you decrease (remove) liquidity, Uniswap V3 automatically collects all pending fees and returns them along with your liquidity tokens in a single transaction. This is more gas-efficient than claiming fees separately first. The total value (liquidity + fees) is shown in the 'USD Delta' for the 'Liquidity Removed' event."
+    question: "Is my data secure?",
+    answer: "Liqui is a read-only interface - we never ask for your private keys or have access to your funds. All data is fetched directly from the blockchain and your connected wallet. We do not store any sensitive information. Your positions remain completely under your control in your own wallet."
   }
 ];
 

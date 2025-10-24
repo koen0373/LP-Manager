@@ -12,7 +12,7 @@ module.exports = {
       colors: {
         liqui: {
           // Brand
-          navy: '#0A1020',       // achtergrond / body
+          navy: '#0D0F13',       // achtergrond / body (antraciet - matches water background)
           ink:  '#0F1324',       // kaarten
           mist: '#B9C7DA',       // tagline / icoontjes / divider
           aqua: '#75C4FF',       // interactieve highlight

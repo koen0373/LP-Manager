@@ -12,11 +12,11 @@ body {
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #0A1020; /* Dark navy from PNG */
+  background-color: #0D0F13; /* Antraciet from water background */
   color: #ffffff;
-  /* Water splash PNG at bottom 50% of screen, dark navy solid top 50% */
+  /* Water splash PNG at bottom 50% of screen, antraciet solid top 50% */
   background-image: 
-    linear-gradient(to bottom, #0A1020 0%, #0A1020 50%, transparent 50%),
+    linear-gradient(to bottom, #0D0F13 0%, #0D0F13 50%, transparent 50%),
     url('/water-splash.png');
   background-size: 100% 50%, 100% 50%;
   background-position: top center, bottom center;
@@ -33,7 +33,7 @@ body {
 :root {
   color-scheme: dark;
   
-  --liqui-bg: #0A1020;       /* liqui.navy */
+  --liqui-bg: #0D0F13;       /* antraciet (matches water background) */
   --liqui-card: rgba(15, 19, 36, 0.85);     /* liqui.ink - 85% opacity (15% transparent) */
   --liqui-subcard: rgba(42, 42, 42, 0.85);  /* 85% opacity (15% transparent) */
   --liqui-border: rgba(185, 199, 218, 0.06); /* liqui.mist 6% */

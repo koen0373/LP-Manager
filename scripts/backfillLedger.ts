@@ -49,8 +49,9 @@ async function main() {
       const positions = await getLpPositionsOnChain(walletAddress as `0x${string}`);
       tokenIds = positions.map(p => parseInt(p.id.toString(), 10)).filter(id => !isNaN(id));
       console.log(`✅ Found ${tokenIds.length} positions: ${tokenIds.join(', ')}\n`);
-    } catch (error: any) {
-      console.error(`❌ Failed to fetch positions for wallet: ${error.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`❌ Failed to fetch positions for wallet: ${message}`);
       process.exit(1);
     }
   }
@@ -89,9 +90,11 @@ async function main() {
 
     console.log('\n✅ Backfill completed successfully!');
     process.exit(0);
-  } catch (error: any) {
-    console.error('\n❌ Backfill failed:', error.message);
-    console.error(error.stack);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : '';
+    console.error('\n❌ Backfill failed:', message);
+    console.error(stack);
     process.exit(1);
   }
 }

@@ -7,9 +7,7 @@ const nextConfig: NextConfig = {
   
   // Optimize build for Docker
   experimental: {
-    // @ts-ignore - workerThreads exists but not in types
     workerThreads: false,
-    // @ts-ignore - cpus exists but not in types
     cpus: 1,
   },
   // Removed output: 'export' to enable API routes

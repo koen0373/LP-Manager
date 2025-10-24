@@ -103,7 +103,7 @@ async function checkTokenId(prisma: PrismaClient, tokenId: string) {
   if (recentEvents.length > 0) {
     console.log(`📝 Recent events:`);
     for (const event of recentEvents) {
-      const type = 'from' in event ? 'TRANSFER' : (event as any).eventType;
+      const type = 'from' in event ? 'TRANSFER' : ('eventType' in event ? event.eventType : 'UNKNOWN');
       console.log(`   - Block ${event.blockNumber}: ${type} (${event.txHash.slice(0, 10)}...)`);
     }
     console.log('');

@@ -267,20 +267,21 @@ export function PoolPairDetail({
                       onClick={onClaimFees}
                       disabled={vm.rewards.feesUsd < 1}
                       className={`
-                        text-xs px-3 py-1 rounded font-medium transition-all
+                        text-xs px-4 py-2 font-medium transition-all text-white
                         ${vm.rewards.feesUsd >= 5 
-                          ? 'bg-green-600 hover:bg-green-700 text-white cursor-pointer' 
+                          ? 'bg-[#3DEB88] cursor-pointer hover:shadow-[0_0_12px_rgba(61,235,136,0.4)]' 
                           : vm.rewards.feesUsd >= 1
-                          ? 'bg-yellow-600 hover:bg-yellow-700 text-white cursor-pointer'
-                          : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                          ? 'bg-[#F8C27A] cursor-pointer hover:shadow-[0_0_12px_rgba(248,194,122,0.4)]'
+                          : 'bg-[#A2AEC0] cursor-not-allowed opacity-60'
                         }
                       `}
+                      style={{ borderRadius: '12px' }}
                       title={
                         vm.rewards.feesUsd >= 5 
-                          ? '✅ Optimal to claim (>$5)'
+                          ? '✅ NU claimen (>$5) - Optimaal!'
                           : vm.rewards.feesUsd >= 1
-                          ? '⚠️ Marginal ($1-$5, gas costs may be high)'
-                          : '🚫 Too low to claim (<$1, wait for more fees)'
+                          ? '⚠️ Het zou kunnen ($1-$5) - Gas costs zijn hoog'
+                          : '🚫 Te vroeg (<$1) - Wacht op meer fees'
                       }
                     >
                       Claim

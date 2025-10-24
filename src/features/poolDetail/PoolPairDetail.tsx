@@ -132,10 +132,10 @@ export function PoolPairDetail({
   }
 
   return (
-    <div className="min-h-screen text-white relative">
-      {/* Anthracite overlay (85% opacity) to reduce water background distraction */}
-      <div className="fixed inset-0 bg-[#0D0F13]/85 pointer-events-none z-0"></div>
-      <div className="relative z-10">
+    <div className="min-h-screen text-white">
+      {/* Anthracite overlay (85% opacity) over water background */}
+      <div className="fixed inset-0 bg-[#0D0F13] opacity-85 pointer-events-none" style={{ zIndex: 1 }}></div>
+      <div className="relative" style={{ zIndex: 2 }}>
       <Header currentPage="pools"
         showTabs={false}
         onWalletConnected={onWalletConnected}

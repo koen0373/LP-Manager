@@ -102,6 +102,64 @@ function timeFormatter(timeRange: TimeRange) {
   };
 }
 
+/** Robust sanitizer for [tsMs, price] points */
+function sanitizeSeries(
+  raw: [number, number][],
+  minPrice: number,
+  maxPrice: number
+): [number, number][] {
+  if (!raw.length) return raw;
+
+  // Ensure all are finite and definitely [time(ms), price]
+  let series = raw.filter(([t, p]) =>
+    Number.isFinite(t) && Number.isFinite(p) && t > 946684800000 && p > 0
+  );
+
+  // If still empty, return raw
+  if (!series.length) return raw;
+
+  // Compute robust center using median
+  const prices = series.map(([, p]) => p).sort((a, b) => a - b);
+  const median = prices[Math.floor(prices.length / 2)];
+
+  // Expected price band from range (with slack)
+  const expectedLo = Math.max(1e-12, Math.min(minPrice, maxPrice) / 5);
+  const expectedHi = Math.max(minPrice, maxPrice) * 5;
+
+  // 1) Hard band clamp (from range)
+  series = series.filter(([, p]) => p >= expectedLo && p <= expectedHi);
+
+  if (!series.length) return raw;
+
+  // 2) IQR-based outlier cut
+  const q1 = prices[Math.floor(prices.length * 0.25)];
+  const q3 = prices[Math.floor(prices.length * 0.75)];
+  const iqr = Math.max(1e-12, q3 - q1);
+  const iqrLo = q1 - 1.5 * iqr;
+  const iqrHi = q3 + 1.5 * iqr;
+
+  series = series.filter(([, p]) => p >= iqrLo && p <= iqrHi);
+
+  if (!series.length) return raw;
+
+  // 3) Spike filter vs. previous point (max 50% jump)
+  const smoothed: [number, number][] = [series[0]];
+  for (let i = 1; i < series.length; i++) {
+    const prev = smoothed[smoothed.length - 1][1];
+    const [t, p] = series[i];
+    const tooBigJump = p > prev * 1.5 || p < prev / 1.5;
+    const obviouslyWrong = p > median * 10 || p < median / 10;
+    if (!tooBigJump && !obviouslyWrong) {
+      smoothed.push([t, p]);
+    } else if (process.env.NODE_ENV !== 'production') {
+      console.warn('[SANITIZE] Filtered spike:', { t: new Date(t), p, prev, median });
+    }
+  }
+
+  // If everything got filtered out, fall back to the last "good" raw list
+  return smoothed.length ? smoothed : series;
+}
+
 export default function EChartsRangeChart({
   priceHistory,
   minPrice = 0,
@@ -113,86 +171,22 @@ export default function EChartsRangeChart({
 }: EChartsRangeChartProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('7d');
 
-  /** Sort, normalize to [ms, price] */
+  /** Sort, normalize to [ms, price] - basic validation only */
   const seriesRaw = useMemo(() => {
-    let arr = [...priceHistory]
+    const arr = [...priceHistory]
       .filter(p => Number.isFinite(p.p) && p.p > 0) // Filter out invalid prices
       .map(p => [toMs(p.t), p.p] as [number, number])
       .sort((a, b) => a[0] - b[0]);
     
-    console.log('[OUTLIER] Initial data:', { 
-      total: arr.length, 
-      minPrice: Math.min(...arr.map(a => a[1])),
-      maxPrice: Math.max(...arr.map(a => a[1])),
-      sample: arr.slice(-5).map(a => a[1])
-    });
-    
-    if (arr.length === 0) return arr;
-    
-    const initialCount = arr.length;
-    
-    // Multiple-pass outlier detection for robust filtering
-    for (let pass = 0; pass < 3; pass++) {
-      const prices = arr.map(a => a[1]).sort((a, b) => a - b);
-      const q1 = prices[Math.floor(prices.length * 0.25)];
-      const q3 = prices[Math.floor(prices.length * 0.75)];
-      const iqr = q3 - q1;
-      
-      // IQR method: filter values outside 1.5*IQR from Q1/Q3
-      const lowerBound = q1 - 1.5 * iqr;
-      const upperBound = q3 + 1.5 * iqr;
-      
-      const filtered = arr.filter(([, price]) => {
-        return price >= lowerBound && price <= upperBound;
+    // Debug logging in dev
+    if (process.env.NODE_ENV !== 'production' && arr.length > 0) {
+      console.log('[CHART] Raw data:', { 
+        total: arr.length, 
+        minPrice: Math.min(...arr.map(a => a[1])),
+        maxPrice: Math.max(...arr.map(a => a[1])),
+        lastFive: arr.slice(-5).map(([t, p]) => ({ time: new Date(t).toISOString(), price: p }))
       });
-      
-      const removed = arr.filter(([, price]) => {
-        return price < lowerBound || price > upperBound;
-      });
-      
-      if (removed.length > 0) {
-        console.log(`[OUTLIER] Pass ${pass + 1} removed ${removed.length} points:`, {
-          bounds: [lowerBound, upperBound],
-          removedPrices: removed.map(a => a[1])
-        });
-      }
-      
-      // Stop if we removed less than 10% (data is clean)
-      if (filtered.length >= arr.length * 0.9) {
-        arr = filtered;
-        break;
-      }
-      
-      // Stop if we would remove too much data
-      if (filtered.length < arr.length * 0.3) {
-        console.warn('[OUTLIER] Would remove too much data, stopping');
-        break;
-      }
-      
-      arr = filtered;
     }
-    
-    // Final sanity check: remove values >100x the median
-    if (arr.length > 1) {
-      const prices = arr.map(a => a[1]);
-      const median = prices.sort((a, b) => a - b)[Math.floor(prices.length / 2)];
-      const outliers = arr.filter(([, price]) => price >= median * 100);
-      if (outliers.length > 0) {
-        console.log('[OUTLIER] Final pass removing extreme outliers (>100x median):', {
-          median,
-          threshold: median * 100,
-          removed: outliers.map(a => a[1])
-        });
-      }
-      arr = arr.filter(([, price]) => price < median * 100);
-    }
-    
-    console.log('[OUTLIER] Final data:', { 
-      kept: arr.length, 
-      removed: initialCount - arr.length,
-      minPrice: Math.min(...arr.map(a => a[1])),
-      maxPrice: Math.max(...arr.map(a => a[1]))
-    });
     
     return arr;
   }, [priceHistory]);
@@ -218,11 +212,14 @@ export default function EChartsRangeChart({
       [now - 24 * 3600 * 1000, Math.min(currentPrice, minPrice)],
       [now - 12 * 3600 * 1000, currentPrice],
       [now, Math.max(currentPrice, maxPrice)],
-    ];
+    ] as [number, number][];
   }, [seriesRaw, fromTs, toTs, currentPrice, minPrice, maxPrice]);
 
-  /** Downsample for performance */
-  const data = useMemo(() => downsampleLTTB(filtered, 500), [filtered]);
+  /** Sanitize + Downsample for performance */
+  const data = useMemo(() => {
+    const clean = sanitizeSeries(filtered, minPrice, maxPrice);
+    return downsampleLTTB(clean, 500);
+  }, [filtered, minPrice, maxPrice]);
 
   /** Activity vertical lines in window */
   const activityLines = useMemo(() => {
@@ -245,16 +242,6 @@ export default function EChartsRangeChart({
     const dataMin = Math.min(...values);
     const dataMax = Math.max(...values);
     
-    // Debug logging
-    console.log('[CHART] Data range:', { 
-      dataMin, 
-      dataMax, 
-      minPrice, 
-      maxPrice,
-      dataPoints: values.length,
-      sampleValues: values.slice(0, 5)
-    });
-    
     // Include configured range boundaries
     const absoluteMin = Math.min(dataMin, minPrice);
     const absoluteMax = Math.max(dataMax, maxPrice);
@@ -263,12 +250,10 @@ export default function EChartsRangeChart({
     const range = absoluteMax - absoluteMin;
     const padding = range * 0.15; // 15% padding top and bottom
     
-    const finalYMin = Math.max(0, absoluteMin - padding);
-    const finalYMax = absoluteMax + padding;
-    
-    console.log('[CHART] Y-axis:', { finalYMin, finalYMax });
-    
-    return [finalYMin, finalYMax];
+    return [
+      Math.max(0, absoluteMin - padding),
+      absoluteMax + padding
+    ];
   }, [data, minPrice, maxPrice]);
 
   /** markLines: min/max (horizontal) + NOW (horizontal thick) + activity (vertical) */

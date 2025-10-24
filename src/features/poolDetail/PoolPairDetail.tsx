@@ -354,6 +354,8 @@ export function PoolPairDetail({
         <div className="mt-6">
           <PriceChart
             priceHistory={vm.priceHistory}
+            token0Symbol={vm.token0?.symbol}
+            token1Symbol={vm.token1?.symbol}
             height={400}
           />
         </div>

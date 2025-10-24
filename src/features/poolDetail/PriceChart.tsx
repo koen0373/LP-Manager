@@ -10,6 +10,8 @@ export interface PricePoint {
 
 interface PriceChartProps {
   priceHistory: PricePoint[];
+  token0Symbol?: string; // e.g., "FXRP"
+  token1Symbol?: string; // e.g., "USDT"
   height?: number;
   className?: string;
 }
@@ -24,10 +26,17 @@ function toMs(t: number | string): number {
 
 export default function PriceChart({
   priceHistory,
+  token0Symbol = '',
+  token1Symbol = '',
   height = 400,
   className = '',
 }: PriceChartProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('1m');
+  
+  // Determine which token's price we're showing (usually token0 in USDT)
+  const priceLabel = token0Symbol && token1Symbol 
+    ? `${token0Symbol} price in ${token1Symbol}`
+    : 'Price';
 
   /** Convert priceHistory to [timestamp_ms, price] tuples */
   const rawData = useMemo(() => {
@@ -115,7 +124,9 @@ export default function PriceChart({
         const dt = new Date(ts);
         const dateStr = dt.toLocaleDateString();
         const timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        return `${dateStr} ${timeStr}<br/>Price: <b>${Number(price).toFixed(6)}</b>`;
+        const priceStr = Number(price).toFixed(6);
+        const label = token1Symbol ? `${token0Symbol}/${token1Symbol}` : 'Price';
+        return `${dateStr} ${timeStr}<br/>${label}: <b>${priceStr}</b>`;
       },
     },
     
@@ -163,15 +174,19 @@ export default function PriceChart({
         data: filteredData,
       },
     ],
-  }), [filteredData, fromTs, toTs, yMin, yMax, xLabelFormatter]);
+  }), [filteredData, fromTs, toTs, yMin, yMax, xLabelFormatter, token0Symbol, token1Symbol]);
 
   return (
     <div className={`w-full ${className}`}>
       {/* Time range selector */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-lg font-bold text-liqui-mist">Range & Price</h3>
-          <p className="text-sm text-liqui-mist/60">Track live price vs your range</p>
+          <h3 className="text-lg font-bold text-liqui-mist">
+            {token0Symbol ? `${token0Symbol} Price` : 'Price'}
+          </h3>
+          <p className="text-sm text-liqui-mist/60">
+            {priceLabel}
+          </p>
         </div>
         
         <div className="flex gap-2">

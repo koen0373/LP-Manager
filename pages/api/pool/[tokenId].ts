@@ -119,8 +119,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
         console.log(`[API] Retrieved ${ledgerEvents.length} events and ${ledgerTransfers.length} transfers from database for token ${tokenId}`);
         
-        // If no data found in database, force sync
-        if (ledgerEvents.length === 0 && ledgerTransfers.length === 0) {
+        // If no events found in database (only transfers), force sync to get Position Manager events
+        if (ledgerEvents.length === 0) {
           console.log(`[API] No cached data found for token ${tokenId}, syncing from blockchain...`);
           let latestBlock = fromBlock;
           try {

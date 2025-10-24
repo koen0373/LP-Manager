@@ -373,6 +373,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           const eventsWithPrice = ledgerEvents.filter(e => e.price1Per0 !== undefined && e.price1Per0 > 0);
           console.log(`[API] Events with price1Per0: ${eventsWithPrice.length}`);
           
+          if (eventsWithPrice.length > 0) {
+            console.log(`[API] First event sample:`, {
+              timestamp: eventsWithPrice[0].timestamp,
+              timestampType: typeof eventsWithPrice[0].timestamp,
+              price: eventsWithPrice[0].price1Per0,
+              date: new Date(eventsWithPrice[0].timestamp * 1000).toISOString(),
+            });
+          }
+          
           history = eventsWithPrice
             .map(e => ({
               t: e.timestamp.toString(),
@@ -380,7 +389,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }))
             .sort((a, b) => Number(a.t) - Number(b.t));
           
-          console.log(`[API] Built ${history.length} price points from ledger events`);
+          console.log(`[API] Built ${history.length} price points. Sample:`, history[0]);
         }
         
         // If no ledger events with price, try database

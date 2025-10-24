@@ -209,14 +209,13 @@ export default function EChartsRangeChart({
   const filtered = useMemo(() => {
     const f = seriesRaw.filter(([t]) => t >= fromTs && t <= toTs);
     if (f.length > 0) return f;
-    // Edge-case: no data → minimal fallback based on current/min/max over 24h
+    // Edge-case: no data → show flat line at current price
     const now = Date.now();
     return [
-      [now - 24 * 3600 * 1000, Math.min(currentPrice, minPrice)],
-      [now - 12 * 3600 * 1000, currentPrice],
-      [now, Math.max(currentPrice, maxPrice)],
+      [fromTs, currentPrice],
+      [now, currentPrice],
     ] as [number, number][];
-  }, [seriesRaw, fromTs, toTs, currentPrice, minPrice, maxPrice]);
+  }, [seriesRaw, fromTs, toTs, currentPrice]);
 
   /** Sanitize + Downsample for performance */
   const data = useMemo(() => {

@@ -391,36 +391,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           );
         }
         
-        // If still no data, create a minimal chart with current price + range
-        if (history.length === 0 && lowerPrice > 0 && currentPrice > 0) {
-          console.log('[API] No historical data, creating fallback chart with range visualization', {
-            lowerPrice,
-            upperPrice,
+        // If still no data, create flat line at current price (no fake movement)
+        if (history.length === 0 && currentPrice > 0 && !isNaN(currentPrice)) {
+          console.log('[API] No historical data, creating flat line at current price', {
             currentPrice,
             token0: position.token0.symbol,
             token1: position.token1.symbol,
-            currentTick,
-            price0Per1,
           });
           const now = Math.floor(Date.now() / 1000);
-          
-          // Create a visual representation of the price range over 24h
-          // This helps users see where the current price sits within their range
           const timeSpan = 24 * 3600; // 24 hours
-          const interval = timeSpan / 5; // 6 points total
           
+          // Flat line at current price (min/max range shown as markLines, not price movement)
           history = [
-            { t: (now - timeSpan).toString(), p: lowerPrice },           // 24h ago: min
-            { t: (now - timeSpan + interval).toString(), p: lowerPrice + (currentPrice - lowerPrice) * 0.2 },
-            { t: (now - timeSpan + interval * 2).toString(), p: lowerPrice + (currentPrice - lowerPrice) * 0.5 },
-            { t: (now - timeSpan + interval * 3).toString(), p: currentPrice * 0.9 },
-            { t: (now - interval).toString(), p: currentPrice },        // Recent: current
-            { t: now.toString(), p: currentPrice },                      // Now: current
-          ].filter(p => p.p > 0 && !isNaN(p.p)); // Safety: remove invalid points
+            { t: (now - timeSpan).toString(), p: currentPrice },  // 24h ago: current
+            { t: now.toString(), p: currentPrice },               // Now: current
+          ];
           
-          console.log(`[API] Created ${history.length} fallback price points for ${position.token0.symbol}/${position.token1.symbol}`);
+          console.log(`[API] Created ${history.length} flat fallback price points`);
         } else if (history.length === 0) {
-          console.warn('[API] Cannot create fallback chart: missing price data', { lowerPrice, currentPrice });
+          console.warn('[API] Cannot create fallback chart: missing price data', { currentPrice });
         }
         
         // Debug: Log final priceHistory

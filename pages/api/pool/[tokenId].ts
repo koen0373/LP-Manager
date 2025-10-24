@@ -367,17 +367,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Build price history from ledger events (they have tick/price data)
         let history: { t: string; p: number }[] = [];
         
+        console.log(`[API] Ledger events available: ${ledgerEvents.length}`);
+        
         if (ledgerEvents.length > 0) {
-          console.log('[API] Building price history from ledger events');
-          history = ledgerEvents
-            .filter(e => e.price1Per0 !== undefined && e.price1Per0 > 0)
+          const eventsWithPrice = ledgerEvents.filter(e => e.price1Per0 !== undefined && e.price1Per0 > 0);
+          console.log(`[API] Events with price1Per0: ${eventsWithPrice.length}`);
+          
+          history = eventsWithPrice
             .map(e => ({
               t: e.timestamp.toString(),
               p: e.price1Per0!,
             }))
             .sort((a, b) => Number(a.t) - Number(b.t));
           
-          console.log(`[API] Built ${history.length} price points from ${ledgerEvents.length} ledger events`);
+          console.log(`[API] Built ${history.length} price points from ledger events`);
         }
         
         // If no ledger events with price, try database

@@ -73,7 +73,9 @@ export function normalizePosition(enriched: EnrichedPosition): PositionRow {
     price1Usd: token1.priceUsd,
     
     tvlUsd,
-    rewardsUsd: feesUsd,
+    rewardsUsd: feesUsd + rflrUsd,
+    unclaimedFeesUsd: feesUsd,
+    rflrRewardsUsd: rflrUsd,
     
     rflrAmount: rflrRewards,
     rflrUsd,

@@ -1,10 +1,10 @@
 {
   "name": "liqui-lp-manager",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "scripts": {
     "dev": "next dev -H 127.0.0.1 -p 3001",
-    "build": "prisma generate && next build",
+    "build": "rm -rf .next && prisma generate && next build",
     "build:worker": "prisma migrate deploy && prisma generate && tsc --project tsconfig.worker.json && tsc-alias -p tsconfig.worker.json",
     "build:worker:local": "prisma generate && tsc --project tsconfig.worker.json && tsc-alias -p tsconfig.worker.json",
     "start": "./start.sh",

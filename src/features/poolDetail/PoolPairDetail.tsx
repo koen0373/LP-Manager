@@ -267,7 +267,7 @@ export function PoolPairDetail({
                       onClick={onClaimFees}
                       disabled={vm.rewards.feesUsd < 1}
                       className={`
-                        text-xs px-4 py-2 font-medium transition-all text-white
+                        text-sm px-3 py-1.5 font-medium transition-all text-white rounded-md
                         ${vm.rewards.feesUsd >= 5 
                           ? 'bg-[#3DEB88] cursor-pointer hover:shadow-[0_0_12px_rgba(61,235,136,0.4)]' 
                           : vm.rewards.feesUsd >= 1
@@ -275,7 +275,6 @@ export function PoolPairDetail({
                           : 'bg-[#A2AEC0] cursor-not-allowed opacity-60'
                         }
                       `}
-                      style={{ borderRadius: '12px' }}
                       title={
                         vm.rewards.feesUsd >= 5 
                           ? '✅ NU claimen (>$5) - Optimaal!'

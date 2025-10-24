@@ -15,7 +15,7 @@ import { PositionEventType } from '@prisma/client';
 import { bigIntToDecimal, tickToPrice } from '@/utils/poolHelpers';
 
 const POSITION_MANAGER_ADDRESS = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657';
-const MAX_BLOCK_RANGE = 10_000; // Limit to prevent RPC timeout
+const MAX_BLOCK_RANGE = 30; // Flare RPC node limit for eth_getLogs
 
 interface SyncOptions {
   fromBlock?: number;

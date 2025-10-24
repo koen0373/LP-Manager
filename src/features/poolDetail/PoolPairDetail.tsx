@@ -142,7 +142,7 @@ export function PoolPairDetail({
       <div className="container mx-auto px-4 py-8">
 
         {/* Pool Detail Header */}
-        <div className="bg-liqui-card rounded-lg p-6 mb-6">
+        <div className="card rounded-xl p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold">Pool Detail</h1>
             <div className="flex items-center gap-2">
@@ -203,8 +203,8 @@ export function PoolPairDetail({
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Liquidity */}
-          <div className="bg-liqui-card rounded-lg p-6">
-            <h2 className="text-lg font-bold mb-4">Liquidity</h2>
+          <div className="card rounded-xl p-6 hover:ring-1 hover:ring-liqui-aqua/40 transition">
+            <h2 className="text-mist text-sm font-semibold uppercase tracking-wide mb-4">Liquidity</h2>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
@@ -242,8 +242,8 @@ export function PoolPairDetail({
           </div>
 
           {/* Rewards */}
-          <div className="bg-liqui-card rounded-lg p-6">
-            <h2 className="text-lg font-bold mb-4">Rewards</h2>
+          <div className="card rounded-xl p-6 hover:ring-1 hover:ring-liqui-aqua/40 transition">
+            <h2 className="text-mist text-sm font-semibold uppercase tracking-wide mb-4">Rewards</h2>
             <div className="space-y-4">
               {/* Total Rewards */}
               <div className="pb-3 border-b border-liqui-border">
@@ -296,8 +296,8 @@ export function PoolPairDetail({
           </div>
 
           {/* Range */}
-          <div className="bg-liqui-card rounded-lg p-6">
-            <h2 className="text-lg font-bold mb-4">Range</h2>
+          <div className="card rounded-xl p-6 hover:ring-1 hover:ring-liqui-aqua/40 transition">
+            <h2 className="text-mist text-sm font-semibold uppercase tracking-wide mb-4">Range</h2>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-liqui-subtext">Min Price</span>
@@ -340,8 +340,8 @@ export function PoolPairDetail({
         </div>
 
         {/* Pool Earnings */}
-        <div className="mt-6 bg-liqui-card rounded-lg p-6">
-          <h2 className="text-lg font-bold mb-4">Pool Earnings</h2>
+        <div className="mt-6 card rounded-xl p-6 hover:ring-1 hover:ring-liqui-aqua/40 transition">
+          <h2 className="text-mist text-sm font-semibold uppercase tracking-wide mb-4">Pool Earnings</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <div className="text-liqui-subtext text-sm">Creation Date</div>
@@ -365,10 +365,10 @@ export function PoolPairDetail({
         </div>
 
         {/* Activity */}
-        <div className="mt-6 bg-liqui-card rounded-lg p-6">
-          <h2 className="text-lg font-bold mb-4">
+        <div className="mt-6 card rounded-xl p-6 hover:ring-1 hover:ring-liqui-aqua/40 transition">
+          <h2 className="text-mist text-sm font-semibold uppercase tracking-wide mb-4">
             Recent Activity
-            <span className="ml-2 text-sm text-liqui-subtext font-normal">
+            <span className="ml-2 text-xs text-mist font-normal lowercase">
               ({vm.activity?.length || 0} events)
             </span>
           </h2>

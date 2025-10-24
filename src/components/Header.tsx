@@ -45,8 +45,8 @@ export default function Header({
       <Image
         src="/icons/liqui_logo.webp"
         alt="Liqui Logo"
-        width={200}
-        height={66}
+        width={169}
+        height={56}
         className="object-contain h-auto"
         onError={() => setLogoError(true)}
         priority

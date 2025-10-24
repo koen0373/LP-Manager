@@ -320,16 +320,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
 
     for (const event of collectEvents) {
-      // Skip COLLECT events that are part of a DECREASE transaction
-      if (decreaseTxHashes.has(event.txHash)) {
-        continue;
-      }
-
       const rawAmount0 = event.amount0 ? BigInt(event.amount0) : 0n;
       const rawAmount1 = event.amount1 ? BigInt(event.amount1) : 0n;
       const amount0 = bigIntToDecimal(rawAmount0, position.token0.decimals);
       const amount1 = bigIntToDecimal(rawAmount1, position.token1.decimals);
       const valueUsd = amount0 * currentPrice0Usd + amount1 * currentPrice1Usd;
+      
+      // Skip COLLECT events within DECREASE transactions ONLY if they have no real fees
+      // (Sometimes DECREASE includes a COLLECT with actual fees that should be shown)
+      if (decreaseTxHashes.has(event.txHash) && valueUsd < 0.01) {
+        continue;
+      }
       const tsMs = (event.timestamp ?? Math.floor(Date.now() / 1000)) * 1000;
 
       feeClaimHistory.push({
@@ -557,6 +558,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           });
           break;
         case PositionEventType.COLLECT:
+          // Skip COLLECT events within DECREASE transactions ONLY if they have no real fees
+          // (Sometimes DECREASE includes a COLLECT with actual fees that should be shown)
+          if (decreaseTxHashes.has(event.txHash) && usdValue < 0.01) {
+            break; // Skip this event
+          }
+          
           activityEntries.push({
             id: `collect-${event.txHash}-${event.blockNumber}`,
             type: 'collect',

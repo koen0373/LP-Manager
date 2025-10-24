@@ -17,7 +17,7 @@ export function FeeBadge({ feeBps }: FeeBadgeProps) {
   };
   
   return (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-liqui-subcard text-liqui-subtext border border-liqui-border">
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-liqui-ink text-mist border border-liqui-border">
       {formatFeePercentage(feePercentage)}
     </span>
   );

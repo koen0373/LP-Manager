@@ -9,12 +9,15 @@ export function StatusPill({ inRange }: StatusPillProps) {
     <span
       className={`inline-flex items-center text-xs font-medium ${
         inRange
-          ? 'text-green-400'
-          : 'text-red-400'
+          ? 'text-liqui-succ'
+          : 'text-liqui-err'
       }`}
     >
       {inRange && (
-        <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+        <div className="w-2 h-2 bg-liqui-succ rounded-full mr-2 slow-pulse"></div>
+      )}
+      {!inRange && (
+        <div className="w-2 h-2 bg-liqui-err rounded-full mr-2"></div>
       )}
       {inRange ? 'In Range' : 'Out of Range'}
     </span>
@@ -30,8 +33,8 @@ export function PositionStatusPill({ status }: PositionStatusPillProps) {
     <span
       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
         status === 'Active'
-          ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-          : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+          ? 'bg-liqui-aqua/20 text-liqui-aqua border border-liqui-aqua/30'
+          : 'bg-liqui-mist/20 text-liqui-mist border border-liqui-mist/30'
       }`}
     >
       {status}

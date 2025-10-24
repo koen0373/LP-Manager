@@ -111,13 +111,13 @@ export default function PositionsTable({
       
       <div className="bg-liqui-card rounded-lg border border-liqui-border overflow-hidden">
         {/* Header */}
-        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-liqui-border bg-liqui-subcard">
-          <div className="text-liqui-subtext font-bold text-left">Specifics</div>
-          <div className="text-liqui-subtext font-bold text-left">Liquidity</div>
-          <div className="text-liqui-subtext font-bold text-left">Fees</div>
-          <div className="text-liqui-subtext font-bold text-left">Incentives</div>
-          <div className="text-liqui-subtext font-bold text-left">Range</div>
-          <div className="text-liqui-subtext font-bold text-left">Status</div>
+        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-[rgba(185,199,218,0.12)] bg-transparent">
+          <div className="text-mist font-bold text-sm text-left uppercase tracking-wide">Specifics</div>
+          <div className="text-mist font-bold text-sm text-left uppercase tracking-wide">Liquidity</div>
+          <div className="text-mist font-bold text-sm text-left uppercase tracking-wide">Fees</div>
+          <div className="text-mist font-bold text-sm text-left uppercase tracking-wide">Incentives</div>
+          <div className="text-mist font-bold text-sm text-left uppercase tracking-wide">Range</div>
+          <div className="text-mist font-bold text-sm text-left uppercase tracking-wide">Status</div>
         </div>
 
         {/* Rows */}
@@ -129,7 +129,7 @@ export default function PositionsTable({
           return (
           <div 
             key={position.id} 
-            className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 hover:bg-white/5 transition-colors cursor-pointer"
+            className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 hover:bg-liqui-aqua/5 transition-colors cursor-pointer"
             onClick={() => handleRowClick(position.id)}
           >
             {/* Position Specifics */}

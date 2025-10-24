@@ -1,6 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import type { EChartsOption } from 'echarts';
+
+type TimeRange = '24h' | '7d' | '1m' | '1y';
 
 interface PricePoint {
   t: number | string; // unix timestamp (can be string from API)
@@ -22,8 +24,21 @@ export default function EChartsRangeChart({
   currentPrice,
   height = 400,
 }: EChartsRangeChartProps) {
+  const [timeRange, setTimeRange] = useState<TimeRange>('1m');
+  
+  // Calculate time window based on selected range
+  const timeWindow = useMemo(() => {
+    const now = Date.now();
+    switch (timeRange) {
+      case '24h': return now - 24 * 3600 * 1000;
+      case '7d':  return now - 7 * 24 * 3600 * 1000;
+      case '1m':  return now - 30 * 24 * 3600 * 1000;
+      case '1y':  return now - 365 * 24 * 3600 * 1000;
+    }
+  }, [timeRange]);
+  
   const option = useMemo(() => {
-    // Sort and format data
+    // Sort and format data, then filter by time window
     const sortedData = [...priceHistory]
       .sort((a, b) => {
         const timeA = typeof a.t === 'string' ? parseInt(a.t, 10) : a.t;
@@ -33,7 +48,8 @@ export default function EChartsRangeChart({
       .map(point => {
         const time = typeof point.t === 'string' ? parseInt(point.t, 10) : point.t;
         return [time * 1000, point.p]; // Convert to milliseconds for ECharts
-      });
+      })
+      .filter(([time]) => time >= timeWindow); // Filter by selected time range
 
     // Calculate Y-axis range to scale min/max prices to 25%/75%
     let yMin = 0;
@@ -248,13 +264,33 @@ export default function EChartsRangeChart({
           : []),
       ],
     };
-  }, [priceHistory, minPrice, maxPrice, currentPrice]);
+  }, [priceHistory, minPrice, maxPrice, currentPrice, timeWindow]);
 
   return (
-    <div className="bg-enosys-card rounded-lg border border-enosys-border p-6">
-      <div className="mb-4">
-        <h2 className="text-lg font-bold text-white">Range & Price</h2>
-        <p className="text-sm text-enosys-subtext">Track live price vs your range</p>
+    <div className="bg-liqui-card rounded-lg border border-liqui-border p-6">
+      {/* Header with time selector */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-lg font-bold text-white">Range & Price</h2>
+          <p className="text-sm text-liqui-subtext">Track live price vs your range</p>
+        </div>
+        
+        {/* Time range selector */}
+        <div className="flex gap-2">
+          {(['24h', '7d', '1m', '1y'] as TimeRange[]).map((range) => (
+            <button
+              key={range}
+              onClick={() => setTimeRange(range)}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                timeRange === range
+                  ? 'bg-liqui-accent text-white'
+                  : 'bg-liqui-card-hover text-liqui-mist hover:bg-liqui-border'
+              }`}
+            >
+              {range === '24h' ? '24h' : range === '7d' ? '7D' : range === '1m' ? '1M' : '1Y'}
+            </button>
+          ))}
+        </div>
       </div>
       <ReactECharts
         option={option as EChartsOption}

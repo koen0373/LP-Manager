@@ -258,11 +258,36 @@ export function PoolPairDetail({
               
               {/* Unclaimed Fees */}
               <div>
-                <div className="flex justify-between items-center mb-2">
+                <div className="flex justify-between items-start mb-2">
                   <span className="text-liqui-subtext">Unclaimed fees:</span>
-                  <span className="text-white">{formatUsd(vm.rewards.feesUsd)}</span>
+                  <div className="flex flex-col items-end gap-2">
+                    <span className="text-white">{formatUsd(vm.rewards.feesUsd)}</span>
+                    {/* Claim button with smart threshold logic */}
+                    <button
+                      onClick={onClaimFees}
+                      disabled={vm.rewards.feesUsd < 1}
+                      className={`
+                        text-xs px-3 py-1 rounded font-medium transition-all
+                        ${vm.rewards.feesUsd >= 5 
+                          ? 'bg-green-600 hover:bg-green-700 text-white cursor-pointer' 
+                          : vm.rewards.feesUsd >= 1
+                          ? 'bg-yellow-600 hover:bg-yellow-700 text-white cursor-pointer'
+                          : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                        }
+                      `}
+                      title={
+                        vm.rewards.feesUsd >= 5 
+                          ? '✅ Optimal to claim (>$5)'
+                          : vm.rewards.feesUsd >= 1
+                          ? '⚠️ Marginal ($1-$5, gas costs may be high)'
+                          : '🚫 Too low to claim (<$1, wait for more fees)'
+                      }
+                    >
+                      Claim
+                    </button>
+                  </div>
                 </div>
-                <div className="pl-4 space-y-2 text-sm">
+                <div className="pl-4 space-y-1 text-sm">
                   {vm.rewards.feesToken0 > 0 && (
                     <div className="text-liqui-subtext">
                       {formatAmount(vm.rewards.feesToken0)} {vm.token0?.symbol}
@@ -273,29 +298,6 @@ export function PoolPairDetail({
                       {formatAmount(vm.rewards.feesToken1)} {vm.token1?.symbol}
                     </div>
                   )}
-                  {/* Claim button with smart threshold logic */}
-                  <button
-                    onClick={onClaimFees}
-                    disabled={vm.rewards.feesUsd < 1}
-                    className={`
-                      text-xs px-3 py-1 rounded font-medium transition-all
-                      ${vm.rewards.feesUsd >= 5 
-                        ? 'bg-green-600 hover:bg-green-700 text-white cursor-pointer' 
-                        : vm.rewards.feesUsd >= 1
-                        ? 'bg-yellow-600 hover:bg-yellow-700 text-white cursor-pointer'
-                        : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                      }
-                    `}
-                    title={
-                      vm.rewards.feesUsd >= 5 
-                        ? '✅ Optimal to claim (>$5)'
-                        : vm.rewards.feesUsd >= 1
-                        ? '⚠️ Marginal ($1-$5, gas costs may be high)'
-                        : '🚫 Too low to claim (<$1, wait for more fees)'
-                    }
-                  >
-                    Claim
-                  </button>
                 </div>
               </div>
               

@@ -14,7 +14,7 @@ interface HeaderProps {
   onWalletConnected?: (address: string) => void;
   onWalletDisconnected?: () => void;
   showTabs?: boolean;
-  currentPage?: 'pools' | 'summary';
+  currentPage?: 'pools' | 'summary' | 'faq';
 }
 
 export default function Header({

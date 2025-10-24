@@ -116,9 +116,25 @@ export default function EChartsRangeChart({
   /** Sort, normalize to [ms, price] */
   const seriesRaw = useMemo(() => {
     const arr = [...priceHistory]
-      .filter(p => Number.isFinite(p.p))
+      .filter(p => Number.isFinite(p.p) && p.p > 0) // Filter out invalid prices
       .map(p => [toMs(p.t), p.p] as [number, number])
       .sort((a, b) => a[0] - b[0]);
+    
+    // Detect and filter outliers (prices that are >10x the median)
+    if (arr.length > 3) {
+      const prices = arr.map(a => a[1]).sort((a, b) => a - b);
+      const median = prices[Math.floor(prices.length / 2)];
+      const filtered = arr.filter(([, price]) => {
+        const ratio = price / median;
+        return ratio > 0.1 && ratio < 10; // Within 10x of median
+      });
+      
+      // Only use filtered data if we didn't remove everything
+      if (filtered.length > arr.length * 0.5) {
+        return filtered;
+      }
+    }
+    
     return arr;
   }, [priceHistory]);
 
@@ -163,12 +179,25 @@ export default function EChartsRangeChart({
 
   /** Y padding so min/max sit visually centered-ish */
   const [yMin, yMax] = useMemo(() => {
-    const values = data.map(d => d[1]);
+    const values = data.map(d => d[1]).filter(v => Number.isFinite(v) && v > 0);
     if (values.length === 0) return [0, 1];
-    const localMin = Math.min(...values, minPrice);
-    const localMax = Math.max(...values, maxPrice);
-    const r = Math.max(1e-9, localMax - localMin);
-    return [Math.max(0, Math.min(localMin, minPrice) - r * 1.0), Math.max(localMax, maxPrice) + r * 1.0];
+    
+    // Get actual data range
+    const dataMin = Math.min(...values);
+    const dataMax = Math.max(...values);
+    
+    // Include configured range boundaries
+    const absoluteMin = Math.min(dataMin, minPrice);
+    const absoluteMax = Math.max(dataMax, maxPrice);
+    
+    // Calculate range with padding
+    const range = absoluteMax - absoluteMin;
+    const padding = range * 0.15; // 15% padding top and bottom
+    
+    return [
+      Math.max(0, absoluteMin - padding),
+      absoluteMax + padding
+    ];
   }, [data, minPrice, maxPrice]);
 
   /** markLines: min/max (horizontal) + NOW (horizontal thick) + activity (vertical) */
@@ -281,6 +310,7 @@ export default function EChartsRangeChart({
 
   // Debug logging
   if (process.env.NODE_ENV === 'development') {
+    const prices = data.map(d => d[1]);
     console.log('[EChartsRangeChart]', {
       timeRange,
       fromTs: new Date(fromTs).toISOString(),
@@ -288,11 +318,22 @@ export default function EChartsRangeChart({
       totalRawPoints: seriesRaw.length,
       filteredPoints: filtered.length,
       downsampledPoints: data.length,
-      minPrice,
-      maxPrice,
-      currentPrice,
-      yMin,
-      yMax,
+      priceRange: {
+        min: Math.min(...prices),
+        max: Math.max(...prices),
+        median: prices.sort((a, b) => a - b)[Math.floor(prices.length / 2)],
+      },
+      configuredRange: {
+        minPrice,
+        maxPrice,
+        currentPrice,
+      },
+      yAxis: { yMin, yMax },
+      outliers: priceHistory.filter(p => {
+        const median = prices[Math.floor(prices.length / 2)];
+        const ratio = p.p / median;
+        return ratio < 0.1 || ratio > 10;
+      }),
     });
   }
 

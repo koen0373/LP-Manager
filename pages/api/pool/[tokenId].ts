@@ -405,7 +405,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const contractCreationDate = contractCreationDateResult.status === 'fulfilled' 
       ? contractCreationDateResult.value 
-      : null;
+      : (console.warn('[API] Failed to fetch contract creation date, using mint timestamp as fallback:', 
+          contractCreationDateResult.reason?.message), null);
     
     const priceHistory = priceHistoryResult.status === 'fulfilled' 
       ? priceHistoryResult.value 

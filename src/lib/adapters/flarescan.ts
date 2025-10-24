@@ -73,7 +73,13 @@ async function flarescanGet<T>({
 
   const response = await rateLimitedFetch({
     description,
-    request: () => fetch(url.toString(), { method: 'GET' }),
+    request: () => fetch(url.toString(), { 
+      method: 'GET',
+      headers: {
+        'User-Agent': 'LiquiLP/1.0',
+        'Accept': 'application/json',
+      }
+    }),
   });
 
   if (!response.ok) {

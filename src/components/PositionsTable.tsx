@@ -141,9 +141,12 @@ export default function PositionsTable({
             {/* Loading Spinner Overlay */}
             {isLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-liqui-card/50 backdrop-blur-sm z-10">
-                <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-liqui-aqua border-t-transparent"></div>
-                  <span className="text-liqui-aqua text-sm font-medium">Loading pool...</span>
+                <div className="flex flex-col items-center space-y-3">
+                  <div className="animate-spin rounded-full h-10 w-10 border-4 border-liqui-aqua border-t-transparent"></div>
+                  <div className="text-center">
+                    <div className="text-liqui-aqua text-sm font-medium mb-1">Retrieving your pool data from the blockchain</div>
+                    <div className="text-liqui-subtext text-xs">The first time could take up to 30 seconds</div>
+                  </div>
                 </div>
               </div>
             )}

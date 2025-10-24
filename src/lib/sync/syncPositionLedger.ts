@@ -105,7 +105,7 @@ export async function syncPositionLedger(
     let usedFlarescan = false;
 
     try {
-      // Try Flarescan API first (FAST - no block limits)
+      // Try Routescan API first (FAST - no block limits, free tier: 2 rps)
       const flarescanLogs = await fetchPositionEventsViaFlarescan(
         tokenId,
         Number(fromBlock),
@@ -125,12 +125,12 @@ export async function syncPositionLedger(
       
       usedFlarescan = true;
       if (verbose) {
-        console.log(`[SYNC] ✅ Fetched ${allPmLogs.length} events via Flarescan API (fast method)`);
+        console.log(`[SYNC] ✅ Fetched ${allPmLogs.length} events via Routescan API (fast method)`);
       }
     } catch (flarescanError) {
-      // Fallback to RPC if Flarescan fails (403 = rate limit or blocked)
+      // Fallback to RPC if Routescan fails
       if (process.env.NODE_ENV === 'development') {
-        console.warn(`[SYNC] Flarescan API failed, falling back to RPC:`, flarescanError);
+        console.warn(`[SYNC] Routescan API failed, falling back to RPC:`, flarescanError);
       }
       
       const blockRange = Number(toBlock - fromBlock);

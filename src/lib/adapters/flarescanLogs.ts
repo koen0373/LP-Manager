@@ -1,12 +1,13 @@
 /**
- * Flarescan API adapter for fetching Position Manager events
+ * Routescan API adapter for fetching Position Manager events
  * Uses Etherscan-compatible API for fast historical event fetching
+ * Free tier: 2 rps, 10k calls/day (no API key needed)
  */
 
 import { Hex } from 'viem';
 
-const FLARESCAN_API = 'https://flarescan.com/api';
-const API_KEY = process.env.FLARESCAN_API_KEY || ''; // Optional for now
+const ROUTESCAN_API = 'https://api.routescan.io/v2/network/mainnet/evm/14/etherscan/api';
+const API_KEY = process.env.ROUTESCAN_API_KEY || 'placeholder'; // 'placeholder' for free tier
 
 // Position Manager contract address
 const POSITION_MANAGER = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657';
@@ -16,8 +17,8 @@ const INCREASE_LIQUIDITY_TOPIC = '0x3067048beee31b25b2f1681f88dac838c8bba36af25b
 const DECREASE_LIQUIDITY_TOPIC = '0x26f6a048ee9138f2c0ce266f322cb99228e8d619ae2bff30c67f8dcf9d2377b4';
 const COLLECT_TOPIC = '0x40d0efd1a53d60ecbf40971b9daf7dc90178c3aadc7aab1765632738fa8b8f01';
 
-// Flarescan API response type (Etherscan-compatible)
-export interface FlarescanLogEntry {
+// Routescan API response type (Etherscan-compatible)
+export interface RoutescanLogEntry {
   address: string;
   topics: string[];
   data: string;
@@ -50,9 +51,9 @@ function tokenIdToTopic(tokenId: string | number): string {
 }
 
 /**
- * Normalize Flarescan log to viem-compatible format
+ * Normalize Routescan log to viem-compatible format
  */
-function normalizeFlarescanLog(log: FlarescanLogEntry): NormalizedLog {
+function normalizeRoutescanLog(log: RoutescanLogEntry): NormalizedLog {
   return {
     address: log.address as Hex,
     topics: log.topics as [Hex, ...Hex[]],
@@ -73,7 +74,7 @@ async function fetchEventsByTopic(
   fromBlock: number,
   toBlock: number | 'latest' = 'latest'
 ): Promise<NormalizedLog[]> {
-  const url = new URL(FLARESCAN_API);
+  const url = new URL(ROUTESCAN_API);
   url.searchParams.set('module', 'logs');
   url.searchParams.set('action', 'getLogs');
   url.searchParams.set('address', POSITION_MANAGER);
@@ -81,10 +82,7 @@ async function fetchEventsByTopic(
   url.searchParams.set('topic1', topic1);
   url.searchParams.set('fromBlock', fromBlock.toString());
   url.searchParams.set('toBlock', toBlock === 'latest' ? 'latest' : toBlock.toString());
-  
-  if (API_KEY) {
-    url.searchParams.set('apikey', API_KEY);
-  }
+  url.searchParams.set('apikey', API_KEY);
 
   const response = await fetch(url.toString(), {
     headers: {
@@ -95,7 +93,7 @@ async function fetchEventsByTopic(
 
   if (!response.ok) {
     throw new Error(
-      `[FlarescanLogs] Failed to fetch events: ${response.status} ${response.statusText}`
+      `[RoutescanLogs] Failed to fetch events: ${response.status} ${response.statusText}`
     );
   }
 
@@ -106,21 +104,21 @@ async function fetchEventsByTopic(
     if (data.message === 'No records found') {
       return [];
     }
-    throw new Error(`[FlarescanLogs] API error: ${data.message || 'Unknown error'}`);
+    throw new Error(`[RoutescanLogs] API error: ${data.message || 'Unknown error'}`);
   }
 
   if (!Array.isArray(data.result)) {
     return [];
   }
 
-  return data.result.map(normalizeFlarescanLog);
+  return data.result.map(normalizeRoutescanLog);
 }
 
 /**
  * Fetch all Position Manager events for a specific tokenId
  * Returns IncreaseLiquidity, DecreaseLiquidity, and Collect events
  */
-export async function fetchPositionEventsViaFlarescan(
+export async function fetchPositionEventsViaRoutescan(
   tokenId: string | number,
   fromBlock: number,
   toBlock: number | 'latest' = 'latest'
@@ -128,7 +126,7 @@ export async function fetchPositionEventsViaFlarescan(
   const tokenTopic = tokenIdToTopic(tokenId);
 
   console.log(
-    `[FlarescanLogs] Fetching events for token ${tokenId} from block ${fromBlock}...`
+    `[RoutescanLogs] Fetching events for token ${tokenId} from block ${fromBlock}...`
   );
 
   try {
@@ -150,30 +148,18 @@ export async function fetchPositionEventsViaFlarescan(
     });
 
     console.log(
-      `[FlarescanLogs] Found ${allEvents.length} events ` +
+      `[RoutescanLogs] Found ${allEvents.length} events ` +
         `(${increaseEvents.length} increase, ${decreaseEvents.length} decrease, ` +
         `${collectEvents.length} collect)`
     );
 
     return allEvents;
   } catch (error) {
-    console.error('[FlarescanLogs] Error fetching events:', error);
+    console.error('[RoutescanLogs] Error fetching events:', error);
     throw error;
   }
 }
 
-/**
- * Check if Flarescan API is available (for fallback logic)
- */
-export async function isFlarescanAvailable(): Promise<boolean> {
-  try {
-    const response = await fetch(`${FLARESCAN_API}?module=logs&action=getLogs`, {
-      method: 'HEAD',
-      headers: { 'User-Agent': 'LiquiLP/1.0' },
-    });
-    return response.ok;
-  } catch {
-    return false;
-  }
-}
+// Keep old name for backward compatibility
+export const fetchPositionEventsViaFlarescan = fetchPositionEventsViaRoutescan;
 

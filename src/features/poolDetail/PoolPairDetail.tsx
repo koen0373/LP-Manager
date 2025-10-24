@@ -259,7 +259,21 @@ export function PoolPairDetail({
               {/* Unclaimed Fees */}
               <div>
                 <div className="flex justify-between items-start mb-2">
-                  <span className="text-liqui-subtext">Unclaimed fees:</span>
+                  <div className="flex-1">
+                    <div className="text-liqui-subtext mb-2">Unclaimed fees:</div>
+                    <div className="pl-4 space-y-1 text-sm">
+                      {vm.rewards.feesToken0 > 0 && (
+                        <div className="text-liqui-subtext">
+                          {formatAmount(vm.rewards.feesToken0)} {vm.token0?.symbol}
+                        </div>
+                      )}
+                      {vm.rewards.feesToken1 > 0 && (
+                        <div className="text-liqui-subtext">
+                          {formatAmount(vm.rewards.feesToken1)} {vm.token1?.symbol}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <div className="flex flex-col items-end gap-2">
                     <span className="text-white">{formatUsd(vm.rewards.feesUsd)}</span>
                     {/* Claim button with smart threshold logic */}
@@ -286,22 +300,6 @@ export function PoolPairDetail({
                       Claim
                     </button>
                   </div>
-                </div>
-                {/* Token amounts aligned with Claim button */}
-                <div className="flex justify-between items-start">
-                  <div className="pl-4 space-y-1 text-sm">
-                    {vm.rewards.feesToken0 > 0 && (
-                      <div className="text-liqui-subtext">
-                        {formatAmount(vm.rewards.feesToken0)} {vm.token0?.symbol}
-                      </div>
-                    )}
-                    {vm.rewards.feesToken1 > 0 && (
-                      <div className="text-liqui-subtext">
-                        {formatAmount(vm.rewards.feesToken1)} {vm.token1?.symbol}
-                      </div>
-                    )}
-                  </div>
-                  <div className="w-[80px]">{/* Spacer to align with button */}</div>
                 </div>
               </div>
               

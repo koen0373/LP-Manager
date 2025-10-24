@@ -623,8 +623,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // ========================================
     // APY Calculation
     // ========================================
+    // Total fees = claimed fees + unclaimed fees (poolRewards)
+    const totalFeesEarned = totalClaimedFees + poolRewards;
+    
     const apyResult = calculateApy(
-      totalClaimedFees,      // Total fees earned
+      totalFeesEarned,       // Total fees earned (claimed + unclaimed)
       totalValue,            // Current TVL
       poolCreationDate,      // Pool creation date
       undefined,             // TODO: fees last 24h

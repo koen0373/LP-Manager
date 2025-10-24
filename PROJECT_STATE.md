@@ -336,7 +336,23 @@ Railway provides `DATABASE_URL` automatically when you add Postgres service.
 
 ## 🚨 **BEKENDE ISSUES & WORKAROUNDS**
 
-### **1. Prisma Studio Error**
+### **1. Railway Logging Rate Limit**
+```
+Railway rate limit of 500 logs/sec reached
+Messages dropped: 1065
+```
+**Status**: ⚠️ Actief issue  
+**Oorzaak**: Te veel console.log statements in development code (284 occurrences)  
+**Impact**: Logs worden gedropt in production, maar app blijft werken  
+**TODO**: Wrap alle console.log in `if (process.env.NODE_ENV !== 'production')` checks  
+**Workaround**: Gebruik `src/lib/util/devLog.ts` voor nieuwe code:
+```typescript
+import { devLog } from '@/lib/util/devLog';
+devLog.log('Debug info'); // Only logs in development
+devLog.error('Error');     // Always logs
+```
+
+### **2. Prisma Studio Error**
 ```
 Error: uv_interface_addresses returned Unknown system error 1
 ```

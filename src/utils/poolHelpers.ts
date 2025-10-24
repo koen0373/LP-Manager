@@ -1,5 +1,6 @@
 import { createPublicClient, fallback, http, decodeFunctionResult, getAddress } from 'viem';
 import { flare } from '../lib/chainFlare';
+import { devLog } from '../lib/util/devLog';
 
 export function normalizeAddress(address: string): `0x${string}` {
   if (!address) {
@@ -53,7 +54,7 @@ const tickCache = new Map<string, {
 
 // Clear all caches
 export function clearCaches(): void {
-  console.log(`[DEBUG] [CACHE CLEAR] Clearing all caches`);
+  devLog.log(`[DEBUG] [CACHE CLEAR] Clearing all caches`);
   poolCache.clear();
   factoryCache.clear();
   feeGrowthCache.clear();

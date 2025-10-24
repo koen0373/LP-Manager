@@ -82,14 +82,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ledgerTransfers = syncResult.transfers;
     } else {
       // Use database cache - much faster!
-      console.log(`[API] Using cached ledger data for token ${tokenId}`);
-      const { getPositionEvents } = await import('@/lib/data/positionEvents');
-      const { getPositionTransfers } = await import('@/lib/data/positionTransfers');
-      
-      [ledgerEvents, ledgerTransfers] = await Promise.all([
-        getPositionEvents(tokenId, { limit: 1000 }),
-        getPositionTransfers(tokenId, { limit: 100 }),
-      ]);
+      // Wrap in try-catch for when database is not available
+      try {
+        console.log(`[API] Using cached ledger data for token ${tokenId}`);
+        const { getPositionEvents } = await import('@/lib/data/positionEvents');
+        const { getPositionTransfers } = await import('@/lib/data/positionTransfers');
+        
+        [ledgerEvents, ledgerTransfers] = await Promise.all([
+          getPositionEvents(tokenId, { limit: 1000 }),
+          getPositionTransfers(tokenId, { limit: 100 }),
+        ]);
+      } catch (dbError) {
+        console.warn(`[API] Database not available, continuing without ledger data:`, dbError);
+        // Continue with empty arrays - will use fallback data sources
+        ledgerEvents = [];
+        ledgerTransfers = [];
+      }
     }
 
     // Get current prices for accurate rewards calculation

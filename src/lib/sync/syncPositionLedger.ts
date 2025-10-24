@@ -128,8 +128,10 @@ export async function syncPositionLedger(
         console.log(`[SYNC] ✅ Fetched ${allPmLogs.length} events via Flarescan API (fast method)`);
       }
     } catch (flarescanError) {
-      // Fallback to RPC if Flarescan fails
-      console.warn(`[SYNC] Flarescan API failed, falling back to RPC:`, flarescanError);
+      // Fallback to RPC if Flarescan fails (403 = rate limit or blocked)
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`[SYNC] Flarescan API failed, falling back to RPC:`, flarescanError);
+      }
       
       const blockRange = Number(toBlock - fromBlock);
       const chunkSize = BigInt(Math.min(blockRange, MAX_BLOCK_RANGE));
@@ -197,10 +199,6 @@ export async function syncPositionLedger(
         });
 
         const chunkPmLogs = [...pmLogs, ...pmDecreaseLogs, ...pmCollectLogs];
-
-        if (verbose && chunkPmLogs.length > 0) {
-          console.log(`[SYNC] Found ${chunkPmLogs.length} Position Manager logs in block range ${currentBlock}-${chunkEnd}`);
-        }
 
         // Add to allPmLogs for processing after loop
         allPmLogs.push(...chunkPmLogs.map(log => ({
@@ -313,15 +311,8 @@ export async function syncPositionLedger(
             };
 
             positionEvents.push(event);
-
-            if (verbose) {
-              console.log(`[SYNC] Processed ${decoded.eventName} event at block ${log.blockNumber}`);
-            }
       } catch {
-        // Skip events we can't decode
-        if (verbose) {
-          console.warn(`[SYNC] Could not decode log at ${log.transactionHash}:${log.logIndex}`);
-        }
+        // Skip events we can't decode (silently in production to reduce log spam)
       }
     } // End processing loop for allPmLogs
 

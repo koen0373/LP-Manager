@@ -72,8 +72,7 @@ export default function Header({
               <div className="h-12 w-[2px] bg-mist/40"></div>
               {/* Tagline */}
               <div className="flex flex-col leading-tight">
-                <span className="text-mist text-[14px] font-medium tracking-wide">The</span>
-                <span className="text-mist text-[14px] font-medium tracking-wide">Liquidity Pool</span>
+                <span className="text-mist text-[14px] font-medium tracking-wide">The Liquidity Pool</span>
                 <span className="text-mist text-[14px] font-medium tracking-wide">Intelligence Platform</span>
               </div>
             </div>

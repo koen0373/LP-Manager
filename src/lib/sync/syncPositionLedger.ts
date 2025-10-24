@@ -15,7 +15,7 @@ import { PositionEventType } from '@prisma/client';
 import { bigIntToDecimal, tickToPrice } from '@/utils/poolHelpers';
 
 const POSITION_MANAGER_ADDRESS = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657';
-const MAX_BLOCK_RANGE = 500; // Test higher limit - will fall back to 30 if RPC rejects
+const MAX_BLOCK_RANGE = 30; // Flare RPC strict limit - cannot be higher
 
 interface SyncOptions {
   fromBlock?: number;
@@ -264,7 +264,10 @@ export async function syncPositionLedger(
           }
         }
       } catch (chunkError) {
-        console.error(`[SYNC] Error fetching chunk ${currentBlock}-${chunkEnd}:`, chunkError);
+        // Only log in verbose mode to reduce Railway log spam
+        if (verbose) {
+          console.error(`[SYNC] Error fetching chunk ${currentBlock}-${chunkEnd}:`, chunkError);
+        }
       }
     }
 

@@ -364,19 +364,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const poolCreationDate = initialTimestamp || new Date();
         const creationTimestamp = Math.floor(poolCreationDate.getTime() / 1000);
         
-        // Try position events first
-        let history = await buildPriceHistory(
-          position.poolAddress,
-          position.token0.decimals,
-          position.token1.decimals,
-          {
-            fromTimestamp: creationTimestamp,
-            toTimestamp: Math.floor(Date.now() / 1000),
-            maxPoints: 500,
-          }
-        );
-
-        // Fallback to pool swaps if no position event data
+        // Build price history from ledger events (they have tick/price data)
+        let history: { t: string; p: number }[] = [];
+        
+        if (ledgerEvents.length > 0) {
+          console.log('[API] Building price history from ledger events');
+          history = ledgerEvents
+            .filter(e => e.price1Per0 !== undefined && e.price1Per0 > 0)
+            .map(e => ({
+              t: e.timestamp.toString(),
+              p: e.price1Per0!,
+            }))
+            .sort((a, b) => Number(a.t) - Number(b.t));
+          
+          console.log(`[API] Built ${history.length} price points from ${ledgerEvents.length} ledger events`);
+        }
+        
+        // If no ledger events with price, try database
+        if (history.length === 0) {
+          console.log('[API] No price from ledger, trying database...');
+          history = await buildPriceHistory(
+            position.poolAddress,
+            position.token0.decimals,
+            position.token1.decimals,
+            {
+              fromTimestamp: creationTimestamp,
+              toTimestamp: Math.floor(Date.now() / 1000),
+              maxPoints: 500,
+            }
+          );
+        }
+        
+        // Fallback to pool swaps if still no data
         if (history.length === 0) {
           console.log('[API] No price history from position events, trying pool swaps...');
           history = await buildPriceHistoryFromSwaps(
@@ -391,23 +410,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           );
         }
         
-        // If still no data, create flat line at current price (no fake movement)
-        if (history.length === 0 && currentPrice > 0 && !isNaN(currentPrice)) {
-          console.log('[API] No historical data, creating flat line at current price', {
-            currentPrice,
-            token0: position.token0.symbol,
-            token1: position.token1.symbol,
-          });
+        // Always add current price as latest point if we have it
+        if (currentPrice > 0 && !isNaN(currentPrice)) {
           const now = Math.floor(Date.now() / 1000);
-          const timeSpan = 24 * 3600; // 24 hours
-          
-          // Flat line at current price (min/max range shown as markLines, not price movement)
+          history.push({ t: now.toString(), p: currentPrice });
+        }
+        
+        // If still no data after all attempts, create minimal fallback
+        if (history.length === 0 && currentPrice > 0 && !isNaN(currentPrice)) {
+          console.log('[API] No historical data available, creating minimal fallback');
+          const now = Math.floor(Date.now() / 1000);
           history = [
-            { t: (now - timeSpan).toString(), p: currentPrice },  // 24h ago: current
-            { t: now.toString(), p: currentPrice },               // Now: current
+            { t: (now - 3600).toString(), p: currentPrice },  // 1h ago
+            { t: now.toString(), p: currentPrice },           // Now
           ];
-          
-          console.log(`[API] Created ${history.length} flat fallback price points`);
         } else if (history.length === 0) {
           console.warn('[API] Cannot create fallback chart: missing price data', { currentPrice });
         }

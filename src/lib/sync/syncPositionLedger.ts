@@ -14,8 +14,7 @@ import {
 import { PositionEventType } from '@prisma/client';
 import { bigIntToDecimal, tickToPrice } from '@/utils/poolHelpers';
 import { 
-  fetchPositionEventsViaFlarescan,
-  type NormalizedLog 
+  fetchPositionEventsViaFlarescan
 } from '@/lib/adapters/flarescanLogs';
 
 const POSITION_MANAGER_ADDRESS = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657';
@@ -218,8 +217,8 @@ export async function syncPositionLedger(
           console.error(`[SYNC] Error fetching chunk ${currentBlock}-${chunkEnd}:`, chunkError);
         }
       }
-    }
-    } // End of Flarescan fallback (RPC loop)
+    } // End RPC for loop
+    } // End RPC fallback catch block
     
     // Process all collected logs (from Flarescan or RPC)
     if (verbose) {
@@ -247,8 +246,8 @@ export async function syncPositionLedger(
           timestamp = Number(block.timestamp);
         }
 
-            // Extract position metadata for calculations
-            const price0Usd = position.price0Usd || 0;
+        // Extract position metadata for calculations
+        const price0Usd = position.price0Usd || 0;
             const price1Usd = position.price1Usd || 0;
             const decimals0 = position.token0.decimals || 18;
             const decimals1 = position.token1.decimals || 18;
@@ -318,26 +317,13 @@ export async function syncPositionLedger(
             if (verbose) {
               console.log(`[SYNC] Processed ${decoded.eventName} event at block ${log.blockNumber}`);
             }
-          } catch {
-            // Skip events we can't decode
-            if (verbose) {
-              console.warn(`[SYNC] Could not decode log at ${log.transactionHash}:${log.logIndex}`);
-            }
-          }
-        }
-      } catch (chunkError) {
-        // Only log in verbose mode to reduce Railway log spam
+      } catch {
+        // Skip events we can't decode
         if (verbose) {
-          console.error(`[SYNC] Error fetching chunk ${currentBlock}-${chunkEnd}:`, chunkError);
+          console.warn(`[SYNC] Could not decode log at ${log.transactionHash}:${log.logIndex}`);
         }
       }
-    }
-    } // End of Flarescan fallback (RPC loop)
-    
-    // Process all collected logs (from Flarescan or RPC)
-    if (verbose) {
-      console.log(`[SYNC] Processing ${allPmLogs.length} Position Manager events...`);
-    }
+    } // End processing loop for allPmLogs
 
     // Step 4: Bulk insert into database (optional - gracefully handle failures)
     let dbWriteSuccess = false;

@@ -374,15 +374,15 @@ export function PoolPairDetail({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <div className="text-liqui-subtext text-sm mb-1">Collected Incentives</div>
-              <div className="text-white text-lg font-medium">
-                {vm.rewards.rflr ? `${formatAmount(vm.rewards.rflr)} RFLR (${formatUsd(vm.rewards.rflrUsd || 0)})` : '$0.00'}
-              </div>
+              <div className="text-white text-lg font-medium">$0.00</div>
+              <div className="text-liqui-subtext text-xs mt-1">RFLR claimed via Flare Portal</div>
             </div>
             <div>
               <div className="text-liqui-subtext text-sm mb-1">Uncollected Incentives</div>
               <div className="text-white text-lg font-medium">
                 {vm.rewards.rflr ? `${formatAmount(vm.rewards.rflr)} RFLR (${formatUsd(vm.rewards.rflrUsd || 0)})` : '$0.00'}
               </div>
+              <div className="text-liqui-subtext text-xs mt-1">Claimable via Flare Portal end of month</div>
             </div>
           </div>
 

@@ -378,7 +378,21 @@ export function PoolPairDetail({
               <div className="text-liqui-subtext text-xs mt-1">RFLR claimed via Flare Portal</div>
             </div>
             <div>
-              <div className="text-liqui-subtext text-sm mb-1">Uncollected Incentives</div>
+              <div className="text-liqui-subtext text-sm mb-1 flex items-center gap-2">
+                Uncollected Incentives
+                <a 
+                  href="https://portal.flare.network" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-liqui-aqua hover:text-liqui-aqua/80 transition-colors"
+                  title="Claim RFLR on Flare Portal"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                    <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                  </svg>
+                </a>
+              </div>
               <div className="text-white text-lg font-medium">
                 {vm.rewards.rflr ? `${formatAmount(vm.rewards.rflr)} RFLR (${formatUsd(vm.rewards.rflrUsd || 0)})` : '$0.00'}
               </div>

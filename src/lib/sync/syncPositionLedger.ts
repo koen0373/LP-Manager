@@ -138,7 +138,7 @@ export async function syncPositionLedger(
         console.log(`[SYNC] Using RPC fallback with ${chunkSize}-block chunks (slow method)`);
       }
 
-    for (let currentBlock = fromBlock; currentBlock <= toBlock; currentBlock += chunkSize) {
+      for (let currentBlock = fromBlock; currentBlock <= toBlock; currentBlock += chunkSize) {
       const chunkEnd = currentBlock + chunkSize - 1n < toBlock 
         ? currentBlock + chunkSize - 1n 
         : toBlock;
@@ -217,7 +217,7 @@ export async function syncPositionLedger(
           console.error(`[SYNC] Error fetching chunk ${currentBlock}-${chunkEnd}:`, chunkError);
         }
       }
-    } // End RPC for loop
+      } // End RPC for loop
     } // End RPC fallback catch block
     
     // Process all collected logs (from Flarescan or RPC)

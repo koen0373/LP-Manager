@@ -1,7 +1,8 @@
 # Build stage
 FROM node:20-alpine AS builder
 
-# Cache buster - change this value to force rebuild
+# Cache buster - increment this manually when changes aren't picked up
+# IMPORTANT: Update this value (v0.1.X) whenever Railway doesn't deploy your changes
 ARG CACHE_BUST=v0.1.3
 
 WORKDIR /app

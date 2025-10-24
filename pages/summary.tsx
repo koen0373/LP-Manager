@@ -176,7 +176,10 @@ export default function SummaryPage() {
     });
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
+      {/* Dark overlay to reduce water background intensity */}
+      <div className="fixed inset-0 bg-liqui-bg/85 pointer-events-none z-0"></div>
+      <div className="relative z-10">
       <Header currentPage="summary" 
         showTabs={false}
         onWalletConnected={handleWalletConnected}
@@ -290,6 +293,7 @@ export default function SummaryPage() {
           </div>
         </div>
 
+      </div>
       </div>
     </div>
   );

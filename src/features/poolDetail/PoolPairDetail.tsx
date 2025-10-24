@@ -358,28 +358,28 @@ export function PoolPairDetail({
             </div>
           </div>
 
-          {/* Row 2: Collected */}
+          {/* Row 2: Fees (Collected left, Uncollected right) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <div className="text-liqui-subtext text-sm mb-1">Collected Fees</div>
               <div className="text-white text-lg font-medium">{formatUsd(vm.rewards.claimedUsd || 0)}</div>
             </div>
             <div>
+              <div className="text-liqui-subtext text-sm mb-1">Uncollected Fees</div>
+              <div className="text-white text-lg font-medium">{formatUsd(vm.rewards.totalUsd - (vm.rewards.rflrUsd || 0))}</div>
+            </div>
+          </div>
+
+          {/* Row 3: Incentives (Collected left, Uncollected right) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
               <div className="text-liqui-subtext text-sm mb-1">Collected Incentives</div>
               <div className="text-white text-lg font-medium">
                 {vm.rewards.rflr ? `${formatAmount(vm.rewards.rflr)} RFLR (${formatUsd(vm.rewards.rflrUsd || 0)})` : '$0.00'}
               </div>
             </div>
-          </div>
-
-          {/* Row 3: Unclaimed */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <div className="text-liqui-subtext text-sm mb-1">Unclaimed Fees</div>
-              <div className="text-white text-lg font-medium">{formatUsd(vm.rewards.totalUsd - (vm.rewards.rflrUsd || 0))}</div>
-            </div>
-            <div>
-              <div className="text-liqui-subtext text-sm mb-1">Unclaimed Incentives</div>
+              <div className="text-liqui-subtext text-sm mb-1">Uncollected Incentives</div>
               <div className="text-white text-lg font-medium">
                 {vm.rewards.rflr ? `${formatAmount(vm.rewards.rflr)} RFLR (${formatUsd(vm.rewards.rflrUsd || 0)})` : '$0.00'}
               </div>

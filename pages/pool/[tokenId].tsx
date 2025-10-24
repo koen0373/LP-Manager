@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GetServerSideProps, NextApiRequest, NextApiResponse } from 'next';
 import { PoolPairDetail } from '@/features/poolDetail/PoolPairDetail';
 import { PoolDetailVM } from '@/features/poolDetail/types';
@@ -13,6 +13,14 @@ export default function PoolPage({ tokenId, initialData, error: serverError }: P
   const [vm, setVm] = useState<PoolDetailVM | null>(initialData);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>(serverError);
+
+  // Hide water background on this page
+  useEffect(() => {
+    document.body.classList.add('no-water-bg');
+    return () => {
+      document.body.classList.remove('no-water-bg');
+    };
+  }, []);
 
   const handleRefresh = async () => {
     setLoading(true);

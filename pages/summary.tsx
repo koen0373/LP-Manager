@@ -27,6 +27,14 @@ export default function SummaryPage() {
   const [walletAddress, setWalletAddress] = React.useState<string>('');
   const { data, isLoading, isError, refetch } = useWalletSummary(walletAddress);
 
+  // Hide water background on this page
+  React.useEffect(() => {
+    document.body.classList.add('no-water-bg');
+    return () => {
+      document.body.classList.remove('no-water-bg');
+    };
+  }, []);
+
   // Check if wallet is already connected on mount
   React.useEffect(() => {
     const checkWallet = async () => {

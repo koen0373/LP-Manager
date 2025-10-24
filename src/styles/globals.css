@@ -32,12 +32,18 @@ body {
 /* Liqui theme colors */
 :root {
   --liqui-bg: #0a0a0a;
-  --liqui-card: rgba(26, 26, 26, 0.85); /* Semi-transparent to show water background */
-  --liqui-subcard: rgba(42, 42, 42, 0.85); /* Semi-transparent */
+  --liqui-card: #1a1a1a; /* Fully opaque - no transparency */
+  --liqui-subcard: #2a2a2a; /* Fully opaque */
   --liqui-border: #3a3a3a;
   --liqui-text: #ffffff;
   --liqui-subtext: #888888;
-  --liqui-hover: rgba(51, 51, 51, 0.7); /* Semi-transparent */
+  --liqui-hover: #333333; /* Fully opaque */
+}
+
+/* Hide water background on specific pages */
+body.no-water-bg {
+  background-image: none;
+  background-color: #0a0a0a;
 }
 
 /* Custom animations */

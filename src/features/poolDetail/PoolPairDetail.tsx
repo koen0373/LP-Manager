@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -6,6 +6,7 @@ import { PoolDetailVM } from './types';
 import Header from '@/components/Header';
 import { WaterSpinner } from '@/components/WaterSpinner';
 import { formatDateShort } from '@/lib/formatDate';
+import { TimeRange } from '@/lib/utils/time';
 
 // Dynamic import - pure client-side (no SSR)
 const EChartsRangeChart = dynamic(
@@ -90,6 +91,8 @@ export function PoolPairDetail({
   onWalletConnected,
   onWalletDisconnected,
 }: PoolPairDetailProps) {
+  // Time range state for chart
+  const [timeRange, setTimeRange] = useState<TimeRange>('7d');
   if (loading) {
     return (
       <div className="min-h-screen text-white">
@@ -352,13 +355,41 @@ export function PoolPairDetail({
 
         {/* Range & Price Chart */}
         <div className="mt-6">
-          <EChartsRangeChart
-            priceHistory={vm.priceHistory}
-            minPrice={vm.range.min}
-            maxPrice={vm.range.max}
-            currentPrice={vm.range.current}
-            activity={vm.activity}
-          />
+          <div className="bg-liqui-card rounded-lg border border-liqui-border p-6">
+            {/* Header with time selector */}
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-bold text-white">Range & Price</h2>
+                <p className="text-sm text-liqui-subtext">Track live price vs your range</p>
+              </div>
+              
+              {/* Time range buttons */}
+              <div className="flex gap-2">
+                {(['24h', '7d', '1m', '1y'] as TimeRange[]).map((range) => (
+                  <button
+                    key={range}
+                    onClick={() => setTimeRange(range)}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      timeRange === range
+                        ? 'bg-liqui-accent text-white'
+                        : 'bg-liqui-card-hover text-liqui-mist hover:bg-liqui-border'
+                    }`}
+                  >
+                    {range === '24h' ? '24h' : range === '7d' ? '7D' : range === '1m' ? '1M' : '1Y'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <EChartsRangeChart
+              priceHistory={vm.priceHistory}
+              minPrice={vm.range.min}
+              maxPrice={vm.range.max}
+              currentPrice={vm.range.current}
+              activity={vm.activity}
+              timeRange={timeRange}
+            />
+          </div>
         </div>
 
         {/* Pool Earnings */}

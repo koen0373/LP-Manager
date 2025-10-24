@@ -279,7 +279,7 @@ Railway provides `DATABASE_URL` automatically when you add Postgres service.
 - `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` → Your WalletConnect project ID
 - `FLARESCAN_API_URL` → https://flare-explorer.flare.network/api
 - `NODE_ENV` → production
-- `CACHE_BUST` → v0.1.3 (bump to force rebuild)
+- `CACHE_BUST` → v0.1.4 (bump to force rebuild)
 
 ---
 

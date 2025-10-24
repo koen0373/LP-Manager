@@ -3,7 +3,7 @@ FROM node:20-alpine AS builder
 
 # Cache buster - increment this manually when changes aren't picked up
 # IMPORTANT: Update this value (v0.1.X) whenever Railway doesn't deploy your changes
-ARG CACHE_BUST=v0.1.3
+ARG CACHE_BUST=v0.1.4
 
 WORKDIR /app
 

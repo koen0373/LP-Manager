@@ -70,8 +70,10 @@ export default function PositionsTable({
   const router = useRouter();
   const previousRflrRef = React.useRef<Map<string, number>>(new Map());
   const [rflrDeltas, setRflrDeltas] = React.useState<Record<string, number>>({});
+  const [navigatingToId, setNavigatingToId] = React.useState<string | null>(null);
 
   const handleRowClick = (tokenId: string) => {
+    setNavigatingToId(tokenId);
     router.push(`/pool/${tokenId}`);
   };
 
@@ -126,12 +128,26 @@ export default function PositionsTable({
           const rflrDelta = rflrDeltas[position.id] ?? 0;
           const showRflrDelta = Math.abs(rflrDelta) >= 0.00001;
           
+          const isLoading = navigatingToId === position.id;
+          
           return (
           <div 
             key={position.id} 
-            className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 hover:bg-liqui-aqua/5 transition-colors cursor-pointer"
+            className={`grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 transition-colors cursor-pointer relative ${
+              isLoading ? 'opacity-50 pointer-events-none' : 'hover:bg-liqui-aqua/5'
+            }`}
             onClick={() => handleRowClick(position.id)}
           >
+            {/* Loading Spinner Overlay */}
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-liqui-card/50 backdrop-blur-sm z-10">
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-liqui-aqua border-t-transparent"></div>
+                  <span className="text-liqui-aqua text-sm font-medium">Loading pool...</span>
+                </div>
+              </div>
+            )}
+            
             {/* Position Specifics */}
             <div className="flex items-center justify-start space-x-3">
               <div className="text-liqui-subtext text-sm">#{position.id}</div>

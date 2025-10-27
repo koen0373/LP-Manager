@@ -934,5 +934,20 @@ Updated: Homepage pricing section unified — replaced two existing blocks with 
 - **External comms (product, investors, B2B/B2C): English only.**  
 - **User support in app & with Koen: Dutch.**
 - Strategic partner posture: LiquiLab is a neutral UX/analytics layer that **surfaces** insights and deep-links to **execution on partner platforms** (Enosys, SparkDEX, BlazeSwap, etc.).  
-- Social share cards must include **provider name as text** (no third-party logos unless explicitly approved).
 
+
+## Pricing & Entitlements
+- Unit price: **$1.99** per pool per **30 days**, billed in **bundles of 5** (5, 10, 15, …).
+- **Allowed slots** (capacity bonus, no price reduction):
+  - Let **U** = number of **paid** pools (multiple of 5).
+  - If **U = 0** → **1 free slot** (trial).
+  - Else **allowed = U + floor(U/10) + (U == 5 ? 1 : 0)**.
+    Examples: 5→6, 10→11, 15→16, 20→22, 30→33.
+- **Yearly** = fees for **10 months** → access for **12 months**.
+- **Upgrades**: pro-rated for days left in period. **Downgrades**: at next period only.
+
+## Waitlist & FastForward Policy
+- **Seat cap** via `LL_SEAT_CAP`. Bij cap bereikt: checkout uit; prospect mag wallet connecten & verkennen.
+- Primaire CTA: **“Join the waiting list”**; optioneel **“FastForward”** (bijv. $50) als `LL_FASTFORWARD_ENABLED=1`.
+- **FastForward** kan door Admin worden uitgezet; bij uit -> alleen wachtlijst.
+- Heropenen van FastForward communiceren we via e-mail naar de wachtlijst en via social kanalen.

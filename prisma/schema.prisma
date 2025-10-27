@@ -281,6 +281,7 @@ model analytics_market {
   createdAt    DateTime @default(now())
   snapshots    analytics_market_snapshot[]
   positions    analytics_position[]
+  metrics      analytics_market_metrics_daily[]
 
   @@unique([providerSlug, marketId])
   @@index([providerId])
@@ -384,4 +385,11 @@ model analytics_discovery_log {
   ts          DateTime @default(now())
 
   @@index([provider, ts])
+}
+
+/// App-wide key/value settings (admin-toggles)
+model AppSetting {
+  key       String  @id
+  value     String
+  updatedAt DateTime @updatedAt
 }

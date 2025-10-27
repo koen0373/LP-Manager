@@ -951,3 +951,27 @@ Updated: Homepage pricing section unified — replaced two existing blocks with 
 - Primaire CTA: **“Join the waiting list”**; optioneel **“FastForward”** (bijv. $50) als `LL_FASTFORWARD_ENABLED=1`.
 - **FastForward** kan door Admin worden uitgezet; bij uit -> alleen wachtlijst.
 - Heropenen van FastForward communiceren we via e-mail naar de wachtlijst en via social kanalen.
+
+### Pricing Model [2025-10-27]
+- Price per pool: **$1.99 / month**.
+- Sold in bundles of **5 paid pools** per tier.
+- **Free capacity rule:** free bonus pools = **ceil(paidCapacity/10)**  
+  Examples: paid 5 → +1 free (5+1), paid 10 → +1 free (10+1), paid 20 → +2 free (20+2), paid 30 → +3 free.
+- New users always have **1 free trial pool** (outside any plan).
+- Yearly billing = pay **10 months** (2 months free).
+- We grant **free capacity**, never price discounts. Cleaner invoicing (EUR/VAT), no proration headaches.
+
+### Access Control
+- Seat cap (rolling): env `LL_SEAT_CAP` (default 100). When `activeSeats >= cap` → waitlist UX.
+- Waitlist CTA copy: **Join the priority list**. Wallet connect & preview blijven beschikbaar.
+- Fastforward toggle: env of admin setting `FASTFORWARD_ENABLED` om $50 bypass te tonen of te verbergen.
+- Admin moet fastforward **aan/uit** kunnen zetten bij piekdrukte.
+
+### Communications & Partners
+- External comms (product/docs/investors/B2B/B2C): **English**.  
+- Direct chat/support met Koen (hier): **Dutch**.  
+- Partner posture: neutral analytics/UX layer; we deep-linken naar **Enosys, SparkDEX, BlazeSwap** voor acties (claim, adjust range).  
+- Social share cards noemen provider **als tekst** (geen third-party logo’s unless approved).
+
+### Dev Environment
+- MacBook Pro 14" (Apple M4 Pro, 24 GB RAM, macOS Sequoia 15.6). Default tooling: zsh, Homebrew, BSD sed.

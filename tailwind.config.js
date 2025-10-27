@@ -46,8 +46,10 @@ module.exports = {
         'enosys-subcard': 'var(--liqui-subcard)',
       },
       fontFamily: {
-        'sans': ['Quicksand', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        'mono': ['ui-monospace', 'SFMono-Regular', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace'],
+        brand: ['Quicksand', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Inter', 'sans-serif'],
+        ui: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Quicksand', 'sans-serif'],
       },
       fontWeight: {
         'normal': '400',
@@ -56,7 +58,35 @@ module.exports = {
       ringColor: ({ theme }) => ({
         DEFAULT: theme('colors.liqui.aqua'),
       }),
+      keyframes: {
+        'pulse-green': {
+          '0%, 100%': {
+            boxShadow: '0 0 8px rgba(0, 198, 107, 0.4), 0 0 16px rgba(0, 198, 107, 0.2)',
+          },
+          '50%': {
+            boxShadow: '0 0 16px rgba(0, 198, 107, 0.8), 0 0 24px rgba(0, 198, 107, 0.4), 0 0 32px rgba(0, 198, 107, 0.2)',
+          },
+        },
+        'glow-orange': {
+          '0%, 100%': {
+            boxShadow: '0 0 8px rgba(255, 165, 0, 0.4), 0 0 12px rgba(255, 165, 0, 0.3)',
+          },
+          '50%': {
+            boxShadow: '0 0 12px rgba(255, 165, 0, 0.6), 0 0 20px rgba(255, 165, 0, 0.4)',
+          },
+        },
+      },
+      animation: {
+        'pulse-green': 'pulse-green 2s ease-in-out infinite',
+        'glow-orange': 'glow-orange 3s ease-in-out infinite',
+      },
     },
   },
-  plugins: [],
+  plugins: [
+    function({ addUtilities }) {
+      addUtilities({
+        '.tnum': { fontVariantNumeric: 'tabular-nums', fontFeatureSettings: '"tnum"' }
+      });
+    }
+  ],
 }

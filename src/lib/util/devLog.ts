@@ -1,8 +1,8 @@
 // Production-safe logging utilities
 // Only logs in development, silent in production unless DEBUG_LOGS=true
 
-const isDev = process.env.NODE_ENV !== 'production';
-const debugEnabled = process.env.DEBUG_LOGS === 'true';
+const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
+const debugEnabled = typeof process !== 'undefined' && process.env.DEBUG_LOGS === 'true';
 const shouldLog = isDev || debugEnabled;
 
 export const devLog = {

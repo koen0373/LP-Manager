@@ -39,17 +39,6 @@ function isHexChainId(value: unknown): value is `0x${string}` {
   return typeof value === 'string' && value.startsWith('0x');
 }
 
-// Extend Window interface for ethereum
-declare global {
-  interface Window {
-    ethereum?: {
-      request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-      on: (event: string, callback: (...args: unknown[]) => void) => void;
-      removeListener: (event: string, callback: (...args: unknown[]) => void) => void;
-    };
-  }
-}
-
 interface WalletConnectProps {
   className?: string;
   onWalletConnected?: (address: string) => void;

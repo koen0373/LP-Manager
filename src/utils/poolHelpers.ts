@@ -263,7 +263,10 @@ export function bigIntToDecimal(amount: bigint, decimals: number): number {
 }
 
 // Get factory address from PositionManager
-export async function getFactoryAddress(positionManager: `0x${string}`): Promise<`0x${string}`> {
+export async function getFactoryAddress(
+  positionManager: `0x${string}`,
+  fallbackFactoryAddress: `0x${string}` = DEFAULT_FACTORY_ADDRESS
+): Promise<`0x${string}`> {
   const cacheKey = positionManager.toLowerCase();
   const cached = factoryCache.get(cacheKey);
   
@@ -303,7 +306,7 @@ export async function getFactoryAddress(positionManager: `0x${string}`): Promise
   } catch (error) {
     console.error('Failed to get factory address:', error);
 
-    const fallbackFactory = DEFAULT_FACTORY_ADDRESS;
+    const fallbackFactory = fallbackFactoryAddress;
     console.warn(
       `[RPC] Falling back to static factory address ${fallbackFactory}. Ensure RPC connectivity is restored.`
     );

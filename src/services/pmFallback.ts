@@ -21,18 +21,56 @@ import {
 } from '../utils/poolHelpers';
 import { readPoolLiquidity } from '../lib/onchain/readers';
 
-const pm = '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657' as `0x${string}`;
+interface PositionManagerConfig {
+  provider: string;
+  providerSlug: string;
+  positionManager: `0x${string}`;
+  factory: `0x${string}`;
+  idPrefix?: string;
+  displayPrefix?: string;
+  supportsRflr?: boolean;
+}
+
+const POSITION_MANAGERS: readonly PositionManagerConfig[] = [
+  {
+    provider: 'Enosys v3',
+    providerSlug: 'enosys-v3',
+    positionManager: '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657',
+    factory: '0x17AA157AC8C54034381b840Cb8f6bf7Fc355f0de',
+    idPrefix: '',
+    displayPrefix: '#',
+    supportsRflr: true,
+  },
+  {
+    provider: 'SparkDEX v3',
+    providerSlug: 'sparkdex-v3',
+    positionManager: '0xEE5FF5Bc5F852764b5584d92A4d592A53DC527da',
+    factory: '0x8A2578d23d4C532cC9A98FaD91C0523f5efDE652',
+    idPrefix: 'sparkdex-v3:',
+    displayPrefix: 'SPARK-',
+    supportsRflr: false,
+  },
+] as const;
 
 const publicClient = createClientWithFallback([
   'https://flare.flr.finance/ext/bc/C/rpc',
   'https://flare.public-rpc.com',
-  'https://rpc-enosys.flare.network'
+  'https://rpc-enosys.flare.network',
 ]);
 
 // Token metadata cache
 const tokenCache = new Map<string, { symbol: string; name: string; decimals: number }>();
 
-
+function deriveRowIdentifiers(tokenId: bigint, config: PositionManagerConfig) {
+  const rawId = tokenId.toString();
+  const idPrefix = config.idPrefix ?? '';
+  const displayPrefix = config.displayPrefix ?? '#';
+  return {
+    id: `${idPrefix}${rawId}`,
+    displayId: `${displayPrefix}${rawId}`,
+    onchainId: rawId,
+  };
+}
 
 // Get token metadata using Viem
 async function getTokenMetadata(address: `0x${string}`): Promise<{ symbol: string; name: string; decimals: number }> {
@@ -44,47 +82,53 @@ async function getTokenMetadata(address: `0x${string}`): Promise<{ symbol: strin
 
   try {
     const [symbol, name, decimals] = await Promise.all([
-      publicClient.readContract({
-        address: normalized,
-        abi: [
-          {
-            name: 'symbol',
-            type: 'function',
-            stateMutability: 'view',
-            inputs: [],
-            outputs: [{ type: 'string' }],
-          },
-        ],
-        functionName: 'symbol',
-      }).catch(() => 'UNKNOWN'),
-      
-      publicClient.readContract({
-        address,
-        abi: [
-          {
-            name: 'name',
-            type: 'function',
-            stateMutability: 'view',
-            inputs: [],
-            outputs: [{ type: 'string' }],
-          },
-        ],
-        functionName: 'name',
-      }).catch(() => 'Unknown Token'),
-      
-      publicClient.readContract({
-        address: normalized,
-        abi: [
-          {
-            name: 'decimals',
-            type: 'function',
-            stateMutability: 'view',
-            inputs: [],
-            outputs: [{ type: 'uint8' }],
-          },
-        ],
-        functionName: 'decimals',
-      }).catch(() => 18),
+      publicClient
+        .readContract({
+          address: normalized,
+          abi: [
+            {
+              name: 'symbol',
+              type: 'function',
+              stateMutability: 'view',
+              inputs: [],
+              outputs: [{ type: 'string' }],
+            },
+          ],
+          functionName: 'symbol',
+        })
+        .catch(() => 'UNKNOWN'),
+
+      publicClient
+        .readContract({
+          address,
+          abi: [
+            {
+              name: 'name',
+              type: 'function',
+              stateMutability: 'view',
+              inputs: [],
+              outputs: [{ type: 'string' }],
+            },
+          ],
+          functionName: 'name',
+        })
+        .catch(() => 'Unknown Token'),
+
+      publicClient
+        .readContract({
+          address: normalized,
+          abi: [
+            {
+              name: 'decimals',
+              type: 'function',
+              stateMutability: 'view',
+              inputs: [],
+              outputs: [{ type: 'uint8' }],
+            },
+          ],
+          functionName: 'decimals',
+        })
+        .catch(() => 18),
     ]);
 
     const metadata = { symbol, name, decimals };
@@ -95,7 +139,6 @@ async function getTokenMetadata(address: `0x${string}`): Promise<{ symbol: strin
     return { symbol: 'UNKNOWN', name: 'Unknown Token', decimals: 18 };
   }
 }
-
 
 // Parse position data from Viem result
 type RawPositionTuple = [
@@ -116,10 +159,11 @@ type RawPositionTuple = [
 async function parsePositionData(
   tokenId: bigint,
   positionData: readonly unknown[] | Record<string, unknown>,
+  config: PositionManagerConfig,
   walletAddress?: string
 ): Promise<PositionRow | null> {
   try {
-    console.log(`[DEBUG] Parsing Viem position data for tokenId: ${tokenId.toString()}`);
+    console.log(`[PMFALLBACK] Parsing position ${tokenId.toString()} for ${config.providerSlug}`);
     const values = Array.isArray(positionData) ? positionData : Object.values(positionData);
     const tuple = values as RawPositionTuple;
     const [
@@ -143,21 +187,21 @@ async function parsePositionData(
     const fee = Number(feeRaw);
     const tickLower = toSignedInt24(tickLowerRaw);
     const tickUpper = toSignedInt24(tickUpperRaw);
-    
-    console.log(`[DEBUG] Viem position tuple:`);
-    console.log(`[DEBUG] Token0: ${token0}, Token1: ${token1}`);
-    console.log(`[DEBUG] Fee: ${fee}, TickLower: ${tickLower}, TickUpper: ${tickUpper}`);
-    console.log(`[DEBUG] Liquidity: ${liquidity.toString()}`);
 
-    // Get token metadata
+    const identifiers = deriveRowIdentifiers(tokenId, config);
+    console.log(`[PMFALLBACK] Viem tuple (${config.providerSlug}):`, {
+      token0,
+      token1,
+      fee,
+      tickLower,
+      tickUpper,
+      liquidity: liquidity.toString(),
+    });
+
     const [token0Meta, token1Meta] = await Promise.all([
       getTokenMetadata(token0),
       getTokenMetadata(token1),
     ]);
-    console.log('[METADATA][viem]', {
-      token0: token0Meta,
-      token1: token1Meta,
-    });
 
     const { lowerPrice, upperPrice } = computePriceRange(
       tickLower,
@@ -165,16 +209,11 @@ async function parsePositionData(
       token0Meta.decimals,
       token1Meta.decimals
     );
-    
-    // Get factory address and pool address
-    const factory = await getFactoryAddress(pm);
+
+    const factory = await getFactoryAddress(config.positionManager, config.factory);
     const poolAddress = await getPoolAddress(factory, token0, token1, fee);
-    
-    // Get pool state
     const { sqrtPriceX96, tick: currentTick } = await getPoolState(poolAddress);
-    
-    // Calculate amounts using proper Uniswap V3 math
-    console.log(`[PMFALLBACK] Calculating amounts for tokenId ${tokenId}, liquidity: ${liquidity.toString()}`);
+
     const { amount0Wei, amount1Wei } = calcAmountsForPosition(
       liquidity,
       sqrtPriceX96,
@@ -183,12 +222,9 @@ async function parsePositionData(
       token0Meta.decimals,
       token1Meta.decimals
     );
-    console.log(`[PMFALLBACK] Calculated amounts: amount0Wei=${amount0Wei.toString()}, amount1Wei=${amount1Wei.toString()}`);
-    
-    // Check if in range
+
     const inRange = isInRange(currentTick, tickLower, tickUpper);
-    console.log(`[PMFALLBACK] Position in range: ${inRange} (currentTick: ${currentTick}, range: ${tickLower}-${tickUpper})`);
-    
+
     const { fee0Wei, fee1Wei } = await calculateAccruedFees({
       poolAddress,
       liquidity,
@@ -200,9 +236,7 @@ async function parsePositionData(
       tokensOwed0,
       tokensOwed1,
     });
-    
-    // Calculate TVL and rewards
-    console.log(`[PMFALLBACK] Calculating TVL and rewards for ${token0Meta.symbol}/${token1Meta.symbol}`);
+
     const {
       amount0,
       amount1,
@@ -223,68 +257,65 @@ async function parsePositionData(
       fee1Wei,
       sqrtPriceX96,
     });
-    console.log(`[PMFALLBACK] Final TVL: $${tvlUsd}, Rewards: $${rewardsUsd}`);
-    console.log('[PMFALLBACK][VALUE]', {
-      amount0,
-      amount1,
-      fee0,
-      fee1,
-      price0Usd,
-      price1Usd,
-    });
 
-    const [rflrAmountRaw, rflrPriceUsd, poolLiquidity] = await Promise.all([
-      getRflrRewardForPosition(tokenId.toString()),
-      getTokenPrice('RFLR'),
-      readPoolLiquidity(poolAddress),
-    ]);
+    const poolLiquidityPromise = readPoolLiquidity(poolAddress);
 
-    const rflrAmount = rflrAmountRaw ?? 0;
-    const rflrUsd = rflrAmount * rflrPriceUsd;
-    
-    // Calculate pool share percentage
+    let rflrAmount = 0;
+    let rflrUsd = 0;
+    let rflrPriceUsd = 0;
+
+    if (config.supportsRflr) {
+      const [rflrAmountRaw, priceUsd] = await Promise.all([
+        getRflrRewardForPosition(identifiers.onchainId),
+        getTokenPrice('RFLR'),
+      ]);
+      rflrAmount = rflrAmountRaw ?? 0;
+      rflrPriceUsd = priceUsd;
+      rflrUsd = rflrAmount * rflrPriceUsd;
+    }
+
+    const poolLiquidity = await poolLiquidityPromise;
+
     let poolSharePct: number | undefined;
     if (poolLiquidity && poolLiquidity > 0n) {
       poolSharePct = (Number(liquidity) / Number(poolLiquidity)) * 100;
     }
-    
-    // Unclaimed fees are separate from RFLR rewards
-    // For inactive pools, fees should be 0 as they don't generate swap fees
-    const unclaimedFeesUsd = inRange ? rewardsUsd : 0;
-    
-    // Total rewards = unclaimed fees + RFLR (for active) or just RFLR (for inactive)
-    const totalRewardsUsd = inRange ? (unclaimedFeesUsd + rflrUsd) : rflrUsd;
 
-    // Create position row
+    const unclaimedFeesUsd = inRange ? rewardsUsd : 0;
+    const totalRewardsUsd = inRange ? unclaimedFeesUsd + rflrUsd : rflrUsd;
+
     return {
-      id: tokenId.toString(),
+      id: identifiers.id,
+      displayId: identifiers.displayId,
+      onchainId: identifiers.onchainId,
+      positionManager: config.positionManager,
+      provider: config.provider,
+      providerSlug: config.providerSlug,
       pairLabel: `${token0Meta.symbol} - ${token1Meta.symbol}`,
       feeTierBps: fee,
       tickLowerLabel: formatPrice(lowerPrice),
       tickUpperLabel: formatPrice(upperPrice),
       tvlUsd,
       rewardsUsd: totalRewardsUsd,
-      unclaimedFeesUsd: unclaimedFeesUsd,
+      unclaimedFeesUsd,
       rflrRewardsUsd: rflrUsd,
       rflrAmount,
       rflrUsd,
       rflrPriceUsd,
-      // APS removed for Phase 3
       inRange,
-      status: 'Active' as const,
+      status: 'Active',
       token0: {
         symbol: token0Meta.symbol,
         address: token0,
         name: token0Meta.name,
-        decimals: token0Meta.decimals
+        decimals: token0Meta.decimals,
       },
       token1: {
         symbol: token1Meta.symbol,
         address: token1,
         name: token1Meta.name,
-        decimals: token1Meta.decimals
+        decimals: token1Meta.decimals,
       },
-      // New fields
       amount0,
       amount1,
       lowerPrice,
@@ -304,59 +335,37 @@ async function parsePositionData(
       poolSharePct,
     };
   } catch (error) {
-    console.error('Failed to parse position data:', error);
+    console.error(`Failed to parse position data (${config.providerSlug}):`, error);
     return null;
   }
 }
 
-// Get a specific position by token ID
-export async function getPositionById(tokenId: string): Promise<PositionRow | null> {
-  return memoize(`position-${tokenId}`, async () => {
-    try {
-      console.log(`[PMFALLBACK] Fetching position by ID: ${tokenId}`);
-      
-      const tokenIdBigInt = BigInt(tokenId);
-      
-      // Get position data directly
-      const positionData = await withTimeout(
-        publicClient.readContract({
-          address: pm,
-          abi: PositionManagerABI,
-          functionName: 'positions',
-          args: [tokenIdBigInt],
-        }) as Promise<Record<string, unknown>>,
-        15000,
-        `Position fetch for ${tokenId} timed out`
-      );
-
-    const parsed = await parsePositionData(tokenIdBigInt, positionData);
-    return parsed;
-  } catch (error) {
-    console.error(`Failed to fetch position ${tokenId}:`, error);
-    return null;
+function normalizeTokenIdForConfig(tokenId: string, config: PositionManagerConfig): string | null {
+  const prefix = config.idPrefix ?? '';
+  if (prefix && tokenId.startsWith(prefix)) {
+    return tokenId.slice(prefix.length);
   }
-  }, 5 * 60 * 1000); // 5 minute cache for individual positions
+  if (!prefix) {
+    return tokenId;
+  }
+  return null;
 }
 
-export async function getLpPositionsOnChain(owner: `0x${string}`): Promise<PositionRow[]> {
-  return memoize(`viem-positions-${owner}`, async () => {
-    try {
-      console.log(`Fetching positions for wallet using Viem: ${owner}`);
+async function fetchPositionsForManager(config: PositionManagerConfig, owner: `0x${string}`): Promise<PositionRow[]> {
+  try {
+    const balance = await withTimeout(
+      publicClient.readContract({
+        address: config.positionManager,
+        abi: PositionManagerABI,
+        functionName: 'balanceOf',
+        args: [owner],
+      }) as Promise<bigint>,
+      15000,
+      `Balance check for ${owner} (${config.providerSlug}) timed out`
+    );
 
-      // Get balance of NFTs (number of positions)
-      const bal = await withTimeout(
-        publicClient.readContract({
-          address: pm,
-          abi: PositionManagerABI,
-          functionName: 'balanceOf',
-          args: [owner],
-        }) as Promise<bigint>,
-        15000,
-        `Balance check for ${owner} timed out`
-      );
-
-    const count = Number(bal);
-    console.log(`Found ${count} positions using Viem`);
+    const count = Number(balance);
+    console.log(`[PMFALLBACK] ${config.providerSlug} balance for ${owner}: ${count}`);
 
     if (count === 0) {
       return [];
@@ -365,7 +374,7 @@ export async function getLpPositionsOnChain(owner: `0x${string}`): Promise<Posit
     const indices = Array.from({ length: count }, (_, i) => i);
     const tokenIdResults = await mapWithConcurrency(indices, 20, async (i) => {
       const tokenId = (await publicClient.readContract({
-        address: pm,
+        address: config.positionManager,
         abi: PositionManagerABI,
         functionName: 'tokenOfOwnerByIndex',
         args: [owner, BigInt(i)],
@@ -373,28 +382,96 @@ export async function getLpPositionsOnChain(owner: `0x${string}`): Promise<Posit
       return tokenId;
     });
 
-    const tokenIds = tokenIdResults
-      .sort((a, b) => a.index - b.index)
-      .map((entry) => entry.value);
+    const tokenIds = tokenIdResults.map((entry) => entry.value);
 
     const positionResults = await mapWithConcurrency(tokenIds, 12, async (tokenId) => {
       const positionData = (await publicClient.readContract({
-        address: pm,
+        address: config.positionManager,
         abi: PositionManagerABI,
         functionName: 'positions',
         args: [tokenId],
       })) as Record<string, unknown>;
 
-      return parsePositionData(tokenId, positionData, owner);
+      return parsePositionData(tokenId, positionData, config, owner);
     });
 
     return positionResults
-      .sort((a, b) => a.index - b.index)
       .map((entry) => entry.value)
       .filter((position): position is PositionRow => position !== null);
   } catch (error) {
-    console.error('Failed to fetch wallet positions using Viem:', error);
+    console.error(`[PMFALLBACK] Failed to fetch positions for ${config.providerSlug}:`, error);
     return [];
   }
-  }, 30 * 1000); // 30 second cache for wallet positions
+}
+
+export async function getPositionById(tokenId: string): Promise<PositionRow | null> {
+  return memoize(`position-${tokenId}`, async () => {
+    for (const config of POSITION_MANAGERS) {
+      const normalized = normalizeTokenIdForConfig(tokenId, config);
+      if (normalized === null) {
+        continue;
+      }
+
+      try {
+        const tokenIdBigInt = BigInt(normalized);
+        const positionData = await withTimeout(
+          publicClient.readContract({
+            address: config.positionManager,
+            abi: PositionManagerABI,
+            functionName: 'positions',
+            args: [tokenIdBigInt],
+          }) as Promise<Record<string, unknown>>,
+          15000,
+          `Position fetch for ${tokenId} (${config.providerSlug}) timed out`
+        );
+
+        const parsed = await parsePositionData(tokenIdBigInt, positionData, config);
+        if (parsed) {
+          return parsed;
+        }
+      } catch (error) {
+        console.error(`Failed to fetch position ${tokenId} for ${config.providerSlug}:`, error);
+      }
+    }
+
+    // Fallback: attempt raw token ID against all managers if nothing matched
+    if (/^\d+$/.test(tokenId)) {
+      for (const config of POSITION_MANAGERS) {
+        try {
+          const tokenIdBigInt = BigInt(tokenId);
+          const positionData = await withTimeout(
+            publicClient.readContract({
+              address: config.positionManager,
+              abi: PositionManagerABI,
+              functionName: 'positions',
+              args: [tokenIdBigInt],
+            }) as Promise<Record<string, unknown>>,
+            15000,
+            `Position fetch for ${tokenId} (${config.providerSlug}) timed out`
+          );
+
+          const parsed = await parsePositionData(tokenIdBigInt, positionData, config);
+          if (parsed) {
+            return parsed;
+          }
+        } catch (error) {
+          console.error(`Fallback fetch failed for ${tokenId} on ${config.providerSlug}:`, error);
+        }
+      }
+    }
+
+    return null;
+  }, 5 * 60 * 1000);
+}
+
+export async function getLpPositionsOnChain(owner: `0x${string}`): Promise<PositionRow[]> {
+  return memoize(`viem-positions-${owner}`, async () => {
+    console.log(`Fetching positions for wallet using Viem: ${owner}`);
+
+    const positionSets = await Promise.all(
+      POSITION_MANAGERS.map((config) => fetchPositionsForManager(config, owner))
+    );
+
+    return positionSets.flat();
+  }, 30 * 1000);
 }

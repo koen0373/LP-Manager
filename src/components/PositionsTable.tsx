@@ -1,290 +1,348 @@
 import React from 'react';
-import { useRouter } from 'next/router';
+import Image from 'next/image';
 import { TokenIcon } from './TokenIcon';
-import { StatusPill } from './StatusPill';
-import { FeeBadge } from './FeeBadge';
-import { fmtUsd, fmtAmt, formatUsd, formatPrice } from '../lib/format';
-import type { PositionRow } from '../types/positions';
+import type { RangeStatus } from '@/components/pools/PoolRangeIndicator';
+import { formatUsd } from '@/utils/format';
 
-interface PositionsTableProps {
-  positions: PositionRow[];
-  headerNote: string;
-  showTotalsRow: boolean;
+export interface PositionData {
+  tokenId: string;
+  dexName: string;
+  poolId: string;
+  token0Symbol: string;
+  token1Symbol: string;
+  token0Icon?: string;
+  token1Icon?: string;
+  feeTier: string;
+  rangeMin?: number;
+  rangeMax?: number;
+  liquidityUsd: number;
+  liquidityShare?: number;
+  feesUsd: number;
+  incentivesUsd: number;
+  incentivesToken?: string;
+  currentPrice?: number;
+  status: RangeStatus;
 }
 
-const STABLE_SYMBOLS = new Set([
-  'USDT',
-  'USDT0',
-  'USDTO',
-  'USDC',
-  'USDCG',
-  'USD0',
-  'USDX',
-  'DAI',
-  'DAI0',
-  'USD₮0',
-  'EUSDT',
-]);
+interface PositionsTableProps {
+  positions: PositionData[];
+  onRowClick?: (tokenId: string) => void;
+}
 
-const normalizeSymbol = (symbol: string): string =>
-  symbol.normalize('NFKD').replace(/[^A-Z0-9]/gi, '').toUpperCase();
-
-const isStable = (symbol: string): boolean => STABLE_SYMBOLS.has(normalizeSymbol(symbol));
-
-const getNonStableTokenPrice = (position: PositionRow): { symbol: string; price: number } | null => {
-  const token0Stable = isStable(position.token0.symbol);
-  const token1Stable = isStable(position.token1.symbol);
-
-  if (token0Stable && !token1Stable) {
-    return { symbol: position.token1.symbol, price: position.price1Usd };
-  }
-
-  if (!token0Stable && token1Stable) {
-    return { symbol: position.token0.symbol, price: position.price0Usd };
-  }
-
-  if (!token0Stable && !token1Stable) {
-    // Default to token0 when both are volatile
-    return { symbol: position.token0.symbol, price: position.price0Usd };
-  }
-
-  return null;
+const STATUS_CONFIG: Record<RangeStatus, { label: string; dotColor: string }> = {
+  IN_RANGE: { label: 'In Range', dotColor: '#00C66B' },
+  NEAR_BAND: { label: 'Near Band', dotColor: '#FFA500' },
+  OUT_OF_RANGE: { label: 'Out of Range', dotColor: '#E74C3C' },
 };
 
-const formatRflrDelta = (delta: number): string => {
-  const abs = Math.abs(delta);
-  if (abs === 0) return '0';
-  if (abs < 0.00001) return '<0.00001';
-  if (abs < 0.001) return abs.toFixed(5);
-  if (abs < 1) return abs.toFixed(4);
-  if (abs < 1000) return abs.toFixed(0);
-  if (abs < 1000000) return `${(abs / 1000).toFixed(1)}K`;
-  return `${(abs / 1000000).toFixed(1)}M`;
+const APY_PLACEHOLDER = '12.4%';
+
+const formatPrice = (value?: number, fallback = '—'): string => {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return fallback;
+  }
+  return value.toFixed(5);
 };
 
-export default function PositionsTable({
-  positions,
-  headerNote,
-  showTotalsRow,
-}: PositionsTableProps) {
-  const router = useRouter();
-  const previousRflrRef = React.useRef<Map<string, number>>(new Map());
-  const [rflrDeltas, setRflrDeltas] = React.useState<Record<string, number>>({});
-  const [navigatingToId, setNavigatingToId] = React.useState<string | null>(null);
+const getSliderProps = (position: PositionData) => {
+  const min = typeof position.rangeMin === 'number' && Number.isFinite(position.rangeMin) ? position.rangeMin : 0;
+  const max =
+    typeof position.rangeMax === 'number' && Number.isFinite(position.rangeMax) && position.rangeMax !== position.rangeMin
+      ? position.rangeMax
+      : min + 1;
+  const current =
+    typeof position.currentPrice === 'number' && Number.isFinite(position.currentPrice)
+      ? Math.min(Math.max(position.currentPrice, min), max)
+      : min;
+  const disabled = !Number.isFinite(min) || !Number.isFinite(max) || min === max;
+  const step = disabled ? undefined : Number(((max - min) / 1000).toPrecision(4));
 
-  const handleRowClick = (tokenId: string) => {
-    setNavigatingToId(tokenId);
-    router.push(`/pool/${tokenId}`);
-  };
+  return { min, max, current, step, disabled };
+};
 
-  React.useEffect(() => {
-    const nextDeltas: Record<string, number> = {};
-    const seen = new Set<string>();
-
-    for (const position of positions) {
-      const previous = previousRflrRef.current.get(position.id);
-      const delta = previous !== undefined ? position.rflrAmount - previous : 0;
-      nextDeltas[position.id] = delta;
-      previousRflrRef.current.set(position.id, position.rflrAmount);
-      seen.add(position.id);
-    }
-
-    for (const key of Array.from(previousRflrRef.current.keys())) {
-      if (!seen.has(key)) {
-        previousRflrRef.current.delete(key);
-      }
-    }
-
-    setRflrDeltas(nextDeltas);
-  }, [positions]);
-
-  const totals = positions.reduce(
-      (acc, pos) => ({
-        tvl: acc.tvl + (pos.tvlUsd || 0),
-        fees: acc.fees + (pos.inRange ? (pos.unclaimedFeesUsd || 0) : 0),
-        rflr: acc.rflr + (pos.rflrUsd || 0),
-      }),
-      { tvl: 0, fees: 0, rflr: 0 }
+export function PositionsTable({ positions, onRowClick }: PositionsTableProps) {
+  if (positions.length === 0) {
+    return (
+      <div className="rounded-lg bg-[#0A0F1A] p-8 text-center">
+        <p className="font-ui text-[#9AA1AB]">No positions found</p>
+      </div>
     );
+  }
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto">
-      <div className="text-liqui-subtext text-sm mb-4">{headerNote}</div>
-      
-      <div className="bg-liqui-card rounded-lg border border-liqui-border overflow-hidden">
-        {/* Header */}
-        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-[rgba(185,199,218,0.12)] bg-transparent">
-          <div className="text-mist font-bold text-sm text-left uppercase tracking-wide">Specifics</div>
-          <div className="text-mist font-bold text-sm text-left uppercase tracking-wide">Liquidity</div>
-          <div className="text-mist font-bold text-sm text-left uppercase tracking-wide">Fees</div>
-          <div className="text-mist font-bold text-sm text-left uppercase tracking-wide">Incentives</div>
-          <div className="text-mist font-bold text-sm text-left uppercase tracking-wide">Range</div>
-          <div className="text-mist font-bold text-sm text-left uppercase tracking-wide">Status</div>
+    <section
+      className="pool-table PoolTableRoot w-full overflow-x-auto rounded-lg"
+      data-ll-ui="v2025-10"
+      style={{
+        background: 'linear-gradient(180deg, rgba(10, 15, 26, 0.75) 0%, rgba(10, 15, 26, 0.92) 100%)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+      }}
+    >
+      <div role="table" className="hidden font-ui text-white lg:block">
+        <div
+          role="row"
+          className="ll-row ll-grid items-end uppercase tracking-[0.18em] text-[11px] text-[#9AA1AB]/70"
+        >
+          <div role="columnheader" className="px-6">Pool</div>
+          <div role="columnheader" className="px-5">Liquidity</div>
+          <div role="columnheader" className="px-5">Unclaimed fees</div>
+          <div role="columnheader" className="px-5">Incentives</div>
+          <div role="columnheader" className="px-5">APY / Status</div>
         </div>
 
-        {/* Rows */}
-            {positions.map((position) => {
-          const nonStablePrice = getNonStableTokenPrice(position);
-          const rflrDelta = rflrDeltas[position.id] ?? 0;
-          const showRflrDelta = Math.abs(rflrDelta) >= 0.00001;
-          
-          const isLoading = navigatingToId === position.id;
-          
-          return (
-          <div 
-            key={position.id} 
-            className={`grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 transition-colors cursor-pointer relative ${
-              isLoading ? 'opacity-50 pointer-events-none' : 'hover:bg-liqui-aqua/5'
-            }`}
-            onClick={() => handleRowClick(position.id)}
-          >
-            {/* Loading Spinner Overlay */}
-            {isLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-liqui-card/50 backdrop-blur-sm z-10">
-                <div className="flex flex-col items-center space-y-3">
-                  <div className="animate-spin rounded-full h-10 w-10 border-4 border-liqui-aqua border-t-transparent"></div>
-                  <div className="text-center">
-                    <div className="text-liqui-aqua text-sm font-medium mb-1">Retrieving your pool data from the blockchain</div>
-                    <div className="text-liqui-subtext text-xs">The first time could take up to 30 seconds</div>
+        <div role="rowgroup">
+          {positions.map((position) => {
+            const statusMeta = STATUS_CONFIG[position.status];
+            const statusColor = statusMeta.dotColor;
+            const slider = getSliderProps(position);
+            const sliderId = `price-${position.tokenId}`;
+            const currentPriceLabel =
+              typeof position.currentPrice === 'number' && Number.isFinite(position.currentPrice)
+                ? position.currentPrice.toFixed(5)
+                : '—';
+            const rangeLabel =
+              position.rangeMin !== undefined && position.rangeMax !== undefined
+                ? `${formatPrice(position.rangeMin)} – ${formatPrice(position.rangeMax)}`
+                : '—';
+
+            return (
+              <React.Fragment key={position.tokenId}>
+                <div
+                  role="row"
+                  className="ll-row ll-grid cursor-pointer transition-colors"
+                  onClick={() => onRowClick?.(position.tokenId)}
+                >
+                  <div role="cell" className="px-6">
+                    <div className="flex flex-col gap-4">
+                      <div className="ll-specifics-line text-[11px] font-medium uppercase tracking-widest text-[#9AA1AB]/70">
+                        {position.dexName} <span className="text-white/25">•</span> {position.poolId}
+                      </div>
+                      <div className="flex items-center gap-3 whitespace-nowrap">
+                        <div className="flex items-center -space-x-2">
+                          {position.token0Icon ? (
+                            <Image
+                              src={position.token0Icon}
+                              alt={position.token0Symbol}
+                              width={28}
+                              height={28}
+                              className="rounded-full border border-[rgba(255,255,255,0.1)]"
+                            />
+                          ) : (
+                            <TokenIcon symbol={position.token0Symbol} size={28} />
+                          )}
+                          {position.token1Icon ? (
+                            <Image
+                              src={position.token1Icon}
+                              alt={position.token1Symbol}
+                              width={28}
+                              height={28}
+                              className="rounded-full border border-[rgba(255,255,255,0.1)]"
+                            />
+                          ) : (
+                            <TokenIcon symbol={position.token1Symbol} size={28} />
+                          )}
+                        </div>
+                        <span className="text-[18px] font-semibold text-white">
+                          {position.token0Symbol} / {position.token1Symbol}
+                        </span>
+                        <span className="rounded-full border border-white/15 px-2 py-0.5 text-[11px] font-medium text-white/70">
+                          {position.feeTier}
+                        </span>
+                      </div>
+                      <div className="ll-minmax text-[13px] text-[#B0B9C7]">{rangeLabel}</div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Position Specifics */}
-            <div className="flex items-center justify-start space-x-3">
-              <div className="text-liqui-subtext text-sm">#{position.id}</div>
-              <div className="flex -space-x-2">
-                <TokenIcon symbol={position.token0.symbol} size={21} />
-                <TokenIcon symbol={position.token1.symbol} size={21} />
-              </div>
-                  <div>
-                    <div className="text-white font-normal whitespace-nowrap">{position.pairLabel}</div>
-                    <div className="text-liqui-subtext text-xs">
-                      {formatPrice(position.lowerPrice || 0)} - {formatPrice(position.upperPrice || 0)}
+
+                  <div role="cell" className="px-5">
+                    <div className="flex flex-col gap-2 font-ui">
+                      <div className="text-[16px] font-semibold text-white">{formatUsd(position.liquidityUsd)}</div>
+                      {position.liquidityShare !== undefined && (
+                        <div className="tnum text-[12px] text-[#9AA1AB]">({position.liquidityShare.toFixed(2)}%)</div>
+                      )}
                     </div>
                   </div>
-              <FeeBadge feeBps={position.feeTierBps} />
-            </div>
 
-                {/* Liquidity */}
-                <div className="text-left">
-                  <div className="text-white font-normal">${formatUsd(position.tvlUsd || 0)}</div>
-                  {position.poolSharePct !== undefined && position.poolSharePct > 0 && (
-                    <div className="text-liqui-subtext text-xs text-left">
-                      ({position.poolSharePct.toFixed(2)}%)
+                  <div role="cell" className="px-5">
+                    <div className="flex flex-col gap-2 font-ui">
+                      <div className="text-[16px] font-semibold text-white">{formatUsd(position.feesUsd)}</div>
+                      <button
+                        type="button"
+                        className="text-left text-[13px] font-medium text-[rgba(110,168,255,0.9)] transition hover:text-[#6EA8FF]"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          alert('Claim fees — coming soon.');
+                        }}
+                      >
+                        Claim fees →
+                      </button>
                     </div>
-                  )}
-                </div>
-
-                {/* Fees (Unclaimed fees only, $0 for inactive) */}
-                <div className="text-left">
-                  <div className="text-white font-normal">
-                    ${formatUsd(position.inRange ? (position.unclaimedFeesUsd || 0) : 0)}
                   </div>
-                  {position.inRange && position.unclaimedFeesUsd > 0 && (
-                    <div className="text-liqui-subtext text-xs text-left">
-                      Unclaimed fees
-                    </div>
-                  )}
-                </div>
 
-            {/* Incentives (formerly RFLR) */}
-            <div className="text-left">
-              {position.rflrUsd > 0 ? (
-                <div>
-                  <div className="text-white font-normal">${fmtUsd(position.rflrUsd)}</div>
-                  <div className="text-liqui-subtext text-xs text-left">{fmtAmt(position.rflrAmount)} RFLR</div>
-                  {showRflrDelta ? (
-                    <div className="text-liqui-subtext text-[11px] text-left">
-                      ({rflrDelta > 0 ? '+' : '-'} {formatRflrDelta(rflrDelta)})
+                  <div role="cell" className="px-5">
+                    <div className="flex flex-col gap-2 font-ui">
+                      <div className="text-[16px] font-semibold text-white">{formatUsd(position.incentivesUsd)}</div>
+                      {position.incentivesToken && (
+                        <div className="text-[12px] text-[#9AA1AB]">{position.incentivesToken}</div>
+                      )}
                     </div>
-                  ) : null}
-                </div>
-              ) : (
-                <div className="text-liqui-subtext text-left">-</div>
-              )}
-            </div>
+                  </div>
 
-            {/* Range Visualization (formerly APS column) */}
-            <div className="text-left">
-              {(() => {
-                const lower = position.lowerPrice || 0;
-                const upper = position.upperPrice || 0;
-                const current = nonStablePrice?.price || 0;
-                
-                if (lower === 0 || upper === 0 || current === 0) {
-                  return <div className="text-liqui-subtext text-xs">-</div>;
-                }
-                
-                // Calculate position percentage (0-100)
-                let percentage = 0;
-                if (current < lower) {
-                  percentage = 0;
-                } else if (current > upper) {
-                  percentage = 100;
-                } else {
-                  percentage = ((current - lower) / (upper - lower)) * 100;
-                }
-                
-                // Determine if in range
-                const inRange = position.isInRange !== undefined ? position.isInRange : position.inRange;
-                const indicatorColor = inRange ? 'bg-green-500' : 'bg-red-500';
-                
-                return (
-                  <div className="space-y-1">
-                    {/* Current price label */}
-                    <div className="text-liqui-subtext text-xs text-left">
-                      Current price
-                    </div>
-                    {/* Current price value */}
-                    <div className="text-white text-xs text-left mb-2">
-                      {formatPrice(current, current < 1 ? 5 : 3)}
-                    </div>
-                    {/* Range bar - left aligned with 80% width */}
-                    <div className="relative w-full flex items-center">
-                      <div className="relative w-[80%] h-0.5 bg-gray-500 rounded-full">
-                        <div 
-                          className={`absolute top-1/2 -translate-y-1/2 w-0.5 h-3 ${indicatorColor}`}
-                          style={{ left: `${Math.max(0, Math.min(100, percentage))}%` }}
-                        />
+                  <div role="cell" className="px-5">
+                    <div className="flex flex-col items-end gap-3 font-ui">
+                      <div role="status" aria-live="polite" className="flex items-center gap-2 text-sm font-medium text-white">
+                        <span className="ll-status-dot" style={{ background: statusColor }} aria-hidden="true" />
+                        <span>{statusMeta.label}</span>
                       </div>
                     </div>
                   </div>
-                );
-              })()}
-            </div>
+                </div>
 
-            {/* Status (with range indicator moved here) */}
-            <div className="text-left">
-              <div className="flex items-center justify-start">
-                <StatusPill inRange={position.isInRange !== undefined ? position.isInRange : position.inRange} />
-              </div>
-            </div>
-          </div>
-        );
-        })}
+                <div
+                  role="row"
+                  className="ll-row ll-grid cursor-pointer transition-colors"
+                  onClick={() => onRowClick?.(position.tokenId)}
+                >
+                  <div role="cell" className="px-6" aria-hidden="true" />
 
-        {/* Totals Row */}
-        {showTotalsRow && (
-          <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-t border-liqui-border bg-liqui-subcard">
-            <div className="text-liqui-subtext text-sm font-bold text-left">Total</div>
-            <div className="text-left">
-              <div className="text-white font-normal">${fmtUsd(totals.tvl)}</div>
-            </div>
-            <div className="text-left">
-              <div className="text-white font-normal">${fmtUsd(totals.fees)}</div>
-            </div>
-            <div className="text-left">
-              <div className="text-white font-normal">${fmtUsd(totals.rflr)}</div>
-            </div>
-            {/* Range column - no total */}
-            <div></div>
-            {/* Status column - no total */}
-            <div></div>
-          </div>
-        )}
+                  <div role="cell" className="px-5">
+                    <div className="flex flex-col gap-3 font-ui">
+                      <label htmlFor={sliderId} id={`${sliderId}-label`} className="text-[12px] font-medium text-[#9AA1AB]">
+                        Current price
+                      </label>
+                      <input
+                        id={sliderId}
+                        type="range"
+                        min={slider.min}
+                        max={slider.max}
+                        step={slider.step}
+                        value={slider.current}
+                        aria-labelledby={`${sliderId}-label`}
+                        disabled={slider.disabled}
+                        className="ll-price-slider"
+                        style={{ '--status-color': statusColor } as React.CSSProperties}
+                        readOnly
+                      />
+                      <div className="tnum text-sm text-[#9AA1AB]">{currentPriceLabel}</div>
+                    </div>
+                  </div>
+
+                  <div role="cell" className="px-5 text-sm text-[#9AA1AB]" aria-hidden="true">
+                    —
+                  </div>
+
+                  <div role="cell" className="px-5 text-sm text-[#9AA1AB]" aria-hidden="true">
+                    —
+                  </div>
+
+                  <div role="cell" className="px-5">
+                    <div className="ll-apy text-right">
+                      <div className="tnum text-xl font-semibold text-white">{APY_PLACEHOLDER}</div>
+                      <div className="text-sm text-[#9AA1AB]">Average 24h APY</div>
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          type="button"
+                          className="ll-btn-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-[#0A0F1A]"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            alert('Share to X — coming soon.');
+                          }}
+                          title="Share your APY snapshot"
+                        >
+                          Share
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="ll-divider my-4 border-t" role="presentation" />
+              </React.Fragment>
+            );
+          })}
+        </div>
       </div>
-    </div>
+
+      <div className="divide-y divide-[rgba(255,255,255,0.1)] font-ui lg:hidden">
+        {positions.map((position) => {
+          const statusMeta = STATUS_CONFIG[position.status];
+
+          return (
+            <div
+              key={position.tokenId}
+              onClick={() => onRowClick?.(position.tokenId)}
+              className="cursor-pointer p-4 transition-colors hover:bg-[rgba(0,230,255,0.05)]"
+            >
+              <div className="mb-3 flex items-center justify-between font-ui">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center -space-x-2">
+                    {position.token0Icon ? (
+                      <Image
+                        src={position.token0Icon}
+                        alt={position.token0Symbol}
+                        width={24}
+                        height={24}
+                        className="rounded-full border border-[rgba(255,255,255,0.1)]"
+                      />
+                    ) : (
+                      <TokenIcon symbol={position.token0Symbol} size={24} />
+                    )}
+                    {position.token1Icon ? (
+                      <Image
+                        src={position.token1Icon}
+                        alt={position.token1Symbol}
+                        width={24}
+                        height={24}
+                        className="rounded-full border border-[rgba(255,255,255,0.1)]"
+                      />
+                    ) : (
+                      <TokenIcon symbol={position.token1Symbol} size={24} />
+                    )}
+                  </div>
+
+                  <span className="text-sm font-bold text-white">
+                    {position.token0Symbol} / {position.token1Symbol}
+                  </span>
+
+                  <span className="rounded-full border border-white/10 px-2 py-0.5 text-xs font-medium text-white/70">
+                    {position.feeTier}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full" style={{ backgroundColor: statusMeta.dotColor }} />
+                  <span className="text-xs font-medium text-white">{statusMeta.label}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-4 text-[#9AA1AB]">
+                  <div className="font-ui">
+                    <span className="font-medium text-white">Liquidity: </span>
+                    <span className="tnum">{formatUsd(position.liquidityUsd)}</span>
+                  </div>
+                  <div className="font-ui">
+                    <span className="font-medium text-white">Fees: </span>
+                    <span className="tnum">{formatUsd(position.feesUsd)}</span>
+                  </div>
+                  <div className="font-ui">
+                    <span className="font-medium text-white">Incentives: </span>
+                    <span className="tnum">{formatUsd(position.incentivesUsd)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {position.rangeMin !== undefined && position.rangeMax !== undefined && (
+                <div className="mt-2 text-center text-xs text-[#9AA1AB]">
+                  Range: <span className="tnum">{position.rangeMin.toFixed(5)} – {position.rangeMax.toFixed(5)}</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
+
+export default PositionsTable;

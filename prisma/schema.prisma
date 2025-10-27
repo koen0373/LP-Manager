@@ -10,6 +10,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id            String     @id @default(cuid())
+  email         String?    @unique
+  state         UserState  @default(WAITLIST)
+  poolAllowance Int        @default(0)
+  activatedAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  wallets   Wallet[]
+  payments  Payment[]
+}
+
 model PoolEvent {
   id           String   @id // txHash:logIndex
   pool         String   // pool address (checksummed lower-case)
@@ -34,6 +47,17 @@ model PoolEvent {
   // dedupe guard
   @@unique([txHash, logIndex])
   @@index([pool, blockNumber])
+}
+
+model WaitlistEntry {
+  id         String   @id @default(cuid())
+  email      String
+  wallet     String?
+  fastTrack  Boolean  @default(false)
+  message    String?
+  createdAt  DateTime @default(now())
+
+  @@unique([email])
 }
 
 enum PositionEventType {
@@ -98,6 +122,27 @@ enum CapitalFlowType {
   OTHER
 }
 
+enum PoolStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum PaymentKind {
+  FAST_FORWARD
+}
+
+enum UserState {
+  WAITLIST
+  ACTIVATED
+}
+
 model CapitalFlow {
   id          String           @id
   wallet      String
@@ -117,6 +162,68 @@ model CapitalFlow {
   @@index([wallet, timestamp])
   @@index([tokenId, timestamp])
   @@index([pool, timestamp])
+}
+
+model Wallet {
+  id               Int        @id @default(autoincrement())
+  userId           String
+  address          String
+  billingStartedAt DateTime   @default(now())
+  billingExpiresAt DateTime   @default(now())
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pools    UserPool[]
+
+  @@unique([userId, address])
+  @@index([billingExpiresAt])
+}
+
+model UserPool {
+  id                  Int        @id @default(autoincrement())
+  walletId            Int
+  poolId              String
+  provider            String
+  status              PoolStatus @default(ACTIVE)
+  excludedFromBilling Boolean    @default(false)
+  lastActivity        DateTime?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@unique([walletId, poolId])
+  @@index([walletId, status])
+}
+
+model Payment {
+  id                 Int            @id @default(autoincrement())
+  userId             String
+  provider           String         @default("crypto")
+  chainId            Int
+  tokenAddress       String
+  treasuryAddress    String
+  amountUsd          Float
+  amountToken        Float
+  txHash             String?
+  intentId           String         @unique
+  expiresAt          DateTime?
+  payerAddress       String?
+  kind               PaymentKind    @default(FAST_FORWARD)
+  status             PaymentStatus  @default(PENDING)
+  disclaimerAccepted Boolean        @default(false)
+  approvedBy         String?
+  approvedAt         DateTime?
+  invoiceNumber      String?
+  invoiceIssuedAt    DateTime?
+  invoiceCsv         String?
+  invoiceSentAt      DateTime?
+  createdAt          DateTime       @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 // Indexer checkpoint tracking
@@ -143,4 +250,10 @@ model BackfillCursor {
   createdAt      DateTime @default(now())
 
   @@index([lastBlock])
+}
+
+model PlaceholderSignup {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
 }

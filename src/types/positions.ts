@@ -57,6 +57,11 @@ export interface PositionRow {
   liquidity?: bigint; // Position liquidity
   poolLiquidity?: bigint; // Total pool liquidity
   poolSharePct?: number; // Percentage of pool owned (0-100)
+  provider?: string;
+  providerSlug?: string;
+  displayId?: string;
+  onchainId?: string; // Raw tokenId as minted on-chain
+  positionManager?: `0x${string}`;
 }
 
 export interface PositionState {

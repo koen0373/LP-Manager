@@ -1,0 +1,19 @@
+{
+  "brand": {
+    "essence": "Down-to-earth intelligence for liquidity pool management.",
+    "category": "Liquid Pool Management Platform",
+    "tone": ["realistic", "optimistic", "honest", "empathic"],
+    "voice": {
+      "weSpeakAs": "fellow liquidity providers, not marketers",
+      "goal": "help users gain clarity, structure, and confidence in managing liquidity pools",
+      "avoid": ["overpromise", "exaggerate", "buzzwords", "crypto slang"]
+    },
+    "emotionalGoal": "Users feel understood and supported by a team who faces the same challenges in liquidity pool management.",
+    "writingStyle": {
+      "language": "English",
+      "verbs": ["track", "rebalance", "improve", "monitor"],
+      "tone": "professional, calm, confident",
+      "length": "short and easy to scan"
+    }
+  }
+}

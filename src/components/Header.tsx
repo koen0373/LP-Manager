@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
-import Image from 'next/image';
+import React from 'react';
 import Link from 'next/link';
 import WalletConnect from './WalletConnect';
+import { LiquiLabLogo } from './LiquiLabLogo';
 
 interface HeaderProps {
   onRefresh?: () => void;
@@ -15,7 +15,7 @@ interface HeaderProps {
   onWalletDisconnected?: () => void;
   showTabs?: boolean;
   showWalletActions?: boolean;
-  currentPage?: 'pools' | 'summary' | 'faq';
+  currentPage?: 'home' | 'faq' | 'summary' | 'pools';
 }
 
 export default function Header({
@@ -28,35 +28,9 @@ export default function Header({
   onWalletDisconnected,
   showTabs = true,
   showWalletActions = true,
-  currentPage = 'pools',
+  currentPage = 'home',
 }: HeaderProps) {
-  const [logoError, setLogoError] = useState(false);
   const handleRefresh = onRefresh ?? (() => {});
-
-  const LogoComponent = () => {
-    if (logoError) {
-      // Fallback to text if logo fails to load
-      return (
-        <div className="flex items-center h-16">
-          <span className="text-white text-2xl font-bold">LiquiLab</span>
-        </div>
-      );
-    }
-
-    return (
-      <Image
-        src="/icons/liquilab_logo.png"
-        alt="LiquiLab Logo"
-        width={168}
-        height={56}
-        className="object-contain h-[56px] w-auto"
-        onError={() => setLogoError(true)}
-        priority
-        unoptimized={true}
-        quality={90}
-      />
-    );
-  };
 
   return (
     <header className="sticky top-0 z-40 w-full bg-liqui-bg/95 backdrop-blur-sm border-b border-liqui-border">
@@ -65,15 +39,15 @@ export default function Header({
           {/* Brand */}
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center">
-              <LogoComponent />
+              <LiquiLabLogo variant="full" size="sm" theme="dark" />
             </Link>
             {/* Vertical divider - centered with tagline */}
             <div className="hidden sm:flex items-center gap-4">
               <div className="h-12 w-[2px] bg-mist/40"></div>
               {/* Tagline */}
               <div className="flex flex-col leading-tight">
-                <span className="text-mist text-[14px] font-medium tracking-wide">The Liquidity Pool</span>
-                <span className="text-mist text-[14px] font-medium tracking-wide">Intelligence Platform</span>
+                <span className="font-brand text-mist text-[14px] font-medium tracking-wide">The Liquidity Pool</span>
+                <span className="font-brand text-mist text-[14px] font-medium tracking-wide">Intelligence Platform</span>
               </div>
             </div>
           </div>
@@ -81,28 +55,8 @@ export default function Header({
           {/* Navigation & Actions */}
           <div className="flex items-center gap-3 sm:gap-6">
             <Link 
-              href="/" 
-              className={`text-sm transition-colors ${
-                currentPage === 'pools' 
-                  ? 'font-bold text-white' 
-                  : 'font-normal text-mist hover:text-white'
-              }`}
-            >
-              My Pools
-            </Link>
-            <Link 
-              href="/summary" 
-              className={`text-sm transition-colors ${
-                currentPage === 'summary' 
-                  ? 'font-bold text-white' 
-                  : 'font-normal text-mist hover:text-white'
-              }`}
-            >
-              Portfolio Performance
-            </Link>
-            <Link 
               href="/faq" 
-              className={`text-sm transition-colors ${
+              className={`font-brand text-sm transition-colors ${
                 currentPage === 'faq' 
                   ? 'font-bold text-white' 
                   : 'font-normal text-mist hover:text-white'

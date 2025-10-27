@@ -17,8 +17,8 @@ export type TokenConfig = {
 // Token registry by address (deterministic order)
 export const TOKEN_REGISTRY: Record<Address, TokenConfig> = {
   // RFLR - hardcoded price
-  '0x1D80c49BbBCd1C0911346656B529DF9E5c2F783d': {
-    address: '0x1D80c49BbBCd1C0911346656B529DF9E5c2F783d',
+  '0x1d80c49bbbcd1c0911346656b529df9e5c2f783d': {
+    address: '0x1d80c49bbbcd1c0911346656b529df9e5c2f783d',
     symbol: 'WFLR',
     name: 'Wrapped Flare',
     decimals: 18,
@@ -35,8 +35,8 @@ export const TOKEN_REGISTRY: Record<Address, TokenConfig> = {
   },
   
   // eUSDT - hardcoded stable price
-  '0x96B41289D90444B8adD57e6F265DB5aE8651DF29': {
-    address: '0x96B41289D90444B8adD57e6F265DB5aE8651DF29',
+  '0x96b41289d90444b8add57e6f265db5ae8651df29': {
+    address: '0x96b41289d90444b8add57e6f265db5ae8651df29',
     symbol: 'eUSDT',
     name: 'Enosys USDT',
     decimals: 6,
@@ -44,8 +44,8 @@ export const TOKEN_REGISTRY: Record<Address, TokenConfig> = {
   },
   
   // USD₮0 - hardcoded stable price
-  '0xe7cd86e13AC4309349F30B3435a9d337750fC82D': {
-    address: '0xe7cd86e13AC4309349F30B3435a9d337750fC82D',
+  '0xe7cd86e13ac4309349f30b3435a9d337750fc82d': {
+    address: '0xe7cd86e13ac4309349f30b3435a9d337750fc82d',
     symbol: 'USD₮0',
     name: 'USD₮0',
     decimals: 6,
@@ -53,33 +53,33 @@ export const TOKEN_REGISTRY: Record<Address, TokenConfig> = {
   },
   
   // FXRP - on-chain pricing via FXRP/USD₮0 pool
-  '0xAd552A648C74D49E10027AB8a618A3ad4901c5bE': {
-    address: '0xAd552A648C74D49E10027AB8a618A3ad4901c5bE',
+  '0xad552a648c74d49e10027ab8a618a3ad4901c5be': {
+    address: '0xad552a648c74d49e10027ab8a618a3ad4901c5be',
     symbol: 'FXRP',
     name: 'FXRP',
     decimals: 6,
     price: [
       { 
         kind: 'onchainPool', 
-        pool: '0x686f53F0950Ef193C887527eC027E6A574A4DbE1', // FXRP/USD₮0 pool
-        base: '0xAd552A648C74D49E10027AB8a618A3ad4901c5bE', // FXRP
-        quote: '0xe7cd86e13AC4309349F30B3435a9d337750fC82D'  // USD₮0
+        pool: '0x686f53f0950ef193c887527ec027e6a574a4dbe1', // FXRP/USD₮0 pool
+        base: '0xad552a648c74d49e10027ab8a618a3ad4901c5be', // FXRP
+        quote: '0xe7cd86e13ac4309349f30b3435a9d337750fc82d'  // USD₮0
       }
     ]
   },
   
   // APS - on-chain pricing via eUSDT/APS pool
-  '0xfF56Eb5b1a7FAa972291117E5E9565dA29bc808d': {
-    address: '0xfF56Eb5b1a7FAa972291117E5E9565dA29bc808d',
+  '0xff56eb5b1a7faa972291117e5e9565da29bc808d': {
+    address: '0xff56eb5b1a7faa972291117e5e9565da29bc808d',
     symbol: 'APS',
     name: 'Apsis',
     decimals: 18,
     price: [
       { 
         kind: 'onchainPool', 
-        pool: '0xcF93d54E7Fea895375667Fa071d5b48C81E76d7d', // eUSDT/APS pool
-        base: '0x96B41289D90444B8adD57e6F265DB5aE8651DF29', // eUSDT
-        quote: '0xfF56Eb5b1a7FAa972291117E5E9565dA29bc808d'  // APS
+        pool: '0xcf93d54e7fea895375667fa071d5b48c81e76d7d', // eUSDT/APS pool
+        base: '0x96b41289d90444b8add57e6f265db5ae8651df29', // eUSDT
+        quote: '0xff56eb5b1a7faa972291117e5e9565da29bc808d'  // APS
       }
     ]
   }
@@ -91,12 +91,13 @@ const CACHE_TTL = 30000; // 30 seconds
 
 export async function getUsdPriceNow(tokenAddress: Address): Promise<number> {
   // Check cache first
-  const cached = priceCache.get(tokenAddress);
+  const normalizedAddress = tokenAddress.toLowerCase() as Address;
+  const cached = priceCache.get(normalizedAddress);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return cached.price;
   }
   
-  const token = TOKEN_REGISTRY[tokenAddress];
+  const token = TOKEN_REGISTRY[normalizedAddress];
   if (!token) {
     throw new Error(`Token not found in registry: ${tokenAddress}`);
   }
@@ -116,7 +117,7 @@ export async function getUsdPriceNow(tokenAddress: Address): Promise<number> {
       }
       
       // Cache the result
-      priceCache.set(tokenAddress, { price, timestamp: Date.now() });
+      priceCache.set(normalizedAddress, { price, timestamp: Date.now() });
       console.log(`[PRICE-REGISTRY] ${token.symbol}: $${price} (source: ${source.kind})`);
       return price;
       
@@ -171,8 +172,8 @@ async function getOnChainPrice(poolAddress: Address, baseToken: Address, quoteTo
   const price = Number(sqrtPriceX96) ** 2 / (2 ** 192) * (10 ** (baseDecimals - quoteDecimals));
   
   // If quote token is USD stablecoin, return price directly
-  if (quoteToken === '0xe7cd86e13AC4309349F30B3435a9d337750fC82D' || 
-      quoteToken === '0x96B41289D90444B8adD57e6F265DB5aE8651DF29') {
+  if (quoteToken === '0xe7cd86e13ac4309349f30b3435a9d337750fc82d' || 
+      quoteToken === '0x96b41289d90444b8add57e6f265db5ae8651df29') {
     return price;
   }
   

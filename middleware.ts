@@ -1,8 +1,6 @@
-// middleware.ts - Production-tested CSP for Next.js + Vercel
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Edge-compatible nonce generator (Web Crypto API)
 function generateNonce(): string {
   const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);
@@ -10,25 +8,43 @@ function generateNonce(): string {
 }
 
 export function middleware(req: NextRequest) {
-  // Only apply CSP to HTML navigation requests (not API, not assets)
-  const accept = req.headers.get('accept') || '';
-  if (!accept.includes('text/html')) {
-    return NextResponse.next();
+  let response: NextResponse | null = null;
+
+  if (process.env.PLACEHOLDER_ENABLED === 'true') {
+    const { pathname } = req.nextUrl;
+    const bypass =
+      pathname.startsWith('/login') ||
+      pathname.startsWith('/api') ||
+      pathname.startsWith('/placeholder') ||
+      pathname.startsWith('/_next') ||
+      pathname.startsWith('/favicon') ||
+      pathname.startsWith('/assets');
+
+    if (!bypass) {
+      const hasAccess = req.cookies.get('ll_dev_access')?.value === '1';
+      if (!hasAccess) {
+        const url = req.nextUrl.clone();
+        url.pathname = '/placeholder';
+        response = NextResponse.rewrite(url);
+      }
+    }
   }
 
-  const res = NextResponse.next();
+  const accept = req.headers.get('accept') || '';
+  if (!accept.includes('text/html')) {
+    return response ?? NextResponse.next();
+  }
+
+  const res = response ?? NextResponse.next();
   const nonce = generateNonce();
 
-  // Store nonce for _document to use with inline scripts
   res.headers.set('x-nonce', nonce);
 
-  // Development mode: relaxed CSP for React Fast Refresh
   const isDev = process.env.NODE_ENV !== 'production';
-  
+
   const csp = isDev
     ? [
         "default-src 'self'",
-        // Dev mode: allow unsafe-eval for React Fast Refresh
         `script-src 'self' 'unsafe-eval' 'nonce-${nonce}'`,
         "connect-src 'self' ws: wss:",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -38,7 +54,6 @@ export function middleware(req: NextRequest) {
       ].join('; ')
     : [
         "default-src 'self'",
-        // Production: allow unsafe-eval for ECharts (chart library requires it)
         `script-src 'self' 'unsafe-eval' 'nonce-${nonce}'`,
         "connect-src 'self'",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -59,5 +74,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/:path*'], // All routes, but we filter on Accept: text/html
+  matcher: ['/:path*'],
 };

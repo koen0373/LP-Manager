@@ -1,6 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { isAddress } from 'viem';
 import { getLpPositionsOnChain } from '../../src/services/pmFallback';
+import { getBlazeSwapPositions } from '@/services/blazeswapService';
+import { getSparkdexPositions } from '@/services/sparkdexService';
 import { getWalletPositionsViaFlareScan } from '../../src/services/flarescanService';
 import { clearCaches } from '../../src/utils/poolHelpers';
 import { clearRflrRewardCache } from '../../src/services/rflrRewards';
@@ -118,16 +120,29 @@ export default async function handler(
 
   try {
     console.log(`[API] Fetching positions for address: ${normalizedAddress}`);
-    const viemPositions = await getLpPositionsOnChain(normalizedAddress as `0x${string}`);
-    console.log(`[API] Received ${viemPositions.length} positions from Viem`);
-    console.log(`[API] First position sample:`, {
-      id: viemPositions[0]?.id,
-      tvlUsd: viemPositions[0]?.tvlUsd,
-      rewardsUsd: viemPositions[0]?.rewardsUsd,
-      amount0: viemPositions[0]?.amount0,
-      amount1: viemPositions[0]?.amount1
-    });
-    const serializedPositions = viemPositions.map(serializePositionRow);
+    const [viemPositions, blazePositions, sparkPositions] = await Promise.all([
+      getLpPositionsOnChain(normalizedAddress as `0x${string}`),
+      getBlazeSwapPositions(normalizedAddress as `0x${string}`),
+      getSparkdexPositions(normalizedAddress as `0x${string}`),
+    ]);
+
+    const allPositions = [...viemPositions, ...blazePositions, ...sparkPositions];
+
+    console.log(
+      `[API] Received ${viemPositions.length} positions from Viem, ${blazePositions.length} from BlazeSwap, ${sparkPositions.length} from SparkDEX`
+    );
+    if (allPositions.length > 0) {
+      const sample = allPositions[0];
+      console.log(`[API] First position sample:`, {
+        id: sample?.id,
+        tvlUsd: sample?.tvlUsd,
+        amount0: sample?.amount0,
+        amount1: sample?.amount1,
+        poolSharePct: sample?.poolSharePct,
+      });
+    }
+
+    const serializedPositions = allPositions.map(serializePositionRow);
     setCached(normalizedAddress, serializedPositions);
     const duration = Date.now() - startTime;
     console.log(`[API] /api/positions - Success via Viem for ${normalizedAddress} - ${serializedPositions.length} positions - ${duration}ms`);

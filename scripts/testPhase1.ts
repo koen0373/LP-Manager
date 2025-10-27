@@ -46,7 +46,7 @@ async function testFlarescanAdapter() {
   try {
     // Test contract creation
     const creation = await getContractCreation(ENOSYS_ADDRESSES.POSITION_MANAGER);
-    if (!creation.result || creation.result.length === 0) {
+    if (!creation.result || !Array.isArray(creation.result) || creation.result.length === 0) {
       throw new Error('Failed to get contract creation');
     }
     console.log(`✅ Contract created in tx: ${creation.result[0].txHash.slice(0, 10)}...`);

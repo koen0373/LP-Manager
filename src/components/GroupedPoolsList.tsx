@@ -107,7 +107,7 @@ export const GroupedPoolsList: React.FC<GroupedPoolsListProps> = ({ pools }) => 
             {/* Pair Header - Clickable */}
             <button
               onClick={() => togglePair(group.pairLabel)}
-              className="w-full px-6 py-4 flex items-center justify-between hover:bg-liqui-subcard/30 transition-colors"
+              className="font-ui w-full px-6 py-4 flex items-center justify-between hover:bg-liqui-subcard/30 transition-colors"
             >
               <div className="flex items-center gap-4">
                 {/* Token Icons */}
@@ -117,12 +117,12 @@ export const GroupedPoolsList: React.FC<GroupedPoolsListProps> = ({ pools }) => 
                 </div>
                 
                 {/* Pair Label */}
-                <h3 className="text-white text-lg font-bold">
+                <h3 className="font-brand text-white text-lg font-bold">
                   {group.pairLabel}
                 </h3>
 
                 {/* Pool Count */}
-                <span className="text-liqui-subtext text-sm">
+                <span className="font-ui text-liqui-subtext text-sm">
                   ({group.pools.length} {group.pools.length === 1 ? 'pool' : 'pools'})
                 </span>
               </div>
@@ -130,10 +130,10 @@ export const GroupedPoolsList: React.FC<GroupedPoolsListProps> = ({ pools }) => 
               <div className="flex items-center gap-6">
                 {/* Total Value */}
                 <div className="text-right">
-                  <div className="text-white font-medium">
+                  <div className="font-ui tnum text-white font-medium">
                     {formatUsd(totalValue)}
                   </div>
-                  <div className="text-liqui-subtext text-sm">
+                  <div className="font-ui text-liqui-subtext text-sm">
                     Total Earnings
                   </div>
                 </div>
@@ -159,7 +159,7 @@ export const GroupedPoolsList: React.FC<GroupedPoolsListProps> = ({ pools }) => 
                           <div className={`w-2 h-2 rounded-full ${pool.status === 'active' ? 'bg-green-500' : 'bg-gray-500'}`} />
                           
                           {/* Pool ID */}
-                          <div className="text-white font-medium">
+                          <div className="font-ui text-white font-medium">
                             Pool #{pool.tokenId}
                           </div>
 
@@ -177,34 +177,34 @@ export const GroupedPoolsList: React.FC<GroupedPoolsListProps> = ({ pools }) => 
                         <div className="flex items-start gap-8">
                           {/* Earnings */}
                           <div className="text-right">
-                            <div className="text-white font-medium mb-1">
+                            <div className="font-ui tnum text-white font-medium mb-1">
                               {formatUsd((pool.earningsUsd || 0) + (pool.rflrUsd || 0))}
                             </div>
                             <div className="text-liqui-subtext text-sm space-y-0.5">
                               {pool.earningsUsd > 0 && (
-                                <div>Fees: {formatUsd(pool.earningsUsd)}</div>
+                                <div>Fees: <span className="tnum">{formatUsd(pool.earningsUsd)}</span></div>
                               )}
                               {pool.fee0 !== undefined && pool.fee1 !== undefined && (
                                 <div className="text-xs">
-                                  {pool.fee0.toFixed(4)} {pool.token0Symbol} + {pool.fee1.toFixed(4)} {pool.token1Symbol}
+                                  <span className="tnum">{pool.fee0.toFixed(4)}</span> {pool.token0Symbol} + <span className="tnum">{pool.fee1.toFixed(4)}</span> {pool.token1Symbol}
                                 </div>
                               )}
                               {pool.rflrAmount > 0 && (
-                                <div>RFLR: {pool.rflrAmount.toFixed(2)} ({formatUsd(pool.rflrUsd)})</div>
+                                <div>RFLR: <span className="tnum">{pool.rflrAmount.toFixed(2)}</span> (<span className="tnum">{formatUsd(pool.rflrUsd)}</span>)</div>
                               )}
                             </div>
                           </div>
 
                           {/* TVL */}
                           <div className="text-right">
-                            <div className="text-liqui-subtext text-xs mb-1">TVL</div>
+                            <div className="font-ui text-liqui-subtext text-xs mb-1">TVL</div>
                             {pool.tvlAtMintUsd !== undefined && (
                               <div className="text-liqui-subtext text-sm mb-0.5">
-                                At mint: {formatUsd(pool.tvlAtMintUsd)}
+                                At mint: <span className="tnum">{formatUsd(pool.tvlAtMintUsd)}</span>
                               </div>
                             )}
-                            <div className="text-white font-medium">
-                              Current: {formatUsd(pool.tvlUsd)}
+                            <div className="font-ui text-white font-medium">
+                              Current: <span className="tnum">{formatUsd(pool.tvlUsd)}</span>
                             </div>
                           </div>
 
@@ -212,7 +212,7 @@ export const GroupedPoolsList: React.FC<GroupedPoolsListProps> = ({ pools }) => 
                           {pool.roi !== undefined && (
                             <div className="text-right">
                               <div className="text-liqui-subtext text-xs mb-1">ROI</div>
-                              <div className={`font-medium ${pool.roi >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                              <div className={`font-ui tnum font-medium ${pool.roi >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                                 {pool.roi >= 0 ? '+' : ''}{formatPercent(pool.roi)}
                               </div>
                             </div>
@@ -226,19 +226,19 @@ export const GroupedPoolsList: React.FC<GroupedPoolsListProps> = ({ pools }) => 
                 {/* Total Row for this Pairing */}
                 <div className="px-6 py-4 bg-liqui-subcard/30 border-t-2 border-liqui-border">
                   <div className="flex items-center justify-between">
-                    <div className="text-white font-bold">
+                    <div className="font-ui text-white font-bold">
                       Total for {group.pairLabel}
                     </div>
                     <div className="flex items-center gap-8">
                       {/* Total Earnings */}
                       <div className="text-right">
-                        <div className="text-white font-bold mb-1">
+                        <div className="font-ui tnum text-white font-bold mb-1">
                           {formatUsd(group.totalEarningsUsd + group.totalRflrUsd)}
                         </div>
-                        <div className="text-liqui-subtext text-sm">
-                          {group.totalEarningsUsd > 0 && <div>Fees: {formatUsd(group.totalEarningsUsd)}</div>}
+                        <div className="font-ui text-liqui-subtext text-sm">
+                          {group.totalEarningsUsd > 0 && <div>Fees: <span className="tnum">{formatUsd(group.totalEarningsUsd)}</span></div>}
                           {group.totalRflrAmount > 0 && (
-                            <div>RFLR: {group.totalRflrAmount.toFixed(2)} ({formatUsd(group.totalRflrUsd)})</div>
+                            <div>RFLR: <span className="tnum">{group.totalRflrAmount.toFixed(2)}</span> (<span className="tnum">{formatUsd(group.totalRflrUsd)}</span>)</div>
                           )}
                         </div>
                       </div>
@@ -246,7 +246,7 @@ export const GroupedPoolsList: React.FC<GroupedPoolsListProps> = ({ pools }) => 
                       {/* Total TVL */}
                       <div className="text-right">
                         <div className="text-liqui-subtext text-xs mb-1">Total TVL</div>
-                        <div className="text-white font-bold">
+                        <div className="font-ui tnum text-white font-bold">
                           {formatUsd(group.totalTvlUsd)}
                         </div>
                       </div>

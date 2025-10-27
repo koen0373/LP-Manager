@@ -1,5 +1,8 @@
 import React from "react";
 import Image from "next/image";
+import type { Address } from "viem";
+
+import { fetchTokenIcon } from "@/services/tokenIconService";
 
 type TokenIconProps = {
   symbol?: string;
@@ -11,7 +14,28 @@ type TokenIconProps = {
 };
 
 // Robuuste icon mapping - alleen lokale WEBP bestanden
-const getTokenIcon = (symbol?: string): string => {
+const ICON_MAP: Record<string, string> = {
+  WFLR: '/icons/flr.webp',
+  FLR: '/icons/flr.webp',
+  SFLR: '/icons/sflr.webp',
+  FXRP: '/icons/fxrp.webp',
+  USDTO: '/icons/usd0.webp',
+  USDT0: '/icons/usd0.webp',
+  USDT: '/icons/usd0.webp',
+  EETH: '/icons/eeth.webp',
+  EQNT: '/icons/eqnt.webp',
+  EUSDT: '/icons/eusdt.webp',
+  HLN: '/icons/hln.webp',
+  APS: '/icons/aps.webp',
+  USDC: '/icons/usdcsg.webp',
+  USDX: '/icons/usdx.webp',
+  SGB: '/icons/sgb.network.webp',
+  YFLR: '/icons/flr.webp',
+  CAND: '/icons/flr.webp',
+  BAZE: '/icons/flr.webp',
+};
+
+const getTokenIcon = (symbol?: string): string | null => {
   const sym = (symbol || "").trim();
   
   // Special handling for USD₮0 (Unicode T symbol)
@@ -21,38 +45,8 @@ const getTokenIcon = (symbol?: string): string => {
   
   // Normalize Unicode characters (NFKD) and remove all non-alphanumeric
   const normalized = sym.normalize('NFKD').replace(/[^A-Z0-9]/g, '').toUpperCase();
-  
-  // Directe mapping naar bestaande WEBP bestanden
-  switch (normalized || sym) {
-    case 'WFLR':
-      return '/icons/flr.webp'; // WFLR gebruikt FLR icoon
-    case 'SFLR':
-      return '/icons/sflr.webp';
-    case 'FXRP':
-      return '/icons/fxrp.webp';
-    case 'USDTO':
-    case 'USDT0':
-    case 'USDT':
-      return '/icons/usd0.webp'; // USDTO icoon
-    case 'FLR':
-      return '/icons/flr.webp';
-    case 'EETH':
-      return '/icons/eeth.webp';
-    case 'EQNT':
-      return '/icons/eqnt.webp';
-    case 'EUSDT':
-      return '/icons/eusdt.webp';
-    case 'HLN':
-      return '/icons/hln.webp';
-    case 'APS':
-      return '/icons/aps.webp';
-    case 'USDC':
-      return '/icons/usdcsg.webp';
-    case 'USDX':
-      return '/icons/usdx.webp';
-    default:
-      return '/icons/default-token.webp';
-  }
+
+  return ICON_MAP[normalized] ?? ICON_MAP[sym] ?? null;
 };
 
 export const TokenIcon: React.FC<TokenIconProps> = ({
@@ -63,8 +57,52 @@ export const TokenIcon: React.FC<TokenIconProps> = ({
   alt: altLabel,
   priority,
 }) => {
-  const iconSrc = getTokenIcon(symbol);
-  const label = altLabel || symbol || (address ? `${address.slice(0, 6)}…` : "token");
+  const localIcon = React.useMemo(() => getTokenIcon(symbol), [symbol]);
+  const [iconSrc, setIconSrc] = React.useState<string | null>(localIcon);
+
+  React.useEffect(() => {
+    setIconSrc(localIcon);
+  }, [localIcon]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    if (!iconSrc && address && address.startsWith('0x')) {
+      fetchTokenIcon(address as Address)
+        .then((remoteIcon) => {
+          if (!cancelled && remoteIcon) {
+            setIconSrc(remoteIcon);
+          }
+        })
+        .catch((error) => {
+          console.warn(`[TokenIcon] Failed to fetch icon for ${address}:`, error);
+        });
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [iconSrc, address]);
+
+  const label = altLabel || symbol || (address ? `${address.slice(0, 6)}…` : 'token');
+
+  if (!iconSrc) {
+    const initials = (symbol || '?').slice(0, 2).toUpperCase();
+    return (
+      <div
+        className={`flex items-center justify-center rounded-full bg-liqui-card-hover text-xs font-semibold text-liqui-subtext ${className ?? ''}`}
+        style={{
+          width: size,
+          height: size,
+          minWidth: size,
+          minHeight: size,
+        }}
+        aria-label={label}
+      >
+        {initials}
+      </div>
+    );
+  }
 
   return (
     <Image
@@ -72,10 +110,7 @@ export const TokenIcon: React.FC<TokenIconProps> = ({
       alt={label}
       width={size}
       height={size}
-      className={
-        className ??
-        "rounded-full object-contain"
-      }
+      className={className ?? 'rounded-full object-contain'}
       style={{
         width: size,
         height: size,
@@ -83,15 +118,9 @@ export const TokenIcon: React.FC<TokenIconProps> = ({
         minHeight: size,
         maxWidth: size,
         maxHeight: size,
-        display: "block",
+        display: 'block',
       }}
       priority={priority}
-      onError={(e) => {
-        console.warn(`Failed to load token icon for symbol "${symbol}":`, iconSrc);
-        // Fallback to default icon on error
-        const target = e.target as HTMLImageElement;
-        target.src = '/icons/default-token.webp';
-      }}
     />
   );
 };

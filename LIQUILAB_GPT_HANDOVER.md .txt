@@ -1,0 +1,93 @@
+# LiquiLab — GPT Pro Handover Starter
+
+> You are taking over an active LiquiLab project.  
+> **Always read `/docs/PROJECT_STATE.md` first** before proposing or applying changes.  
+> After completing any task, **append a concise summary + changelog** to `/docs/PROJECT_STATE.md`.  
+> **Execution Check Rule:** Before you start, ask: **“Has the previous task been reviewed and confirmed as complete?”**
+
+---
+
+## 🔒 Brand Lock (immutable)
+
+- **LiquiLab — The Liquidity Pool Intelligence Platform**  
+- **The easy way to manage your liquidity pools.**  
+
+Never broaden beyond *liquidity pools*. Never rephrase or shorten the tagline.
+
+---
+
+## 💳 Pricing — Annual focus (monthly optional)
+
+| Plan (Liquidity Journey) | Pool limit | Annual | Monthly |
+|---|---:|---:|---:|
+| **Shallow** | Up to 5 | **$99.95** | **$9.95** |
+| **Flow** | Up to 15 | **$249.95** | **$24.95** |
+| **Depth** | Up to 50 | **$749.95** | **$74.95** |
+| **Tide** | 50+ | **Custom** | **Custom** |
+
+**Trial:** 14-day free trial; payment is authorized at signup but **not captured until day 14**.  
+Users can cancel anytime during the trial (no charge).
+
+---
+
+## 🏠 Homepage — Final order
+
+1. **Hero (promise):** “The easy way to manage your liquidity pools.”  
+2. **Problem:** LP chaos (too many dashboards, no overview).  
+3. **Solution:** one clear dashboard (Enosys, BlazeSwap, SparkDEX).  
+4. **Proof:** **Live demo pools** (glassy table, 75% container).  
+5. **Subscription:** single **“Liquidity Journey”** block (Annual/Monthly toggle) with **“Start free trial”** under **every** plan; for **Tide**: secondary “Start free trial” next to “Join priority list”.  
+
+> ❌ No waitlist / pre-launch content on the homepage (separate landing page later).
+
+---
+
+## 📊 Pool Table — UI spec (v2025.10)
+
+- **Container width:** 75% centered (desktop), 92–94% (tablet/mobile).  
+- **Glassy overlay:** `rgba(10,15,26,0.85–0.90)` + `backdrop-filter: blur(10–12px)`; water background must remain visible.  
+- **Dividers:** `rgba(110,168,255,0.12)`; 8px vertical rhythm; **min-row-height: 140px**.  
+- **Columns:** Specifics | Liquidity | Fees | Incentives | Range | Status.  
+- **Specifics:** icons + pair + fee must **always stay on one line** (no wrap); min–max range **centered below**.  
+- **Current Price slider:** thin baseline + single marker; **marker color must equal status color**.  
+- **Status logic:**  
+  - **In Range (green):** within `[min, max]` (earns fees).  
+  - **Near Band (orange):** within **3%** of lower or upper bound (inside band).  
+  - **Out of Range (red):** below min or above max.  
+- **APY block:** add 12–16px spacing above label **“Average 24h APY”**; use `font-variant-numeric: tabular-nums`.
+
+---
+
+## ✒️ Typography & Style
+
+- **Inter** for UI (tables, pricing, copy).  
+- **Quicksand** for **logo/tagline/hero headings** only.  
+- Buttons: aqua `#6EA8FF`, soft hover glow, **focus ring visible**.  
+- Maintain transparency in key sections; **water background is part of the brand**.
+
+---
+
+## 🤝 AI Collaboration Rules
+
+- Only **one AI** edits at a time — Claude ↔ GPT work **in series** (no parallel edits).  
+- **Both** AIs must **document each change** in `/docs/PROJECT_STATE.md` (summary + changelog).  
+- **Execution Check Rule:** GPT must ask before starting any new task:  
+  “**Has the previous task been reviewed and confirmed as complete?**”
+
+---
+
+## ✅ Your first actions (do not skip)
+
+1) **Execution check:** Ask if the previous task has been confirmed as complete.  
+2) **Read `/docs/PROJECT_STATE.md`** end-to-end.  
+3) **Gap analysis:** List any mismatches vs. this handover (pricing, homepage order, Pool Table specs, AI rules, transparency).  
+4) **Propose the smallest next change** (3–5 bullets) to close the biggest gap with minimal risk.  
+5) **On approval:** Apply **only that change**, test visually, and append a short **summary + changelog** to `/docs/PROJECT_STATE.md`.
+
+**Acceptance for the first change**
+- Addresses one concrete gap (e.g., single pricing block merge; table container to 75%; slider marker=status color with 3% near-band).  
+- Does **not** alter brand scope or tagline.  
+- Follows glass aesthetic and typography rules.  
+- Ends with a doc update and changelog in `PROJECT_STATE.md`.
+
+---

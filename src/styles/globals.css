@@ -2,13 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .hero-wave-bg {
+    background-image: url('/media/hero-wave.svg');
+  }
+}
+
 /* Custom styles for the Enosys LP Manager */
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--font-ui);
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -34,6 +38,25 @@ body {
 
 * {
   box-sizing: border-box;
+}
+
+
+:root {
+  --font-brand: 'Quicksand', system-ui, -apple-system, 'Segoe UI', 'Roboto', 'Inter', sans-serif;
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
+}
+
+.font-brand {
+  font-family: var(--font-brand);
+}
+
+.font-ui {
+  font-family: var(--font-ui);
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
 }
 
 /* Liqui theme colors */
@@ -81,4 +104,108 @@ body {
 
 .text-aqua {
   color: #75C4FF; /* liqui.aqua */
+}
+
+/* Pool table hover effect - highlight both rows of the same pool */
+/* When hovering row 1, also highlight row 2 (next sibling) */
+tr.pool-row-1:hover,
+tr.pool-row-1:hover + tr.pool-row-2 {
+  background-color: rgba(0, 230, 255, 0.05);
+}
+
+/* When hovering row 2, only highlight row 2 (CSS can't select previous sibling) */
+/* We'll need to use a different approach - wrapping or JS */
+tr.pool-row-2:hover {
+  background-color: rgba(0, 230, 255, 0.05);
+}
+
+/* JS-controlled hover class for both rows of same pool */
+tr.pool-hover {
+  background-color: rgba(0, 230, 255, 0.05);
+}
+
+
+
+[data-ll-ui="v2025-10"]{
+  --ll-aqua:#6EA8FF;
+  --ll-divider:rgba(110,168,255,0.12);
+}
+
+[data-ll-ui="v2025-10"] .ll-grid{
+  display:grid;
+  grid-template-columns:1.6fr 1.2fr 1.1fr 1.2fr 1.1fr;
+  column-gap:24px;
+}
+
+@media (max-width:1024px){
+  [data-ll-ui="v2025-10"] .ll-grid{
+    grid-template-columns:1.4fr 1.1fr 1fr 1.1fr 1fr;
+  }
+}
+
+[data-ll-ui="v2025-10"] .ll-row{
+  min-height:140px;
+  align-items:start;
+}
+
+[data-ll-ui="v2025-10"] .ll-divider{
+  border-color:var(--ll-divider);
+}
+
+[data-ll-ui="v2025-10"] .ll-specifics-line{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+[data-ll-ui="v2025-10"] .ll-minmax{
+  text-align:center;
+}
+
+[data-ll-ui="v2025-10"] .ll-price-slider{
+  appearance:none;
+  height:2px;
+  background:var(--ll-divider);
+  width:100%;
+  cursor:pointer;
+}
+
+[data-ll-ui="v2025-10"] .ll-price-slider:focus-visible{
+  outline:2px solid var(--ll-aqua);
+  outline-offset:2px;
+}
+
+[data-ll-ui="v2025-10"] .ll-price-slider::-webkit-slider-thumb,
+[data-ll-ui="v2025-10"] .ll-price-slider::-moz-range-thumb{
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  background:var(--status-color);
+  border:0;
+  box-shadow:0 0 0 2px rgba(10,15,26,.85);
+}
+
+[data-ll-ui="v2025-10"] .ll-apy{
+  margin-top:12px;
+  font-variant-numeric:tabular-nums;
+}
+
+[data-ll-ui="v2025-10"] .ll-btn-primary{
+  background:var(--ll-aqua);
+  transition:box-shadow .2s,transform .1s;
+}
+
+[data-ll-ui="v2025-10"] .ll-btn-primary:hover{
+  box-shadow:0 0 24px rgba(110,168,255,.35);
+}
+
+[data-ll-ui="v2025-10"] .ll-btn-primary:focus-visible{
+  outline:2px solid var(--ll-aqua);
+  outline-offset:2px;
+}
+
+[data-ll-ui="v2025-10"] .ll-status-dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
 }

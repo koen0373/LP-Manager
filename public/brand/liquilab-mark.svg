@@ -1,0 +1,7 @@
+<svg width="40" height="48" viewBox="0 0 40 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LiquiLab droplet mark">
+  <!-- Water droplet shape -->
+  <path d="M20 0C20 0 0 18 0 30C0 40.4934 8.95431 48 20 48C31.0457 48 40 40.4934 40 30C40 18 20 0 20 0Z" fill="#6EA8FF"/>
+  <!-- Light reflection for depth -->
+  <ellipse cx="15" cy="20" rx="6" ry="8" fill="#78B5FF" opacity="0.4"/>
+</svg>
+

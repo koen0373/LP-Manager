@@ -68,16 +68,16 @@ export default function SummaryPage() {
   // Wallet not connected
   if (!walletAddress) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen font-ui">
         <Header currentPage="summary" 
           showTabs={false}
           onWalletConnected={handleWalletConnected}
           onWalletDisconnected={handleWalletDisconnected}
         />
-        <div className="w-full max-w-[1200px] mx-auto px-4 py-8">
+        <div className="w-full max-w-[1200px] mx-auto px-4 py-8 font-ui">
           <div className="bg-liqui-card rounded-lg p-8 text-center">
-            <h2 className="text-xl font-bold text-white mb-4">Connect Your Wallet</h2>
-            <p className="text-liqui-subtext mb-6">
+            <h2 className="font-brand text-xl font-bold text-white mb-4">Connect Your Wallet</h2>
+            <p className="font-ui text-liqui-subtext mb-6">
               Please connect your wallet to view your portfolio summary.
             </p>
           </div>
@@ -89,13 +89,13 @@ export default function SummaryPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen font-ui">
         <Header currentPage="summary" 
           showTabs={false}
           onWalletConnected={handleWalletConnected}
           onWalletDisconnected={handleWalletDisconnected}
         />
-        <div className="w-full max-w-[1200px] mx-auto px-4 py-8">
+        <div className="w-full max-w-[1200px] mx-auto px-4 py-8 font-ui">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="bg-liqui-card rounded-lg p-6 animate-pulse">
@@ -116,16 +116,16 @@ export default function SummaryPage() {
   // Error state
   if (isError || !data) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen font-ui">
         <Header currentPage="summary" 
           showTabs={false}
           onWalletConnected={handleWalletConnected}
           onWalletDisconnected={handleWalletDisconnected}
         />
-        <div className="w-full max-w-[1200px] mx-auto px-4 py-8">
+        <div className="w-full max-w-[1200px] mx-auto px-4 py-8 font-ui">
           <div className="bg-liqui-card rounded-lg p-8 text-center">
-            <h2 className="text-xl font-bold text-red-500 mb-4">Error Loading Summary</h2>
-            <p className="text-liqui-subtext mb-6">
+            <h2 className="font-brand text-xl font-bold text-red-500 mb-4">Error Loading Summary</h2>
+            <p className="font-ui text-liqui-subtext mb-6">
               Failed to fetch your portfolio data. Please try again.
             </p>
             <button
@@ -176,7 +176,7 @@ export default function SummaryPage() {
     });
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen font-ui">
       {/* Anthracite overlay (85% opacity) over water background */}
       <div className="fixed inset-0 bg-[#0D0F13] opacity-85 pointer-events-none" style={{ zIndex: 1 }}></div>
       <div className="relative" style={{ zIndex: 2 }}>
@@ -185,51 +185,51 @@ export default function SummaryPage() {
         onWalletConnected={handleWalletConnected}
         onWalletDisconnected={handleWalletDisconnected}
       />
-      <div className="w-full max-w-[1200px] mx-auto px-4 py-8">
+      <div className="w-full max-w-[1200px] mx-auto px-4 py-8 font-ui">
         
         {/* Top Row Cards - Totals */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           {/* Total TVL */}
           <div className="bg-liqui-card rounded-lg p-6">
-            <div className="text-liqui-subtext text-sm mb-2">Total TVL</div>
-            <div className="text-white text-2xl font-bold mb-1">
+            <div className="font-ui text-liqui-subtext text-sm mb-2">Total TVL</div>
+            <div className="font-ui tnum text-white text-2xl font-bold mb-1">
               {formatUsd(totals.tvlUsd)}
             </div>
-            <div className="text-liqui-subtext text-xs">
+            <div className="font-ui text-liqui-subtext text-xs">
               Current value in pools
             </div>
           </div>
 
           {/* Realized Fees */}
           <div className="bg-liqui-card rounded-lg p-6">
-            <div className="text-liqui-subtext text-sm mb-2">Realized Fees</div>
-            <div className="text-white text-2xl font-bold mb-1">
+            <div className="font-ui text-liqui-subtext text-sm mb-2">Realized Fees</div>
+            <div className="font-ui tnum text-white text-2xl font-bold mb-1">
               {formatUsd(totals.feesRealizedUsd)}
             </div>
-            <div className="text-liqui-subtext text-xs">
+            <div className="font-ui text-liqui-subtext text-xs">
               From collect events
             </div>
           </div>
 
           {/* Total Rewards */}
           <div className="bg-liqui-card rounded-lg p-6">
-            <div className="text-liqui-subtext text-sm mb-2">Total Rewards</div>
-            <div className="text-white text-2xl font-bold mb-1">
+            <div className="font-ui text-liqui-subtext text-sm mb-2">Total Rewards</div>
+            <div className="font-ui tnum text-white text-2xl font-bold mb-1">
               {formatUsd(totals.rewardsUsd)}
             </div>
-            <div className="text-liqui-subtext text-xs space-y-1">
-              <div>Unclaimed fees: {formatUsd(totals.unclaimedFeesUsd || 0)}</div>
-              <div>RFLR: {(totals.rflrAmount || 0).toFixed(2)} ({formatUsd(totals.rflrUsd || 0)})</div>
+            <div className="font-ui text-liqui-subtext text-xs space-y-1">
+              <div>Unclaimed fees: <span className="tnum">{formatUsd(totals.unclaimedFeesUsd || 0)}</span></div>
+              <div>RFLR: <span className="tnum">{(totals.rflrAmount || 0).toFixed(2)}</span> (<span className="tnum">{formatUsd(totals.rflrUsd || 0)}</span>)</div>
             </div>
           </div>
 
           {/* ROI */}
           <div className="bg-liqui-card rounded-lg p-6">
-            <div className="text-liqui-subtext text-sm mb-2">ROI</div>
-            <div className={`text-2xl font-bold mb-1 ${totals.roiPct >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            <div className="font-ui text-liqui-subtext text-sm mb-2">ROI</div>
+            <div className={`font-ui tnum text-2xl font-bold mb-1 ${totals.roiPct >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {totals.roiPct >= 0 ? '+' : ''}{formatPercent(totals.roiPct)}
             </div>
-            <div className="text-liqui-subtext text-xs">
+            <div className="font-ui text-liqui-subtext text-xs">
               Return on investment
             </div>
           </div>
@@ -237,28 +237,28 @@ export default function SummaryPage() {
 
         {/* Capital Timeline Section */}
         <div className="bg-liqui-card rounded-lg p-6 mb-8">
-          <h2 className="text-white text-lg font-bold mb-4">Capital Timeline</h2>
+          <h2 className="font-brand text-white text-lg font-bold mb-4">Capital Timeline</h2>
           {/* TODO: Add Recharts line chart with capitalTimeline data */}
           {/* TODO: Add time range filters (7d, 30d, 90d, all) */}
           <div className="h-64 flex items-center justify-center bg-liqui-subcard rounded-lg">
-            <p className="text-liqui-subtext">Chart Coming Soon</p>
+            <p className="font-ui text-liqui-subtext">Chart Coming Soon</p>
           </div>
         </div>
 
         {/* Grouped Pools by Pairing */}
         <div className="mb-8">
-          <h2 className="text-white text-lg font-bold mb-4">Your Pools</h2>
+          <h2 className="font-brand text-white text-lg font-bold mb-4">Your Pools</h2>
           <GroupedPoolsList pools={poolsData} />
         </div>
 
         {/* Recent Activity Section */}
         <div className="bg-liqui-card rounded-lg p-6">
-          <h2 className="text-white text-lg font-bold mb-4">Recent Activity</h2>
+          <h2 className="font-brand text-white text-lg font-bold mb-4">Recent Activity</h2>
           {/* TODO: Add event type icons (mint, collect, burn, swap) */}
           {/* TODO: Add pagination for long lists */}
           <div className="space-y-3">
             {recentActivity.length === 0 ? (
-              <p className="text-liqui-subtext text-center py-8">No recent activity</p>
+              <p className="font-ui text-liqui-subtext text-center py-8">No recent activity</p>
             ) : (
               recentActivity.map((activity, idx) => (
                 <div
@@ -266,16 +266,16 @@ export default function SummaryPage() {
                   className="flex items-center justify-between bg-liqui-subcard rounded-lg p-4"
                 >
                   <div>
-                    <div className="text-white font-medium">
+                    <div className="font-ui text-white font-medium">
                       {activity.label.charAt(0).toUpperCase() + activity.label.slice(1).toLowerCase()}
                     </div>
-                    <div className="text-liqui-subtext text-sm">
+                    <div className="font-ui text-liqui-subtext text-sm">
                       {dayjs.unix(activity.timestamp).format('DD MMM YYYY HH:mm')}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="text-white font-medium">
-                      {formatUsd(activity.amountUsd)}
+                    <div className="font-ui text-white font-medium">
+                      <span className="tnum">{formatUsd(activity.amountUsd)}</span>
                     </div>
                     <a
                       href={`https://flarescan.com/tx/${activity.txHash}`}

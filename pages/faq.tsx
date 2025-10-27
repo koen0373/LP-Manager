@@ -78,8 +78,8 @@ export default function FAQ() {
           >
             ← Back to My Pools
           </Link>
-          <h1 className="text-3xl font-bold text-white mt-4">Frequently Asked Questions</h1>
-          <p className="text-liqui-subtext mt-2">
+          <h1 className="font-brand text-3xl font-bold text-white mt-4">Frequently Asked Questions</h1>
+          <p className="font-ui text-liqui-subtext mt-2">
             Everything you need to know about managing your Uniswap V3 liquidity positions
           </p>
         </div>
@@ -95,7 +95,7 @@ export default function FAQ() {
                 onClick={() => setOpenIndex(openIndex === index ? null : index)}
                 className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-liqui-hover transition-colors"
               >
-                <span className="text-lg font-semibold text-white pr-4">
+                <span className="font-brand text-lg font-semibold text-white pr-4">
                   {item.question}
                 </span>
                 <svg
@@ -116,7 +116,7 @@ export default function FAQ() {
               </button>
               
               {openIndex === index && (
-                <div className="px-6 pb-4 text-liqui-subtext">
+                <div className="px-6 pb-4 font-ui text-liqui-subtext">
                   {item.answer}
                 </div>
               )}
@@ -126,8 +126,8 @@ export default function FAQ() {
 
         {/* Footer */}
         <div className="mt-12 p-6 bg-liqui-card border border-liqui-border rounded-lg">
-          <h2 className="text-xl font-bold text-white mb-3">Still have questions?</h2>
-          <p className="text-liqui-subtext mb-4">
+          <h2 className="font-brand text-xl font-bold text-white mb-3">Still have questions?</h2>
+          <p className="font-ui text-liqui-subtext mb-4">
             If you can&apos;t find the answer you&apos;re looking for, feel free to reach out:
           </p>
           <div className="flex flex-col sm:flex-row gap-3">

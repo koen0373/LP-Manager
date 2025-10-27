@@ -975,3 +975,21 @@ Updated: Homepage pricing section unified — replaced two existing blocks with 
 
 ### Dev Environment
 - MacBook Pro 14" (Apple M4 Pro, 24 GB RAM, macOS Sequoia 15.6). Default tooling: zsh, Homebrew, BSD sed.
+
+**2025-10-27 — Pricing bundles & dashboard onboarding:**
+- Updated /api/admin/settings POST handler to accept `WAITLIST_ENABLED` and `FASTFORWARD_ENABLED` toggles and return consolidated settings map.
+- Added pricing calculator component with bundle logic (first pool free, $1.99 per pool, yearly = 10× monthly) and embedded it on / and /pricing.
+- Introduced WalletConnect modal with MetaMask & Rabby connectors (wagmi), surfaced Bifrost/Xaman guidance, and refreshed dashboard onboarding flow.
+- Created dashboard view that fetches wallet pools, splits Active/Inactive, stores trial selection, and surfaces upgrade CTAs.
+- Added admin settings page and smoke script for pricing/health endpoints.
+- Files: src/data/pricing.ts; pages/api/admin/settings.ts; src/lib/wagmi.ts; pages/_app.tsx; src/components/WalletConnect.tsx; src/components/billing/PricingCalculator.tsx; pages/index.tsx; pages/pricing.tsx; pages/dashboard.tsx; src/features/pools/PoolsOverview.tsx; pages/admin/settings.tsx; scripts/smoke_pricing.sh; src/components/Header.tsx.
+- Resolved issues: placeholder/login visuals persisted (previous entry), pricing model update → **OPGELOST**; waitlist/fast-forward toggles surfaced → **OPGELOST**; wallet onboarding lacked plan guidance → **OPGELOST**.
+
+## Backlog & Decisions
+- Ideas backlog: `docs/IDEAS.md` (Inbox → Next → Doing → Done).
+- Decisions: `docs/ADRs/` (ADR-YYYYMMDD-*.md).
+- Rituals:
+  - Daily: capture ideas via `scripts/idea_add.sh "…"`.
+  - Weekly: triage Inbox → Next; promote to Doing; belangrijke besluiten vastleggen met `scripts/adr_new.sh`.
+- Rule: external comms in **English** (B2B/B2C/investors), direct chat with founder in Dutch.
+

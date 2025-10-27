@@ -43,3 +43,45 @@ LiquiLab’s data layer is built around lightweight adapters that standardize ho
 | SparkDEX   | v2 ERC20 | Pair contract, LP token       | ERC-20 LP share math (no NFTs)    |
 
 All adapters return normalized records so downstream services (ledger, billing, analytics) can treat v2 and v3 pools uniformly.
+
+## Adapter Data Contract v0.1
+
+**Goal:** Normalize all provider data (DEX v3, staking, perps) so LiquiLab can analyse, advise, and demo wallets across platforms.
+
+### Required Entities
+- **Provider**: `{ slug, name, type, apiDocsUrl?, rateLimits }`
+- **Market (Pool)**: `{ providerSlug, marketId, feeTierBps, token0{symbol,decimals,address}, token1{...}, poolAddress?, createdAt }`
+- **MarketSnapshot (≤ hourly)**: `{ marketId, ts, price, tvlUsd, volume24hUsd?, incentiveUsd?, apyPct? }`
+- **Position**: `{ onchainId, owner, marketId, status, lowerPrice, upperPrice, feeTierBps, createdAt }`
+- **PositionSnapshot (≤ hourly)**: `{ positionId, ts, amount0, amount1, tvlUsd, unclaimedFees{token0,token1,usd}, incentivesUsd?, inRange }`
+- **Computed (server-side allowed)**: IL, APY breakdown, range status, `staleSeconds`.
+
+### Links (deep-link builders)
+- `link.pool({ providerSlug, marketId })`
+- `link.position({ providerSlug, positionId })`
+- `link.claim({ providerSlug, positionId|marketId })`
+- UTM schema: `utm_source=liquilab&utm_medium=app&utm_campaign=<flow>&utm_content=<providerSlug>-<id>-<action>`
+
+### Error & Caching Rules
+- Backoff on 429/5xx, per-host RPS caps, circuit breaker after 3 fails.
+- Cache TTLs: price ≤60s, fees/incentives 60–300s, static 24h.
+- Always return `staleSeconds`.
+
+---
+
+## Observability (Adapters)
+
+**SLO:** 99.5% success (7-day), p95 latency ≤1200ms cached / ≤3000ms uncached.
+
+**Metrics to emit**
+- `adapter_requests_total{provider,route,status}`
+- `adapter_latency_ms_p50/p95{provider,route}`
+- `cache_hit_ratio{provider,route}`
+- `stale_seconds{provider,entity}` (gauge)
+- `errors_total{provider,kind}`
+
+**Alerts**
+- High error rate: `errors_total > 1% of adapter_requests_total` for 10m
+- Staleness: `stale_seconds > TTL*3` for 15m
+- Latency: `p95 > SLO` for 15m
+

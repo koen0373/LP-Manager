@@ -923,3 +923,16 @@ Updated: Homepage pricing section unified — replaced two existing blocks with 
 ### Metrics We Share with Partners (aggregate, privacy-safe)
 - Click-outs to platform (by market), claim-events initiated, watchlist counts, and retention deltas (no PII).
 
+
+**2025-10-27 — Placeholder & Login hero visuals (providers + wave):**
+- `pages/placeholder.tsx`: ensured the provider screenshot renders via `next/image` pointing to `/media/providers.png` and kept the purge-proof `hero-wave-bg` utility in use.
+- `pages/login.tsx`: aligned the password gate with the same wave background and gradient overlay so both pages share consistent visuals.
+- Assets required: `/public/media/providers.png` and `/public/media/hero-wave.svg` (case-sensitive).
+- Status: Provider screenshot — **OPGELOST**; Hero wave background on placeholder + login — **OPGELOST**.
+
+## Communication & Markets
+- **External comms (product, investors, B2B/B2C): English only.**  
+- **User support in app & with Koen: Dutch.**
+- Strategic partner posture: LiquiLab is a neutral UX/analytics layer that **surfaces** insights and deep-links to **execution on partner platforms** (Enosys, SparkDEX, BlazeSwap, etc.).  
+- Social share cards must include **provider name as text** (no third-party logos unless explicitly approved).
+

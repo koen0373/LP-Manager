@@ -257,3 +257,131 @@ model PlaceholderSignup {
   email     String   @unique
   createdAt DateTime @default(now())
 }
+
+/// -------- Analytics foundation (safe-prefixed) --------
+model analytics_provider {
+  id        BigInt @id @default(autoincrement())
+  slug      String @unique
+  name      String
+  type      String   // dex_v3 | staking | perps
+  createdAt DateTime @default(now())
+  markets   analytics_market[]
+}
+
+model analytics_market {
+  id           BigInt @id @default(autoincrement())
+  providerId   BigInt
+  provider     analytics_provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerSlug String
+  marketId     String
+  feeTierBps   Int
+  token0Symbol String
+  token1Symbol String
+  poolAddress  String?
+  createdAt    DateTime @default(now())
+  snapshots    analytics_market_snapshot[]
+  positions    analytics_position[]
+
+  @@unique([providerSlug, marketId])
+  @@index([providerId])
+}
+
+model analytics_market_snapshot {
+  id            BigInt   @id @default(autoincrement())
+  marketIdFk    BigInt
+  market        analytics_market @relation(fields: [marketIdFk], references: [id], onDelete: Cascade)
+  ts            DateTime @default(now())
+  price         Decimal  @db.Decimal(38, 18)
+  tvlUsd        Decimal  @db.Decimal(38, 18)
+  volume24hUsd  Decimal? @db.Decimal(38, 18)
+  incentiveUsd  Decimal? @db.Decimal(38, 18)
+  apyPct        Decimal? @db.Decimal(38, 18)
+
+  @@index([marketIdFk, ts])
+}
+
+model analytics_wallet {
+  id         BigInt   @id @default(autoincrement())
+  address    String   @unique
+  firstSeen  DateTime @default(now())
+  lastSeen   DateTime @updatedAt
+  positions  analytics_position[]
+  metrics    analytics_wallet_metrics_daily[]
+}
+
+model analytics_position {
+  id           BigInt  @id @default(autoincrement())
+  walletId     BigInt
+  wallet       analytics_wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  marketIdFk   BigInt
+  market       analytics_market @relation(fields: [marketIdFk], references: [id], onDelete: Cascade)
+  onchainId    String
+  status       String
+  lowerPrice   Decimal @db.Decimal(38, 18)
+  upperPrice   Decimal @db.Decimal(38, 18)
+  feeTierBps   Int
+  createdAt    DateTime @default(now())
+  snapshots    analytics_position_snapshot[]
+
+  @@unique([marketIdFk, onchainId])
+  @@index([walletId])
+}
+
+model analytics_position_snapshot {
+  id              BigInt   @id @default(autoincrement())
+  positionIdFk    BigInt
+  position        analytics_position @relation(fields: [positionIdFk], references: [id], onDelete: Cascade)
+  ts              DateTime @default(now())
+  amount0         Decimal  @db.Decimal(38, 18)
+  amount1         Decimal  @db.Decimal(38, 18)
+  tvlUsd          Decimal  @db.Decimal(38, 18)
+  feesToken0      Decimal  @db.Decimal(38, 18)
+  feesToken1      Decimal  @db.Decimal(38, 18)
+  feesUsd         Decimal  @db.Decimal(38, 18)
+  incentivesUsd   Decimal? @db.Decimal(38, 18)
+  inRange         Boolean
+
+  @@index([positionIdFk, ts])
+}
+
+model analytics_wallet_metrics_daily {
+  id                  BigInt   @id @default(autoincrement())
+  walletId            BigInt
+  wallet              analytics_wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  day                 DateTime
+  poolsCount          Int
+  activePoolsCount    Int
+  tvlUsd              Decimal  @db.Decimal(38, 18)
+  realizedFeesUsd     Decimal  @db.Decimal(38, 18)
+  avgApyPct           Decimal? @db.Decimal(38, 18)
+  avgRangeWidthRatio  Decimal? @db.Decimal(38, 18)
+
+  @@unique([walletId, day])
+  @@index([day])
+}
+
+model analytics_market_metrics_daily {
+  id               BigInt   @id @default(autoincrement())
+  marketIdFk       BigInt
+  market           analytics_market @relation(fields: [marketIdFk], references: [id], onDelete: Cascade)
+  day              DateTime
+  tvlUsd           Decimal  @db.Decimal(38, 18)
+  activePositions  Int
+  avgApyPct        Decimal? @db.Decimal(38, 18)
+
+  @@unique([marketIdFk, day])
+  @@index([day])
+}
+
+model analytics_discovery_log {
+  id          BigInt   @id @default(autoincrement())
+  source      String   // e.g. enosys-v3:PositionManager
+  provider    String
+  txHash      String?
+  block       BigInt?
+  wallet      String
+  marketId    String?
+  ts          DateTime @default(now())
+
+  @@index([provider, ts])
+}

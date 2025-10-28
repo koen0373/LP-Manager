@@ -14,7 +14,32 @@ const nextConfig: NextConfig = {
   // Removed trailingSlash: true to avoid conflicts with API routes
   images: {
     unoptimized: false,
-    domains: ['localhost'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.bifrostwallet.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cryptologos.cc',
+      },
+      {
+        protocol: 'https',
+        hostname: 'static.okx.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'rabby.io',
+      },
+      {
+        protocol: 'https',
+        hostname: 'brave.com',
+      },
+    ],
     formats: ['image/webp', 'image/avif'],
   },
   

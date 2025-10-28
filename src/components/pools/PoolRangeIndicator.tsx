@@ -153,15 +153,16 @@ export function RangeBand({
   const statusColor = RANGE_STATUS_COLORS[status] ?? RANGE_STATUS_COLORS.out;
 
   const formattedCurrent = formatPrice(safeCurrent);
+  const formattedMin = formatPrice(safeMin);
+  const formattedMax = formatPrice(safeMax);
 
-  // Bereken lijnlengte op basis van strategy
-  // Aggressive (< 12%): 30% breed
-  // Balanced (12-35%): 60% breed
-  // Conservative (> 35%): 90% breed
-  const lineWidth = strategy.tone === 'narrow' ? 30 : strategy.tone === 'balanced' ? 60 : 90;
+  // Lijnlengte = de spread percentage tussen min en max
+  // Als spread 15% is, dan is de lijn 15% breed
+  // Cap tussen 5% (minimum zichtbaarheid) en 95% (maximum)
+  const lineWidth = clamp(rangeWidthPct, 5, 95);
 
   const ariaLabel = hasRange
-    ? `Range: Current ${formattedCurrent}, Strategy ${strategy.label}.`
+    ? `Range: Min ${formattedMin}, Current ${formattedCurrent}, Max ${formattedMax}, Spread ${rangeWidthPct.toFixed(1)}%, Strategy ${strategy.label}.`
     : 'Range data unavailable.';
 
   return (
@@ -178,14 +179,18 @@ export function RangeBand({
       {/* Current price label boven de lijn */}
       <div className="ll-range-label">Current price</div>
 
-      {/* Horizontale lijn met marker - lengte = strategy */}
-      <div className="ll-range-track">
-        <span className="ll-range-line" aria-hidden="true" />
-        <span
-          className={`ll-range-marker ll-range-marker--${status}`}
-          style={{ left: `${markerPosition}%` }}
-          title={`Current: ${formattedCurrent} ${token1Symbol}/${token0Symbol}`}
-        />
+      {/* Horizontale lijn met min/max labels en marker - lengte = strategy */}
+      <div className="ll-range-track-container">
+        <span className="ll-range-bound ll-range-bound--min">{formattedMin}</span>
+        <div className="ll-range-track">
+          <span className="ll-range-line" aria-hidden="true" />
+          <span
+            className={`ll-range-marker ll-range-marker--${status}`}
+            style={{ left: `${markerPosition}%` }}
+            title={`Current: ${formattedCurrent} ${token1Symbol}/${token0Symbol}`}
+          />
+        </div>
+        <span className="ll-range-bound ll-range-bound--max">{formattedMax}</span>
       </div>
 
       {/* Current price value onder de lijn */}

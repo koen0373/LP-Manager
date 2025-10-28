@@ -90,12 +90,15 @@ export const TokenIcon: React.FC<TokenIconProps> = ({
     const initials = (symbol || '?').slice(0, 2).toUpperCase();
     return (
       <div
-        className={`flex items-center justify-center rounded-full bg-liqui-card-hover text-xs font-semibold text-liqui-subtext ${className ?? ''}`}
+        className={`flex items-center justify-center rounded-full border border-[rgba(255,255,255,0.1)] bg-gradient-to-br from-[#1BE8D2] to-[#3B82F6] text-xs font-bold text-white ${className ?? ''}`}
         style={{
           width: size,
           height: size,
           minWidth: size,
           minHeight: size,
+          maxWidth: size,
+          maxHeight: size,
+          flexShrink: 0,
         }}
         aria-label={label}
       >
@@ -110,7 +113,7 @@ export const TokenIcon: React.FC<TokenIconProps> = ({
       alt={label}
       width={size}
       height={size}
-      className={className ?? 'rounded-full object-contain'}
+      className={`rounded-full border border-[rgba(255,255,255,0.1)] object-contain ${className ?? ''}`}
       style={{
         width: size,
         height: size,
@@ -118,6 +121,7 @@ export const TokenIcon: React.FC<TokenIconProps> = ({
         minHeight: size,
         maxWidth: size,
         maxHeight: size,
+        flexShrink: 0,
         display: 'block',
       }}
       priority={priority}

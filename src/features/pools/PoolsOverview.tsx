@@ -4,6 +4,7 @@ import React from 'react';
 
 import type { PositionRow } from '@/types/positions';
 import { includedCapacity, freeBonus } from '@/data/pricing';
+import { TokenIcon } from '@/components/TokenIcon';
 
 const STORAGE_KEY_TRIAL = 'liquilab/trial-pool';
 
@@ -197,12 +198,31 @@ export default function PoolsOverview({ address }: PoolsOverviewProps) {
                   className="rounded-2xl border border-white/10 bg-[rgba(10,15,26,0.7)] px-5 py-5 backdrop-blur-xl"
                 >
                   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <h4 className="font-brand text-lg font-semibold text-white">
-                        {pool.token0.symbol} / {pool.token1.symbol}
-                      </h4>
-                      <p className="font-ui text-xs uppercase tracking-wider text-[#6EA8FF]/80">{pool.provider ?? 'Unknown provider'}</p>
-                      <p className="font-ui text-sm text-[#B0B9C7]">TVL {formatUsd(pool.tvlUsd)}</p>
+                    <div className="flex flex-col gap-2">
+                      {/* Token icons met 30% overlap - BOVEN het pool pair */}
+                      <div className="flex items-center -space-x-3">
+                        <div className="relative">
+                          <TokenIcon
+                            symbol={pool.token0.symbol}
+                            size={40}
+                            className="rounded-full border-2 border-[#0A0F1C]"
+                          />
+                        </div>
+                        <div className="relative">
+                          <TokenIcon
+                            symbol={pool.token1.symbol}
+                            size={40}
+                            className="rounded-full border-2 border-[#0A0F1C]"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-brand text-lg font-semibold text-white">
+                          {pool.token0.symbol} / {pool.token1.symbol}
+                        </h4>
+                        <p className="font-ui text-xs uppercase tracking-wider text-[#6EA8FF]/80">{pool.provider ?? 'Unknown provider'}</p>
+                        <p className="font-ui text-sm text-[#B0B9C7]">TVL {formatUsd(pool.tvlUsd)}</p>
+                      </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                       {isTrial && (
@@ -243,12 +263,31 @@ export default function PoolsOverview({ address }: PoolsOverviewProps) {
                   className="rounded-2xl border border-white/10 bg-white/[0.05] px-5 py-5 backdrop-blur-md"
                 >
                   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <h4 className="font-brand text-lg font-semibold text-white">
-                        {pool.token0.symbol} / {pool.token1.symbol}
-                      </h4>
-                      <p className="font-ui text-xs uppercase tracking-wider text-[#748199]">Inactive</p>
-                      <p className="font-ui text-sm text-[#B0B9C7]">TVL {formatUsd(pool.tvlUsd)}</p>
+                    <div className="flex flex-col gap-2">
+                      {/* Token icons met 30% overlap - BOVEN het pool pair */}
+                      <div className="flex items-center -space-x-3">
+                        <div className="relative">
+                          <TokenIcon
+                            symbol={pool.token0.symbol}
+                            size={40}
+                            className="rounded-full border-2 border-[#0A0F1C]"
+                          />
+                        </div>
+                        <div className="relative">
+                          <TokenIcon
+                            symbol={pool.token1.symbol}
+                            size={40}
+                            className="rounded-full border-2 border-[#0A0F1C]"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-brand text-lg font-semibold text-white">
+                          {pool.token0.symbol} / {pool.token1.symbol}
+                        </h4>
+                        <p className="font-ui text-xs uppercase tracking-wider text-[#748199]">Inactive</p>
+                        <p className="font-ui text-sm text-[#B0B9C7]">TVL {formatUsd(pool.tvlUsd)}</p>
+                      </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                       {isTrial && (

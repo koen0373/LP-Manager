@@ -168,6 +168,7 @@ export function PoolRow({ pool, onNavigate, onShare }: PoolRowProps) {
 
   return (
     <div
+      data-ll-ui="v2025-10"
       role={onNavigate ? 'button' : 'group'}
       tabIndex={onNavigate ? 0 : -1}
       onClick={handleNavigate}

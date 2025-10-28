@@ -1,36 +1,30 @@
 # LiquiLab Pricing Model
 
-LiquiLab has transitioned from per-pool billing to an annual subscription framework called the **Liquidity Journey**. Every plan includes a 14-day free trial with deferred payment capture.
+LiquiLab bills per pool with one simple rule set.
 
-## Early Access & Trial Onboarding
-- Join the waitlist (or Fast-Track priority access) to activate the Liquidity Journey beta.
-- Select a plan and authorize billing in USDT₀ (Flare Network); no funds are captured until the 14-day trial ends.
-- Cancel anytime during the trial — the authorization is voided and no payment is processed.
+## Core Rules
+- **First pool is always free.**
+- Every additional pool costs **$1.99 per month**.
+- Annual billing charges **10× the monthly amount** (two months free).
+- Upgrades take effect instantly and are pro-rated to the end of the current cycle.
+- Downgrades take effect at the next renewal.
 
-## Liquidity Journey Plans
+## Cost Examples
+| Pools followed | Free pools | Paid pools | Monthly | Annual |
+| -------------- | ---------- | ---------- | ------- | ------ |
+| 1              | 1          | 0          | $0.00   | $0.00  |
+| 2              | 1          | 1          | $1.99   | $19.90 |
+| 7              | 1          | 6          | $11.94  | $119.40 |
+| 20             | 1          | 19         | $37.81  | $378.10 |
 
-| Plan | Pool limit | Annual Price | Monthly Option | Description |
-|------|-------------|---------------|----------------|-------------|
-| **Shallow** | Up to 5 | $99.95/year | $9.95/mo | For new LPs exploring liquidity management |
-| **Flow** | Up to 15 | $249.95/year | $24.95/mo | For active LPs managing multiple pools |
-| **Depth** | Up to 50 | $749.95/year | $74.95/mo | For professionals and small teams |
-| **Tide** | 50+ | Custom | Custom | For DAOs and organizations (enterprise access coming soon) |
+All monetary values are rounded to two decimals using standard currency rounding.
 
-### Billing Highlights
-- Annual billing is the default; monthly is available for flexibility.
-- Trial window: full platform access for 14 days at zero cost.
-- Automatic capture occurs on day 14 if the subscription is still active.
-- Customers can downgrade, upgrade, or switch billing cadence before capture.
+## Operational Notes
+- Seat caps, waitlist, and Fast-Forward toggles remain unchanged.
+- Billing previews accept either `activePools` or `desiredCapacity` and surface paid vs. free slots.
+- Monthly invoices display the number of paid pools and the first-pool-free credit line.
+- Annual invoices capture 10× the monthly total and label the effective monthly equivalent.
+- When a user upgrades mid-cycle, only the additional paid pools are charged for the remaining days. Downgrades queue for the next renewal.
 
-## Invoicing & Receipts
-- Crypto payments (USDT₀) trigger an automated CSV invoice compatible with GetGekko.
-- Historical invoices remain accessible through the admin console and account emails.
-- Enterprise/Tide customers coordinate bespoke invoicing and payment rails with the LiquiLab team.
+Keep all external copy in English. Founder-facing chat remains Dutch.
 
-## Supported DEXs
-LiquiLab currently tracks pools from:
-- **Enosys** – Uniswap v3-style NFT positions
-- **BlazeSwap** – Uniswap v3-style NFT positions
-- **SparkDEX** – Uniswap v2-style ERC-20 LP tokens
-
-All venues follow the same subscription flow; pool limits are determined by the selected Liquidity Journey plan.

@@ -5,7 +5,7 @@
  * These thresholds can be tuned in production based on user feedback.
  */
 
-import { 
+import {
   getStrategy, 
   getRangeStatus, 
   calculateMarkerPosition,

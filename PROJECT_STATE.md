@@ -275,51 +275,211 @@ publicClient.getLogs()       // Transfer, Mint, Collect events (30-block chunks)
 
 ### UI Structure & Visual Guidelines
 
-#### Pool Table Layout (v2025.10 — Two-Row Design)
+#### Pool Table Layout (v2025.10.28 — Compact Two-Row Design — DEFINITIVE SPEC)
 
 **Core Purpose:**  
-The Pool Table visualizes liquidity positions across multiple DEXs with a transparent, data-focused design that serves both as proof-of-concept and the primary interface for LP position management.
+The Pool Table visualizes liquidity positions across multiple DEXs with a transparent, data-focused, ultra-compact design. This specification applies to both demo pools (homepage) and live wallet pools (dashboard).
 
-**Structure:**  
-Each pool renders as **two table rows** with a **5-column layout**:
+**Grid Structure:**  
+Each pool renders as **two table rows** with a **5-column layout**.
 
-| Column | Row 1 Content | Row 2 Content |
-|--------|---------------|---------------|
-| **1. Pool** (spans both rows) | "Pool" label + DEX Name & Pool ID + Icons + Pool Pair + Fee + Min-Max Range | *(empty — rowspan continues)* |
-| **2. Liquidity** | "Liquidity" label + TVL $ value + (% share) | *Current Price + Range Slider* |
-| **3. Unclaimed Fees** | "Unclaimed Fees" label + $ value + "Claim fees" button | *(colspan 2 continues from Col 2)* |
-| **4. Incentives** | "Incentives" label + $ value + Token breakdown | "APY" label + APY % (large, aqua, glowing) |
-| **5. Status** | Range indicator dot (animated) + Status label | "Share your APY" label + Twitter share button |
+**Grid Column Proportions:**
+```css
+grid-template-columns: 1.6fr 1.2fr 1.1fr 1.2fr 1.1fr;
+column-gap: 24px;
+```
 
-**Visual Design:**
-- **Container width:** 75% of viewport (desktop ≥1280px), centered automatically
-- **Background:** `rgba(10,15,26,0.85)` + `backdrop-filter: blur(10px)` (glassmorphic aesthetic)
-- **Dividers:** `rgba(255,255,255,0.25)` with `h-[2px]` + 75% transparency, rounded corners
-- **Typography:** 
-  - Labels: `text-[10px] font-semibold uppercase tracking-widest text-[#9AA1AB]/50`
-  - Primary values: `text-[17px] font-semibold text-white/95`
-  - Secondary text: `text-[11px] text-[#9AA1AB]/70`
-  - APY: `text-[24px] font-bold text-[#75C4FF]` with subtle glow (`text-shadow`)
-- **Font:** Inter with `font-variant-numeric: tabular-nums` for all numeric values
-- **Spacing:** `px-6 py-8` for cells, `gap-4` between major sections, `gap-2.5` between labels and data
-- **No table header:** Column structure is implicit from consistent cell layout
-- **No internal borders:** Each pool block is visually separated only by the divider row
+At 1200px container width:
+- Column 1 (Pool): ~285px
+- Column 2 (Liquidity): ~214px  
+- Column 3 (Unclaimed Fees): ~196px
+- Column 4 (Incentives): ~214px
+- Column 5 (APY/Status): ~196px
 
-**Interaction:**
-- **Hover:** Entire pool block (both rows) highlights with `bg-white/[0.02]` when any part is hovered
-- **Cursor:** `cursor-pointer` for all rows
-- **Animation:** Range indicator dots pulse/glow based on status (see Range Status & Slider section)
+**Row Heights & Padding:**
+- Base row height: `min-height: 60px`
+- Row 1: `pt-2.5` (10px top padding) + 60px min = **70px total**
+- Row 2: `pb-5` (20px bottom padding) + 60px min = **80px total**
+- Divider between pools: `my-2` (8px top + 8px bottom + 1px border) = **17px**
+- **Total per pool block:** 70 + 80 + 17 = **167px**
 
-**Data Constraints:**
-- Icons + Pool Pair + Fee tag stay on **one line** (no wrapping/truncation)
-- Range min/max copy now lives inside RangeBand™; pool column no longer repeats range text.
-- RangeBand meta block (width % + strategy) must stay single-line at ≥1280px; wraps gracefully on tablet/mobile.
-- All numeric columns continue to use tabular-nums for perfect alignment.
-- Status dots align via shared RangeBand marker + column-five badges (no standalone slider container).
+**Row 1 Structure (Data Row):**
+
+| Column | Content | Typography | Spacing | Alignment |
+|--------|---------|------------|---------|-----------|
+| **1. Pool** | Icons (24×24px) + Pool Pair (horizontal)<br>Provider • ID • Fee% (below) | Pair: 15px semibold white<br>Metadata: 9px medium uppercase 50% opacity | Gap 2.5 between icons/pair<br>mt-1 between pair/metadata<br>gap-1.5 bullets | `flex flex-col justify-center`<br>Icons -space-x-2 (overlap) |
+| **2. Liquidity** | TVL amount | 15px semibold white tnum<br>`leading-tight` | - | `flex items-center` |
+| **3. Unclaimed Fees** | Fee amount<br>"Claim →" button | Amount: 15px semibold white tnum<br>Button: 9px semibold aqua #1BE8D2 | mt-0.5 between<br>gap-0.5 internal | `flex items-center`<br>Button left-aligned |
+| **4. Incentives** | Incentive amount<br>Token symbol (rFLR) | Amount: 15px semibold white tnum<br>Symbol: 9px 60% opacity | mt-0.5 between<br>gap-0.5 internal | `flex items-center` |
+| **5. Status** | Status dot (10px) + label | Dot: status color<br>Label: 12px medium white | gap-1.5 between dot/label | `flex items-center justify-end` |
+
+**Row 2 Structure (Range + APY Row):**
+
+| Column | Content | Details | Alignment |
+|--------|---------|---------|-----------|
+| **1. Pool** | Empty (aria-hidden) | - | - |
+| **2-4. RangeBand** | Spans 3 columns<br>Min/Max prices + horizontal line + marker + current price | Max-width: 500px<br>Line length = spread %<br>Clamped 5-95% | `flex items-center justify-center` |
+| **5. APY** | APY % (top)<br>"24h APY" label (bottom) | APY: 18px bold white tnum<br>Label: 9px uppercase 50% opacity | gap-0.5 vertical<br>`flex flex-col items-end` |
+
+**Typography Specification:**
+
+```css
+/* Pool Column */
+.pool-pair { font-size: 15px; font-weight: 600; line-height: 1; color: white; }
+.pool-metadata { font-size: 9px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(154,161,171,0.5); }
+
+/* Data Columns (Liquidity, Fees, Incentives) */
+.amount-primary { font-size: 15px; font-weight: 600; line-height: 1.25; color: white; font-variant-numeric: tabular-nums; }
+.amount-secondary { font-size: 9px; color: rgba(154,161,171,0.6); }
+
+/* Claim Button */
+.claim-button { font-size: 9px; font-weight: 600; color: #1BE8D2; }
+.claim-button:hover { color: #24F0DC; text-decoration: underline; }
+/* Opens provider pool page with UTM tracking (utm_source=liquilab&utm_campaign=claim_flow) */
+
+/* Status */
+.status-label { font-size: 12px; font-weight: 500; color: white; }
+
+/* APR */
+.apr-value { font-size: 18px; font-weight: 700; line-height: 1; color: white; font-variant-numeric: tabular-nums; }
+.apr-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(154,161,171,0.5); }
+/* APR (Annual Percentage Rate) calculated from 24h fees, no compounding assumed */
+
+/* Table Headers */
+.table-header { font-size: 10px; text-transform: uppercase; letter-spacing: 0.18em; color: rgba(154,161,171,0.5); padding-bottom: 16px; }
+```
+
+**Token Icons:**
+- Size: **24×24px** (both real icons and fallback initials)
+- Border: `border border-[rgba(255,255,255,0.1)]` (1px white 10% opacity)
+- Overlap: `-space-x-2` (8px negative margin = 33% overlap)
+- Fallback: Gradient `from-[#1BE8D2] to-[#3B82F6]` with token initials
+- Source: Online via DexScreener API (`fetchTokenIconBySymbol()`) with 1-hour cache
+
+**RangeBand™ V2 Specification:**
+
+**Layout:**
+```
+CURRENT PRICE     ← Label (9px uppercase)
+[Min] ————●———— [Max]  ← Line (variable width) + marker
+3.000000          ← Current value (11px tnum)
+```
+
+**Line Width Calculation:**
+```typescript
+// Line length directly represents the spread percentage
+rangeWidthPct = ((max - min) / ((min + max) / 2)) * 100;
+lineWidth = clamp(rangeWidthPct, 5, 95); // Clamped for readability
+```
+
+**Min/Max Labels:**
+- Font: 10px semibold tabular-nums
+- Color: `#9AA1AB`
+- Min: `text-align: right`, 60px min-width
+- Max: `text-align: left`, 60px min-width
+- Gap: 12px between labels and track
+
+**Marker Positioning:**
+```typescript
+if (current <= min) return 0;
+if (current >= max) return 100;
+return ((current - min) / (max - min)) * 100;
+```
+
+**Status Colors:**
+- In Range: `#00C66B` (green) with box-shadow glow
+- Near Band: `#FFA500` (amber) with box-shadow glow
+- Out of Range: `#E74C3C` (red) with box-shadow
+
+**APR Calculation (CRITICAL):**
+```typescript
+// APR = (fees collected in last 24h / TVL) × 365 × 100
+// NOT total unclaimed fees (those accumulate over time)
+// APR (not APY) because we don't assume auto-compounding
+function calculateAPY24h(dailyFeesUsd: number, tvlUsd: number): number {
+  if (tvlUsd <= 0) return 0;
+  const dailyYield = dailyFeesUsd / tvlUsd;
+  const apr = dailyYield * 365 * 100;
+  return Math.max(0, Math.min(999, apr)); // Cap 0-999%
+}
+```
+
+**Status Calculation (3% Near Band Buffer):**
+```typescript
+function getRangeStatus(current: number, min: number, max: number): RangeStatus {
+  const width = max - min;
+  const nearBuffer = width * 0.03;  // 3% buffer
+  const nearLower = min + nearBuffer;
+  const nearUpper = max - nearBuffer;
+  
+  if (current < min || current > max) return 'out';
+  if (current <= nearLower || current >= nearUpper) return 'near';
+  return 'in';
+}
+```
+
+**Data Model:**
+```typescript
+interface PositionData {
+  tokenId: string;
+  dexName: string;           // "Enosys v3", "BlazeSwap v3", "SparkDEX v2"
+  poolId: string;            // "22003", "41022", "DX-117"
+  token0Symbol: string;      // "WFLR", "USDT0", etc.
+  token1Symbol: string;
+  token0Icon?: string;       // URL from DexScreener
+  token1Icon?: string;
+  feeTier: string;           // "0.30%", "5.00%"
+  rangeMin: number;          // Lower price bound
+  rangeMax: number;          // Upper price bound
+  currentPrice: number;      // LIVE market price (not midpoint!)
+  liquidityUsd: number;      // TVL
+  liquidityShare?: number;   // % of total pool (optional)
+  feesUsd: number;           // Total unclaimed fees (accumulated)
+  incentivesUsd: number;     // Additional incentives
+  incentivesToken?: string;  // "rFLR", etc.
+  status: 'in' | 'near' | 'out';  // Calculated via getRangeStatus()
+  apy24h: number;            // APR calculated from dailyFees (not total unclaimed), no compounding
+}
+```
+
+**Cell Alignment & Padding:**
+- All Row 1 cells: `px-6` horizontal, no vertical padding (uses grid `items-end` + row `pt-2.5`)
+- All Row 2 cells: `px-6` horizontal, no extra padding (uses row `pb-5`)
+- Pool column Row 1: `flex flex-col justify-center` for internal vertical centering
+- Data columns Row 1: `flex items-center` for baseline alignment on pool pair
+- RangeBand cell Row 2: `flex items-center justify-center` with `max-w-[500px]` wrapper
+- APY cell Row 2: `flex items-center justify-end`
+
+**Container & Background:**
+```css
+background: linear-gradient(180deg, rgba(10,15,26,0.75) 0%, rgba(10,15,26,0.92) 100%);
+backdrop-filter: blur(12px);
+border-radius: 0.5rem; /* 8px */
+```
+
+**Divider:**
+```css
+border-top: 1px solid var(--ll-divider); /* rgba(110,168,255,0.12) */
+margin: 8px 0; /* my-2 */
+```
+
+**Hover State:**
+Both rows of same pool highlight together via JavaScript:
+- `data-pool-id={tokenId}` attribute on both row 1 and row 2
+- MouseEnter/Leave listeners add/remove `.pool-hover` class
+- Hover color: `rgba(27,232,210,0.06)` (LiquiLab Aqua 6% opacity)
+- Transition: `0.15s ease` for smooth effect
+- Effect applies to entire pool block (both rows simultaneously)
 
 **Responsive Behavior:**
-- **Desktop (≥1280px):** Full 2-row, 5-column layout as described
-- **Tablet/Mobile (<1280px):** Falls back to stacked card view (not yet implemented)
+- Desktop (≥1280px): Full 2-row, 5-column layout as specified
+- Tablet/Mobile (<1280px): Falls back to stacked card view (not yet implemented)
+
+**Implementation Files:**
+- Component: `/src/components/PositionsTable.tsx`
+- RangeBand: `/src/components/pools/PoolRangeIndicator.tsx`
+- Styles: `/src/styles/globals.css` under `[data-ll-ui="v2025-10"]`
+- Demo: `/src/components/demo/DemoPoolsTable.tsx` + `/pages/api/demo/pools.ts`
 
 #### RangeBand™ (v2025.10.28 — Unified Range & Strategy Visual)
 
@@ -928,14 +1088,10 @@ Updated: Homepage pricing section unified — replaced two existing blocks with 
 
 
 ## Pricing & Entitlements
-- Unit price: **$1.99** per pool per **30 days**, billed in **bundles of 5** (5, 10, 15, …).
-- **Allowed slots** (capacity bonus, no price reduction):
-  - Let **U** = number of **paid** pools (multiple of 5).
-  - If **U = 0** → **1 free slot** (trial).
-  - Else **allowed = U + floor(U/10) + (U == 5 ? 1 : 0)**.
-    Examples: 5→6, 10→11, 15→16, 20→22, 30→33.
-- **Yearly** = fees for **10 months** → access for **12 months**.
-- **Upgrades**: pro-rated for days left in period. **Downgrades**: at next period only.
+- First pool is always free.
+- Each additional pool costs **$1.99 per month**.
+- Annual billing = **10×** the monthly total for the paid pools (two months free).
+- Upgrades pro-rate instantly; downgrades take effect at the next renewal.
 
 ## Waitlist & FastForward Policy
 - **Seat cap** via `LL_SEAT_CAP`. Bij cap bereikt: checkout uit; prospect mag wallet connecten & verkennen.
@@ -943,14 +1099,11 @@ Updated: Homepage pricing section unified — replaced two existing blocks with 
 - **FastForward** kan door Admin worden uitgezet; bij uit -> alleen wachtlijst.
 - Heropenen van FastForward communiceren we via e-mail naar de wachtlijst en via social kanalen.
 
-### Pricing Model [2025-10-27]
-- Price per pool: **$1.99 / month**.
-- Sold in bundles of **5 paid pools** per tier.
-- **Free capacity rule:** free bonus pools = **ceil(paidCapacity/10)**  
-  Examples: paid 5 → +1 free (5+1), paid 10 → +1 free (10+1), paid 20 → +2 free (20+2), paid 30 → +3 free.
-- New users always have **1 free trial pool** (outside any plan).
-- Yearly billing = pay **10 months** (2 months free).
-- We grant **free capacity**, never price discounts. Cleaner invoicing (EUR/VAT), no proration headaches.
+### Pricing Model [2025-10-28]
+- First pool remains free; every additional pool is billed at **$1.99 per month**.
+- Annual billing multiplies the paid pool total by **10** (two months free baked in).
+- Billing previews surface `freePools`, `paidPools`, `monthlyEquivalentUsd`, and respect either `activePools` or `desiredCapacity`.
+- Upgrades are pro-rated to the end of the current cycle; downgrades take effect on renewal.
 
 ### Access Control
 - Seat cap (rolling): env `LL_SEAT_CAP` (default 100). When `activeSeats >= cap` → waitlist UX.
@@ -1000,7 +1153,29 @@ Updated: Homepage pricing section unified — replaced two existing blocks with 
   - `src/components/system/ClientOnly.tsx` (confirmed)
 - Resolved issues: RangeBand™ component finalized → **COMPLETE**; strategy thresholds documented → **COMPLETE**; tests cover edge cases → **COMPLETE**; wagmi SSR crashes → **RESOLVED** (client-only provider); pools table crashes without wallet → **RESOLVED** (safe null handling).
 
-**2025-10-28 — RangeBand™ V2 Compact Redesign (Claude) — ⚠️ OUTAGE:**
+**2025-10-28 — Token Icons with 30% Overlap — Vertical Stack + Fallback Fix (Claude):**
+- **Objective**: Place token icons ABOVE pool pair text with 30% overlap for clear visual hierarchy
+- **Implementation**:
+  - Added `TokenIcon` component import to `PoolsOverview.tsx`
+  - Changed layout from horizontal (`flex-row`) to vertical (`flex-col gap-2`)
+  - Token icons positioned ABOVE pool pair in vertical stack
+  - Icons: 40px size with 2px dark border (`border-[#0A0F1C]`) for depth, `-space-x-3` for 30% overlap
+  - **Fixed TokenIcon fallback rendering**: replaced undefined `bg-liqui-card-hover` with branded gradient (`bg-gradient-to-br from-[#6EA8FF] to-[#3B82F6]`)
+  - Fallback now shows token initials in aqua-to-blue gradient with white bold text when icon file missing
+  - **Layout structure**:
+    ```
+    🔴 🟢  ← Token icons (overlapping, real icons or initials)
+    WFLR / USD₮0  ← Pool pair (below icons)
+    ENOSYS  ← Provider
+    TVL $123.45  ← TVL info
+    ```
+- **Files modified**:
+  - `src/features/pools/PoolsOverview.tsx` (lines 7, 201-226 active pools, 266-291 inactive pools)
+  - `src/components/TokenIcon.tsx` (line 93: fixed fallback gradient from broken CSS class to inline Tailwind gradient)
+- **Verification**: Dashboard loads HTTP 200, no linter errors, icons render above pool pair with proper overlap, fallback initials display correctly
+- **Status**: ✅ COMPLETE
+
+**2025-10-28 — RangeBand™ V2 Compact Redesign (Claude) — ✅ RESOLVED:**
 - **Redesign objective**: Super compact range slider with line length = strategy visualization
 - **Changes implemented:**
   - Rewrote `PoolRangeIndicator.tsx` to minimal 3-line design: label → horizontal line → value
@@ -1010,26 +1185,25 @@ Updated: Homepage pricing section unified — replaced two existing blocks with 
   - Token icons moved to PoolRow column 1 with 30% overlap (`-space-x-2`)
   - Removed range label from desktop layout (info now in compact RangeBand)
 - **Files modified:**
-  - `src/components/pools/PoolRangeIndicator.tsx` (full rewrite)
-  - `src/features/pools/PoolRow.tsx` (removed range label line 277, updated RangeBand integration)
-  - `src/styles/globals.css` (added `.ll-rangeband-v2` styles + responsive rules)
-- **⚠️ CRITICAL ISSUE — HTTP 500 Internal Server Error:**
-  - **Symptoms**: All pages return HTTP 500; plain text "Internal Server Error" (no HTML)
-  - **Started**: Immediately after RangeBand V2 changes deployed to dev server
-  - **Impact**: Complete development outage; no pages accessible
-  - **Suspected cause**: React rendering failure (CSS class mismatch, SSR hydration error, or component prop issue)
-  - **Status**: **UNRESOLVED** — handover created in `HANDOVER_TO_GPT.md`
-  - **Next steps**: Kill dev server (PID 89814), clean `.next/`, restart, capture error logs; rollback if needed
-- **Known issues (new):**
-  - Dev server returns HTTP 500 on all routes
-  - No build artifacts in `.next/` (Turbopack may be using stale cache)
-  - No visible TypeScript/ESLint errors in source files
-  - Browser console not yet checked for React hydration errors
-- **Open actions:**
-  - Diagnose root cause (React error, CSS scope, HMR failure)
-  - Fix or rollback RangeBand V2 changes
-  - Verify homepage returns HTTP 200
-  - Test pool rendering with new compact design
+  - `src/components/pools/PoolRangeIndicator.tsx` (full rewrite — 197 lines)
+  - `src/features/pools/PoolRow.tsx` (added `data-ll-ui="v2025-10"` to parent div, updated RangeBand integration)
+  - `src/styles/globals.css` (added `.ll-rangeband-v2` styles scoped under `[data-ll-ui="v2025-10"]`)
+- **⚠️ INCIDENT — HTTP 500 Internal Server Error (RESOLVED):**
+  - **Symptoms**: All pages returned HTTP 500; plain text "Internal Server Error" (no HTML)
+  - **Duration**: ~20 minutes (14:30 – 14:50 CET, 2025-10-28)
+  - **Root cause**: Stale Turbopack cache serving compiled code from before RangeBand V2 refactor
+  - **Fix applied**: 
+    1. Killed dev server: `lsof -iTCP:3000 -sTCP:LISTEN -t | xargs kill -9`
+    2. Cleaned build cache: `rm -rf .next`
+    3. Added missing `data-ll-ui="v2025-10"` attribute to PoolRow parent div (line 171)
+    4. Restarted dev server: `npm run dev`
+  - **Verification**: Homepage HTTP 200, all API routes functional, no TypeScript errors
+  - **Status**: **✅ RESOLVED** — full handover documented in `HANDOVER_TO_GPT.md`
+  - **Lesson learned**: Next.js 15.5.6 with Turbopack can hold stale compiled code in memory; always clean `.next/` when adding CSS custom properties or scoped classes
+- **Resolved issues:**
+  - HTTP 500 errors on all routes → **RESOLVED** (clean build + restart)
+  - Missing `data-ll-ui` scope attribute → **RESOLVED** (added to PoolRow parent)
+  - RangeBand™ V2 compact design → **COMPLETE** (line length = strategy, min-height 42px)
 
 ### RangeBand™ Strategy Thresholds (tunable constants)
 These thresholds are documented in `src/components/pools/PoolRangeIndicator.tsx` as `RANGE_STRATEGY_THRESHOLDS`:
@@ -1055,3 +1229,56 @@ These can be adjusted based on user feedback and real-world LP behavior patterns
   - Daily: capture ideas via `scripts/idea_add.sh "…"`.
   - Weekly: triage Inbox → Next; promote to Doing; belangrijke besluiten vastleggen met `scripts/adr_new.sh`.
 - Rule: external comms in **English** (B2B/B2C/investors), direct chat with founder in Dutch.
+- Rule: external comms in **English** (B2B/B2C/investors), direct chat with founder in Dutch.
+
+## 2025-10-28 — Acquisition Funnel v1 (3-step, per-pool pricing)
+**Changelog**
+- Introduced a single-path funnel: Home → Connect & Discovery → Checkout → Success.
+- Homepage hero simplified (logo, headline, subhead, price line, one CTA). No plan grids/waitlist/Fast-Forward in this path.
+- Canonical pricing for this flow: $1.99 per pool / month; first pool free; sold in bundles of 5; annual billed as 10 months (2 free).
+- Added analytics events: hero_cta_click, wallet_connected, pools_detected {count}, trial_selected, checkout_viewed, payment_success.
+- Required visual: `/public/media/wave-hero.png` as a subtle fixed background behind glass overlays.
+
+**Decisions**
+- Supersede the “Liquidity Journey” homepage plan grid for the acquisition path; it will reappear later as a separate flow (out of scope here).
+- RangeBand™ is dashboard-only; it is excluded from this funnel.
+- Monthly is default; annual upsell appears only as a small inline link (no toggles/tables).
+
+**Open actions**
+- Build `pages/connect.tsx` and `pages/checkout.tsx` with the minimal component kit (`src/components/ui/*`).
+- Implement `src/lib/analytics.ts` with the event helpers above; wire events on CTA clicks and milestones.
+- Discovery: call `/api/positions?wallet=…`, show read-only previews, track `pools_detected {count}`.
+- Checkout logic (UX-level): round detected pools up to the nearest 5; first pool auto-free; allow annual link; invoice email required; optional Company/VAT; show “USDC on Flare” hint.
+- Emails: add short “Payment receipt” and “Trial started” transactional templates (neutral tone).
+
+- **Changelog (2025-10-28):** Added simple 3-step funnel (index/connect/checkout), wave background ensured, minimal component kit, analytics hooks.  
+- **Decisions:** No pricing grids/toggles in hero; monthly default; annual as micro-link; freebies modeled as capacity only.  
+- **Open actions:** Hook real discovery API; wire payment; add error states; later: waitlist & Fast-Forward.
+
+- **Changelog (2025-10-28):** Simplified per-pool pricing across API, UI, and docs (`pages/api/billing/preview.ts`, `src/data/subscriptionPlans.ts`, `pages/index.tsx`, `pages/connect.tsx`, `pages/checkout.tsx`, `src/components/marketing/PricingPanel.tsx`, `src/features/billing/BillingDashboard.tsx`, `docs/PRICING_MODEL.md`).
+
+## 2025-10-28 — Homepage 3-section restructure (Proposition, Trial, Proof)
+**Changelog**
+- Restructured `pages/index.tsx` into three clear sections with semantic landmarks and proper spacing (`space-y-24 sm:space-y-32`).
+- Created `src/components/marketing/TrialAcquisition.tsx` — trial-focused section with 3-step visual (Connect wallet → Choose free pool → Create account) and one primary CTA.
+- Created `src/components/demo/DemoPoolsTable.tsx` to use the real 2-row pool blocks via `PositionsTable` component instead of simplified table.
+- Created `src/components/demo/DemoSection.tsx` with proof of concept heading and subtitle.
+- Mapped demo API response to `PositionData` format for full compatibility with existing pool row rendering (RangeBand™ included).
+
+**Why**
+- Clarify homepage narrative: Proposition (what) → Trial (how to start) → Proof (see it live).
+- Use existing pool blocks for proof section to show real UX instead of simplified preview.
+- All copy in English per brand guidelines (external communications).
+
+
+<!-- CHANGELOG:APPEND_ONLY -->
+
+### 2025-10-28
+- Changed: `/pages/index.tsx`, `/src/components/marketing/TrialAcquisition.tsx`, `/src/components/demo/DemoSection.tsx`, `/src/components/demo/DemoPoolsTable.tsx`, `/src/components/marketing/Proposition.tsx`, `/src/components/onboarding/ConnectWalletModal.tsx`, `/pages/api/demo/pools.ts`, `/src/components/ui/Button.tsx`, `/src/components/TokenIcon.tsx`, `/src/services/tokenIconService.ts`, `/src/components/pools/PoolRangeIndicator.tsx`, `/src/styles/globals.css`, `/src/components/PositionsTable.tsx`, `/PROJECT_STATE.md` (section 5), `/src/lib/poolDeepLinks.ts`, `/next.config.ts` — implemented simplified 2-section homepage fully aligned with Design System
+- Notes: Applied official brand guidelines (LiquiLab Aqua `#1BE8D2`, Mist `#B9C7DA`, glass overlay `rgba(10,15,26,0.88)`, responsive widths 75vw/94vw max 1200px, rounded-3xl cards); token icons fetched online via DexScreener API; RangeBand V2: line length = exact spread %, min/max flank line; pool table: rows 60px + row 1 pt-2.5 + row 2 pb-5, APR calculation; **DOCUMENTED complete pool table spec**; hover: pool block aqua 6%; Claim deep links with UTM; **SIMPLIFIED HOMEPAGE**: unified hero (2 sections); **INLINE ONBOARDING**: wallet modal 3 phases, fetches `/api/positions?address=`, improved pool detection + flexible field mapping (supports both flat fields like `token0Symbol` and nested like `token0.symbol`, `token0.iconSrc`), console.log for debugging, shows top pool + counts, two CTAs; **HEADER WALLET STATUS**: connected address + Disconnect button
+- Open actions: none
+
+### 2025-10-28 (evening)
+- Changed: `/src/components/onboarding/ConnectWalletModal.tsx`, `/pages/index.tsx`, `/src/components/marketing/Proposition.tsx`, `/src/components/marketing/TrialAcquisition.tsx`, `/src/components/demo/DemoSection.tsx`, `/src/components/ui/Button.tsx`, `/src/components/PositionsTable.tsx`, `/src/styles/globals.css` — refined top pool + color audit + wallet improvements
+- Notes: Top pool card with current price, 4-col grid (TVL, FEES, INCENTIVES, 24h APR), RangeBand + status; **COLOR AUDIT**: Aqua `#1BE8D2` ONLY for checkmarks, Electric Blue `#3B82F6` for all actions/highlights, Mist `#9CA3AF` for muted; **PRICING COPY**: bundles of 5; **WALLET**: local icons, browser detection, "INSTALLED" badge; **POOL HOVER FIX**: removed divider margin (was my-2), moved spacing to rows (pt-4 row1, pb-4 row2), hover now extends from first pixel to divider with no gap, flat Electric Blue `rgba(59,130,246,0.06)`
+- Open actions: none

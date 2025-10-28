@@ -3,152 +3,112 @@
 import React from 'react';
 import Link from 'next/link';
 
-import { SUBSCRIPTION_PLANS, SubscriptionPlan, SubscriptionPlanId } from '@/data/subscriptionPlans';
+import { Button } from '@/components/ui/Button';
+import {
+  ANNUAL_MULTIPLIER,
+  FREE_POOLS,
+  PRICE_PER_POOL_USD,
+} from '@/data/subscriptionPlans';
 
 interface BillingDashboardProps {
   walletId?: number;
-  initialPlanId?: SubscriptionPlanId;
+  detectedPools?: number | null;
 }
 
-type BillingCycle = 'annual' | 'monthly';
+const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
 
-const BILLING_CYCLES: { id: BillingCycle; label: string; helper: string }[] = [
-  {
-    id: 'annual',
-    label: 'Annual billing',
-    helper: 'Best value · pay after your 14-day trial',
-  },
-  {
-    id: 'monthly',
-    label: 'Monthly billing',
-    helper: 'Flexible · cancel anytime during trial',
-  },
-];
-
-const formatPriceLabel = (plan: SubscriptionPlan, cycle: BillingCycle): string => {
-  const value = cycle === 'annual' ? plan.annualPrice : plan.monthlyPrice;
-  if (value == null) {
-    return 'Custom pricing';
+const clampCapacity = (value: number | null | undefined): number => {
+  if (value == null || Number.isNaN(value) || !Number.isFinite(value)) {
+    return FREE_POOLS;
   }
-  const suffix = cycle === 'annual' ? '/year' : '/month';
-  return `$${value.toFixed(2)}${suffix}`;
+  return Math.max(FREE_POOLS, Math.floor(value));
 };
 
-const monthlyText = (plan: SubscriptionPlan, cycle: BillingCycle): string => {
-  if (plan.monthlyPrice == null) {
-    return 'Talk to us for tailored enterprise onboarding.';
-  }
-  if (cycle === 'annual') {
-    return `Monthly equivalent: $${plan.monthlyPrice.toFixed(2)}`;
-  }
-  return 'Billed every 30 days';
-};
-
-export function BillingDashboard({ walletId, initialPlanId = 'shallow' }: BillingDashboardProps) {
-  const defaultPlan = React.useMemo(
-    () => SUBSCRIPTION_PLANS.find((plan) => plan.id === initialPlanId) ?? SUBSCRIPTION_PLANS[0],
-    [initialPlanId],
+export function BillingDashboard({ walletId, detectedPools = null }: BillingDashboardProps) {
+  const totalCapacity = clampCapacity(detectedPools);
+  const paidPools = Math.max(0, totalCapacity - FREE_POOLS);
+  const monthlyAmount = Number((paidPools * PRICE_PER_POOL_USD).toFixed(2));
+  const annualAmount = Number(
+    (paidPools * PRICE_PER_POOL_USD * ANNUAL_MULTIPLIER).toFixed(2),
   );
-  const [selectedPlan, setSelectedPlan] = React.useState<SubscriptionPlan>(defaultPlan);
-  const [cycle, setCycle] = React.useState<BillingCycle>('annual');
 
-  const priceLabel = formatPriceLabel(selectedPlan, cycle);
-  const secondaryText = monthlyText(selectedPlan, cycle);
+  const checkoutParams = new URLSearchParams({
+    desiredCapacity: String(totalCapacity),
+  }).toString();
 
   return (
-    <section className="space-y-6 rounded-3xl border border-liqui-border bg-liqui-card/60 p-6">
+    <section className="space-y-6 rounded-3xl border border-white/10 bg-[rgba(10,15,26,0.82)] p-6 backdrop-blur-xl">
       <header className="space-y-2">
-        <h2 className="font-brand text-2xl font-semibold text-white">Plan preview</h2>
-        <p className="font-ui text-sm text-liqui-subtext">
-          Every Liquidity Journey plan starts with a 14-day free trial. Authorise your preferred billing cycle today — no
-          charge until the trial ends.
+        <h2 className="font-brand text-2xl font-semibold text-white">
+          Subscription preview
+        </h2>
+        <p className="font-ui text-sm text-white/70">
+          Your first pool is always free. Each additional pool adds $
+          {PRICE_PER_POOL_USD.toFixed(2)} per month, or 10× for an annual plan.
         </p>
+        {walletId ? (
+          <p className="font-ui text-xs uppercase tracking-[0.2em] text-white/40">
+            Wallet ID: {walletId}
+          </p>
+        ) : null}
       </header>
 
-      <div className="flex flex-wrap gap-3">
-        {BILLING_CYCLES.map(({ id, label, helper }) => {
-          const isActive = cycle === id;
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setCycle(id)}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                isActive
-                  ? 'border-liqui-aqua bg-liqui-aqua/10 text-liqui-aqua'
-                  : 'border-liqui-border text-liqui-subtext hover:border-liqui-aqua/60 hover:text-liqui-aqua'
-              }`}
-            >
-              <span className="block text-left">
-                {label}
-                <span className="block text-[11px] font-normal text-liqui-subtext">{helper}</span>
-              </span>
-            </button>
-          );
-        })}
+      <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-white/80 backdrop-blur">
+        <span>
+          Capacity:{' '}
+          <span className="tnum text-white">{totalCapacity}</span> pools
+        </span>
+        <span>
+          Free:{' '}
+          <span className="tnum text-white">{FREE_POOLS}</span> · Paid:{' '}
+          <span className="tnum text-white">{paidPools}</span>
+        </span>
+        <span className="text-xs text-white/50">
+          Monthly: {formatCurrency(monthlyAmount)} · Annual:{' '}
+          {formatCurrency(annualAmount)}
+        </span>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {SUBSCRIPTION_PLANS.map((plan) => {
-          const isSelected = selectedPlan.id === plan.id;
-          const cardPrice = formatPriceLabel(plan, cycle);
-          const cardSecondary = monthlyText(plan, cycle);
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <Button
+          as="a"
+          href="/connect"
+          aria-label="Connect your wallet to start with the free pool"
+        >
+          Start free
+        </Button>
 
-          return (
-            <button
-              key={plan.id}
-              type="button"
-              onClick={() => setSelectedPlan(plan)}
-              className={`rounded-2xl border p-5 text-left transition ${
-                isSelected
-                  ? 'border-liqui-aqua bg-liqui-aqua/10 shadow-lg shadow-liqui-aqua/15'
-                  : 'border-liqui-border bg-liqui-card/70 hover:border-liqui-aqua/60'
-              }`}
-            >
-              <div className="flex flex-col gap-3">
-                <span className="font-brand text-xl font-semibold text-white">{plan.name}</span>
-                <span className="font-ui text-sm text-liqui-subtext">{plan.poolLimitLabel}</span>
-                <div className="font-ui text-2xl font-semibold text-white">{cardPrice}</div>
-                <span className="font-ui text-xs text-liqui-subtext">{cardSecondary}</span>
-                <span className="font-ui text-sm text-liqui-subtext">{plan.description}</span>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="rounded-2xl border border-liqui-border bg-liqui-card-hover/40 p-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-1">
-            <p className="font-brand text-lg font-semibold text-white">
-              {selectedPlan.name} plan · {priceLabel}
-            </p>
-            <p className="font-ui text-sm text-liqui-subtext">
-              {selectedPlan.monthlyPrice == null
-                ? 'Enterprise onboarding currently happens through our priority list.'
-                : 'Switch billing cycle or change plan anytime during your trial.'}
-            </p>
-            <p className="font-ui text-xs text-liqui-subtext">{secondaryText}</p>
-          </div>
-          <div className="flex flex-col gap-2 md:items-end">
-            <Link
-              href={selectedPlan.ctaHref ?? '/waitlist'}
-              className={`inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                selectedPlan.id === 'tide'
-                  ? 'border border-liqui-aqua text-liqui-aqua hover:bg-liqui-aqua/10'
-                  : 'bg-liqui-aqua text-liqui-navy hover:bg-liqui-aqua/80'
-              }`}
-            >
-              {selectedPlan.ctaLabel ?? 'Start free trial'}
-            </Link>
-            {walletId ? (
-              <span className="font-ui text-[11px] uppercase tracking-wide text-liqui-subtext">
-                Wallet ID: {walletId}
-              </span>
-            ) : null}
-          </div>
+        <div className="flex flex-col items-start gap-2 md:items-end">
+          <Button
+            as="a"
+            href={`/checkout?${checkoutParams}`}
+            variant="ghost"
+            disabled={paidPools === 0}
+            className="tnum"
+            aria-label={
+              paidPools === 0
+                ? 'No paid pools detected yet'
+                : `Activate ${paidPools} paid pool${
+                    paidPools === 1 ? '' : 's'
+                  } for ${formatCurrency(monthlyAmount)}/month`
+            }
+          >
+            Activate {paidPools}{' '}
+            {paidPools === 1 ? 'pool' : 'pools'} for {formatCurrency(monthlyAmount)}
+            /month
+          </Button>
+          <Link
+            href={`/checkout?${checkoutParams}&billingCycle=year`}
+            className="tnum text-xs font-semibold text-white/60 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
+            aria-label={`Pay annually for ${paidPools} paid pool${
+              paidPools === 1 ? '' : 's'
+            } at ${formatCurrency(annualAmount)}/year`}
+          >
+            Pay annually ({formatCurrency(annualAmount)}/year)
+          </Link>
         </div>
       </div>
     </section>
   );
 }
+

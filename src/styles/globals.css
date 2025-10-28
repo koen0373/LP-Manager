@@ -8,6 +8,35 @@
   }
 }
 
+.page-bg{
+  position:fixed;
+  inset:0;
+  z-index:0;
+  width:100%;
+  height:100%;
+  background:#0a0f1c;
+}
+
+.page-bg:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  /* Remove dark gradient overlay to keep wave background crisp */
+  background:none;
+}
+
+.page-bg:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background-image:url('/media/wave-hero.png');
+  background-position:bottom;
+  background-repeat:no-repeat;
+  background-size:cover;
+  /* Ensure the background image remains crisp and bright site-wide */
+  opacity:1;
+}
+
 /* Custom styles for the Enosys LP Manager */
 body {
   margin: 0;
@@ -18,21 +47,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #0D0F13; /* Antraciet from water background */
   color: #ffffff;
-  /* Smooth gradient from solid antraciet (top) to transparent over water splash (bottom) */
-  background-image: 
-    linear-gradient(to bottom, 
-      #0D0F13 0%,           /* Solid antraciet at top */
-      #0D0F13 30%,          /* Keep solid for header area */
-      rgba(13, 15, 19, 0.85) 45%,  /* Start fading */
-      rgba(13, 15, 19, 0.6) 55%,   /* Mid fade */
-      rgba(13, 15, 19, 0.3) 70%,   /* More transparent */
-      transparent 85%       /* Fully transparent, showing water */
-    ),
-    url('/water-splash.png');
-  background-size: 100% 100%, 100% 50%;
-  background-position: top center, bottom center;
-  background-repeat: no-repeat, no-repeat;
-  background-attachment: fixed, fixed;
+  /* Remove global gradient/image overlays so the dedicated .page-bg controls the hero background */
+  background-image: none;
+  background-size: auto;
+  background-position: initial;
+  background-repeat: initial;
+  background-attachment: initial;
   min-height: 100vh;
 }
 
@@ -124,6 +144,11 @@ tr.pool-hover {
   background-color: rgba(0, 230, 255, 0.05);
 }
 
+[data-ll-ui="v2025-10"] .pool-hover {
+  background-color: rgba(59, 130, 246, 0.06);
+  transition: background-color 0.15s ease;
+}
+
 
 
 [data-ll-ui="v2025-10"]{
@@ -144,7 +169,7 @@ tr.pool-hover {
 }
 
 [data-ll-ui="v2025-10"] .ll-row{
-  min-height:140px;
+  min-height:60px;
   align-items:start;
 }
 
@@ -214,12 +239,39 @@ tr.pool-hover {
   color: #9AA1AB;
 }
 
+[data-ll-ui="v2025-10"] .ll-range-track-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+}
+
+[data-ll-ui="v2025-10"] .ll-range-bound {
+  font-family: var(--font-ui, 'Inter', sans-serif);
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #9AA1AB;
+  min-width: 60px;
+  white-space: nowrap;
+}
+
+[data-ll-ui="v2025-10"] .ll-range-bound--min {
+  text-align: right;
+}
+
+[data-ll-ui="v2025-10"] .ll-range-bound--max {
+  text-align: left;
+}
+
 [data-ll-ui="v2025-10"] .ll-range-track {
   position: relative;
   width: var(--line-width);
   height: 16px;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 [data-ll-ui="v2025-10"] .ll-range-line {

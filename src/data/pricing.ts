@@ -1,37 +1,75 @@
 // Single source of truth for LiquiLab pricing
 
-export const PRICE_PER_POOL_USD = 1.99
-export const BUNDLE_SIZE = 5 as const
+export const PRICE_PER_POOL_USD = 1.99;
+export const BUNDLE_SIZE = 5 as const;
 
-export type BillingCycle = 'month' | 'year'
+export type BillingCycle = 'month' | 'year';
 
-export function freeBonus(paidCapacity: number): number {
-  // Rule: +1 free per 10 paid pools (5-tier gets +1 as well): ceil(paid/10)
-  if (paidCapacity <= 0) return 0
-  return Math.ceil(paidCapacity / 10)
-}
-
-export function includedCapacity(paidCapacity: number): number {
-  return paidCapacity + freeBonus(paidCapacity)
-}
-
-export function bundlesForActivePools(activePools: number): number {
-  // Find the smallest multiple of 5 whose included capacity >= activePools
-  let paid = 0
-  while (includedCapacity(paid) < Math.max(0, activePools)) {
-    paid += BUNDLE_SIZE
+function normalizePaidCapacity(paidCapacity: number): number {
+  if (!Number.isFinite(paidCapacity) || paidCapacity < 0) {
+    return 0;
   }
-  return paid / BUNDLE_SIZE
+  return Math.floor(paidCapacity);
 }
 
-export function quote(activePools: number, billing: BillingCycle = 'month') {
-  const bundles = bundlesForActivePools(activePools)
-  const paidPools = bundles * BUNDLE_SIZE
-  const bonus = freeBonus(paidPools)
-  const capacity = paidPools + bonus
+export function freeBonus(paidCapacityInput: number): number {
+  const paidCapacity = normalizePaidCapacity(paidCapacityInput);
+  if (paidCapacity <= 0) {
+    // First pool is always free
+    return 1;
+  }
 
-  const monthly = +(paidPools * PRICE_PER_POOL_USD).toFixed(2)
-  const amount = billing === 'year' ? +(monthly * 10).toFixed(2) : monthly
+  if (paidCapacity <= BUNDLE_SIZE) {
+    // 5-pack receives a single bonus slot (covers the free starter pool)
+    return 1;
+  }
+
+  // Additional free capacity is granted on each multiple of 10 paid pools
+  return Math.floor(paidCapacity / 10);
+}
+
+export function includedCapacity(paidCapacityInput: number): number {
+  const paidCapacity = normalizePaidCapacity(paidCapacityInput);
+  const bonus = freeBonus(paidCapacity);
+  const capacity = paidCapacity + bonus;
+  return capacity > 0 ? capacity : 0;
+}
+
+export function bundlesForActivePools(activePoolsInput: number): number {
+  const activePools = Math.max(0, Math.floor(activePoolsInput));
+  let paid = 0;
+
+  while (includedCapacity(paid) < activePools) {
+    paid += BUNDLE_SIZE;
+    if (paid > 5000) {
+      // Prevent runaway loops in unexpected scenarios
+      break;
+    }
+  }
+
+  return paid / BUNDLE_SIZE;
+}
+
+export function monthlyAmountUsdForPaidCapacity(paidCapacityInput: number): number {
+  const paidCapacity = normalizePaidCapacity(paidCapacityInput);
+  return Number((paidCapacity * PRICE_PER_POOL_USD).toFixed(2));
+}
+
+export function yearlyAmountUsdForPaidCapacity(paidCapacityInput: number): number {
+  // Yearly billing = pay 10 months
+  const monthly = monthlyAmountUsdForPaidCapacity(paidCapacityInput);
+  return Number((monthly * 10).toFixed(2));
+}
+
+export function quote(activePoolsInput: number, billing: BillingCycle = 'month') {
+  const activePools = Math.max(0, Math.floor(activePoolsInput));
+  const bundles = bundlesForActivePools(activePools);
+  const paidPools = bundles * BUNDLE_SIZE;
+  const bonus = freeBonus(paidPools);
+  const totalCapacity = includedCapacity(paidPools);
+
+  const monthlyAmount = monthlyAmountUsdForPaidCapacity(paidPools);
+  const amountUsd = billing === 'year' ? yearlyAmountUsdForPaidCapacity(paidPools) : monthlyAmount;
 
   return {
     ok: true,
@@ -41,15 +79,15 @@ export function quote(activePools: number, billing: BillingCycle = 'month') {
       bundles,
       paidPools,
       freeBonus: bonus,
-      totalCapacity: capacity,
-      amountUsd: amount,
-      monthlyEquivalentUsd: monthly
+      totalCapacity,
+      amountUsd,
+      monthlyEquivalentUsd: monthlyAmount,
     },
     suggestion: {
       activePools,
       recommendedBundles: bundles,
       recommendedPaidPools: paidPools,
-      recommendedCapacity: capacity
-    }
-  }
+      recommendedCapacity: totalCapacity,
+    },
+  };
 }

@@ -15,7 +15,7 @@ interface HeaderProps {
   onWalletDisconnected?: () => void;
   showTabs?: boolean;
   showWalletActions?: boolean;
-  currentPage?: 'home' | 'faq' | 'summary' | 'pools';
+  currentPage?: 'home' | 'faq' | 'summary' | 'pools' | 'pricing' | 'dashboard';
 }
 
 export default function Header({
@@ -54,15 +54,35 @@ export default function Header({
 
           {/* Navigation & Actions */}
           <div className="flex items-center gap-3 sm:gap-6">
-            <Link 
-              href="/faq" 
+            <Link
+              href="/pricing"
               className={`font-brand text-sm transition-colors ${
-                currentPage === 'faq' 
-                  ? 'font-bold text-white' 
+                currentPage === 'pricing'
+                  ? 'font-bold text-white'
+                  : 'font-normal text-mist hover:text-white'
+              }`}
+            >
+              Pricing
+            </Link>
+            <Link
+              href="/faq"
+              className={`font-brand text-sm transition-colors ${
+                currentPage === 'faq'
+                  ? 'font-bold text-white'
                   : 'font-normal text-mist hover:text-white'
               }`}
             >
               FAQ
+            </Link>
+            <Link
+              href="/dashboard"
+              className={`hidden font-brand text-sm transition-colors sm:inline ${
+                currentPage === 'dashboard'
+                  ? 'font-bold text-white'
+                  : 'font-normal text-mist hover:text-white'
+              }`}
+            >
+              Dashboard
             </Link>
 
             {showWalletActions && (

@@ -1,43 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import Image from 'next/image';
-
-type RpcError = {
-  code?: number;
-  message?: string;
-};
-
-type NetworkOption = {
-  name: string;
-  chainId: `0x${string}`;
-  iconSrc: string;
-  iconAlt: string;
-  rpcUrl: string;
-  blockExplorer: string;
-};
-
-// Flare network only - using Enosys reference configuration
-const FLARE_NETWORK: NetworkOption = {
-  name: 'Flare',
-  chainId: '0xe',
-  iconSrc: '/icons/flr.network.webp',
-  iconAlt: 'Flare',
-  rpcUrl: 'https://flare.flr.finance/ext/bc/C/rpc',
-  blockExplorer: 'https://flare.space',
-};
-
-function isRpcError(error: unknown): error is RpcError {
-  return typeof error === 'object' && error !== null && 'code' in error;
-}
-
-function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((entry) => typeof entry === 'string');
-}
-
-function isHexChainId(value: unknown): value is `0x${string}` {
-  return typeof value === 'string' && value.startsWith('0x');
-}
+import React from 'react';
+import { flare } from 'wagmi/chains';
+import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
 
 interface WalletConnectProps {
   className?: string;
@@ -45,485 +10,203 @@ interface WalletConnectProps {
   onWalletDisconnected?: () => void;
 }
 
+type WalletOption =
+  | { id: string; label: string; description: string; type: 'connector'; connectorId: string }
+  | { id: string; label: string; description: string; type: 'external'; href: string }
+  | { id: string; label: string; description: string; type: 'disabled' };
+
+const WALLET_OPTIONS: WalletOption[] = [
+  {
+    id: 'metamask',
+    label: 'MetaMask',
+    description: 'Browser extension on Chrome, Brave, Edge, and Firefox.',
+    type: 'connector',
+    connectorId: 'injected',
+  },
+  {
+    id: 'rabby',
+    label: 'Rabby Wallet',
+    description: 'Flare-ready DeFi wallet with automatic network switching (uses browser injection).',
+    type: 'connector',
+    connectorId: 'injected',
+  },
+  {
+    id: 'bifrost',
+    label: 'Bifrost Wallet',
+    description: 'Scan the QR code inside Bifrost to sign requests (mobile).',
+    type: 'external',
+    href: 'https://www.bifrostwallet.com/',
+  },
+  {
+    id: 'xaman',
+    label: 'Xaman (coming soon)',
+    description: 'Desktop integration is on the roadmap. Use the mobile app today.',
+    type: 'disabled',
+  },
+];
+
 export default function WalletConnect({ className, onWalletConnected, onWalletDisconnected }: WalletConnectProps) {
-  const [isConnected, setIsConnected] = useState(false);
-  const [address, setAddress] = useState<string>('');
-  const [showModal, setShowModal] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-  const [isDisconnecting, setIsDisconnecting] = useState(false);
-  
-  // Use refs to store stable references to callbacks
-  const onWalletConnectedRef = useRef(onWalletConnected);
-  const onWalletDisconnectedRef = useRef(onWalletDisconnected);
-  
-  // Update refs when props change
-  useEffect(() => {
-    onWalletConnectedRef.current = onWalletConnected;
-    onWalletDisconnectedRef.current = onWalletDisconnected;
-  }, [onWalletConnected, onWalletDisconnected]);
+  const { address, status, chainId } = useAccount();
+  const { connect, connectors, error: connectError, isPending } = useConnect();
+  const { disconnect } = useDisconnect();
+  const { switchChainAsync } = useSwitchChain();
+  const [showModal, setShowModal] = React.useState(false);
+  const [localError, setLocalError] = React.useState<string | null>(null);
 
-  // Stable disconnect function (now handled in handleDisconnect)
-  const disconnectWallet = useCallback(() => {
-    console.log('Disconnecting wallet...');
-    setIsConnected(false);
-    setAddress('');
-    onWalletDisconnectedRef.current?.();
-    console.log('Wallet disconnected');
-  }, []);
+  React.useEffect(() => {
+    if (address) {
+      onWalletConnected?.(address);
+      setShowModal(false);
+      setLocalError(null);
+    } else if (status === 'disconnected') {
+      onWalletDisconnected?.();
+    }
+  }, [address, status, onWalletConnected, onWalletDisconnected]);
 
-  // Stable connect function
-  const connectWallet = useCallback((newAddress: string) => {
-    console.log('Connecting wallet:', newAddress);
-    setIsConnected(true);
-    setAddress(newAddress);
-    onWalletConnectedRef.current?.(newAddress);
-  }, []);
+  React.useEffect(() => {
+    async function ensureFlare() {
+      try {
+        if (address && chainId !== flare.id) {
+          await switchChainAsync?.({ chainId: flare.id });
+        }
+      } catch (error) {
+        console.warn('[WalletConnect] Failed to switch chain', error);
+        setLocalError('Please switch to the Flare network inside your wallet.');
+      }
+    }
 
-  useEffect(() => {
-    setIsClient(true);
-    
-    if (typeof window === 'undefined' || !window.ethereum) {
+    void ensureFlare();
+  }, [address, chainId, switchChainAsync]);
+
+  function handleOpenModal() {
+    setLocalError(null);
+    setShowModal(true);
+  }
+
+  function handleCloseModal() {
+    setShowModal(false);
+  }
+
+  async function handleDisconnect() {
+    try {
+      await disconnect();
+      onWalletDisconnected?.();
+    } catch (error) {
+      console.error('[WalletConnect] disconnect failed', error);
+    }
+  }
+
+  async function handleConnect(connectorId: string) {
+    const connector = connectors.find((item) => item.id === connectorId);
+    if (!connector) {
+      setLocalError('Connector not available in this browser.');
       return;
     }
-
-    // Check if wallet is already connected
-    const checkConnection = async () => {
-      try {
-        const accountsResult = await window.ethereum!.request({ method: 'eth_accounts' });
-        if (isStringArray(accountsResult) && accountsResult.length > 0) {
-          connectWallet(accountsResult[0]);
-        }
-        
-        // Check if we're on Flare network
-        const chainIdResult = await window.ethereum!.request({ method: 'eth_chainId' });
-        if (isHexChainId(chainIdResult) && chainIdResult !== FLARE_NETWORK.chainId) {
-          console.log('Not on Flare network, switching...');
-          await switchToFlareNetwork();
-        }
-      } catch (error) {
-        console.error('Error checking wallet connection:', error);
-      }
-    };
-
-    checkConnection();
-
-    // Event handlers with stable references
-    const handleAccountsChanged = (payload: unknown) => {
-      if (!isStringArray(payload)) {
-        console.warn('Received unexpected accounts payload:', payload);
-        disconnectWallet();
-        return;
-      }
-
-      console.log('Accounts changed:', payload);
-      if (payload.length === 0) {
-        // Use the simple disconnect for account changes
-        disconnectWallet();
-      } else {
-        connectWallet(payload[0]);
-      }
-    };
-
-    const handleChainChanged = (chainIdValue: unknown) => {
-      if (typeof chainIdValue !== 'string') {
-        console.warn('Received unexpected chain payload:', chainIdValue);
-        return;
-      }
-
-      console.log('Chain changed to:', chainIdValue);
-      // If not on Flare network, switch to it
-      if (chainIdValue !== FLARE_NETWORK.chainId) {
-        console.log('Not on Flare network, switching...');
-        switchToFlareNetwork();
-      } else {
-        console.log('Connected to Flare network');
-        // If we have a connected address, trigger re-fetch
-        if (isConnected && address) {
-          onWalletConnectedRef.current?.(address);
-        }
-      }
-    };
-
-    // Add event listeners
-    window.ethereum.on('accountsChanged', handleAccountsChanged);
-    window.ethereum.on('chainChanged', handleChainChanged);
-
-    // Cleanup function
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-        window.ethereum.removeListener('chainChanged', handleChainChanged);
-      }
-    };
-  }, [connectWallet, disconnectWallet, isConnected, address]);
-
-
-  const formatAddress = (addr: string) => {
-    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-  };
-
-  const renderNetworkIcon = (network: NetworkOption, size = 16) => (
-    <Image
-      src={network.iconSrc}
-      alt={network.iconAlt}
-      width={size}
-      height={size}
-      className="rounded-full"
-    />
-  );
-
-  const switchToFlareNetwork = async () => {
-    if (typeof window !== 'undefined' && window.ethereum) {
-      try {
-        console.log('Switching to Flare network...');
-        await window.ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: FLARE_NETWORK.chainId }],
-        });
-      } catch (switchError) {
-        // If the chain doesn't exist, add it
-        if (isRpcError(switchError) && switchError.code === 4902) {
-          console.log('Adding Flare network...');
-          await window.ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [{
-              chainId: FLARE_NETWORK.chainId,
-              chainName: FLARE_NETWORK.name,
-              nativeCurrency: {
-                name: 'Flare',
-                symbol: 'FLR',
-                decimals: 18,
-              },
-              rpcUrls: [FLARE_NETWORK.rpcUrl],
-              blockExplorerUrls: [FLARE_NETWORK.blockExplorer],
-            }],
-          });
-        } else {
-          throw switchError;
-        }
-      }
-    }
-  };
-
-  const handleConnect = async () => {
-    if (typeof window !== 'undefined' && window.ethereum) {
-      try {
-        console.log('Requesting wallet connection...');
-        
-        // First, request accounts
-        const accountsResult = await window.ethereum.request({
-          method: 'eth_requestAccounts',
-        });
-        console.log('Received accounts:', accountsResult);
-        
-        if (!isStringArray(accountsResult) || accountsResult.length === 0) {
-          console.warn('No accounts returned from wallet.');
-          return;
-        }
-        
-        const selectedAccount = accountsResult[0];
-        
-        // Check current chain ID
-        const chainIdResult = await window.ethereum.request({
-          method: 'eth_chainId',
-        });
-        console.log('Current chain ID:', chainIdResult);
-        
-        // Flare mainnet chain ID is 0xe (14 in decimal)
-        const flareChainId: `0x${string}` = FLARE_NETWORK.chainId;
-        
-        if (!isHexChainId(chainIdResult) || chainIdResult !== flareChainId) {
-          try {
-            console.log('Switching to Flare network...');
-            await window.ethereum.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: flareChainId }],
-            });
-          } catch (switchError) {
-            // If the chain doesn't exist, add it
-            if (isRpcError(switchError) && switchError.code === 4902) {
-              console.log('Adding Flare network...');
-              await window.ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [{
-                  chainId: flareChainId,
-                  chainName: 'Flare',
-                  nativeCurrency: {
-                    name: 'Flare',
-                    symbol: 'FLR',
-                    decimals: 18,
-                  },
-                  rpcUrls: [FLARE_NETWORK.rpcUrl],
-                  blockExplorerUrls: [FLARE_NETWORK.blockExplorer],
-                }],
-              });
-            } else {
-              throw switchError;
-            }
-          }
-        }
-        
-        // Use the stable connect function
-        connectWallet(selectedAccount);
-        setShowModal(false);
-        console.log('Wallet connected to Flare:', selectedAccount);
-      } catch (error) {
-        console.error('Failed to connect wallet:', error);
-        
-        if (isRpcError(error) && error.code === 4001) {
-          alert('Connection rejected by user.');
-        } else if (isRpcError(error) && error.code === -32002) {
-          alert('Connection request already pending. Please check your wallet.');
-        } else {
-          alert('Failed to connect wallet. Please make sure MetaMask is installed and unlocked.');
-        }
-      }
-    } else {
-      alert('MetaMask is not installed. Please install MetaMask to connect your wallet.');
-    }
-  };
-
-  const handleDisconnect = async () => {
-    console.log('Starting wallet disconnect process...');
-    setIsDisconnecting(true);
-    
     try {
-      // First, try to disconnect via MetaMask if available
-      if (typeof window !== 'undefined' && window.ethereum) {
-        try {
-          // Some wallets support wallet_revokePermissions
-          await window.ethereum.request({
-            method: 'wallet_revokePermissions',
-            params: [{ eth_accounts: {} }],
-          });
-          console.log('Successfully revoked wallet permissions');
-        } catch (revokeError) {
-          // This is expected for many wallets that don't support revokePermissions
-          console.log('Wallet does not support revokePermissions, continuing with local disconnect', revokeError);
-        }
-        
-        // Force clear any cached state by checking accounts
-        try {
-          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-          console.log('Current accounts after disconnect attempt:', accounts);
-        } catch (error) {
-          console.log('Could not check accounts after disconnect:', error);
-        }
-      }
-      
-      // Always perform local disconnect regardless of wallet response
-      console.log('Performing local disconnect...');
-      setIsConnected(false);
-      setAddress('');
-      onWalletDisconnectedRef.current?.();
-      
-      // Clear any localStorage/sessionStorage that might cache wallet state
-      try {
-        localStorage.removeItem('walletconnect');
-        localStorage.removeItem('walletconnect_v2');
-        sessionStorage.removeItem('walletconnect');
-        sessionStorage.removeItem('walletconnect_v2');
-        console.log('Cleared wallet storage');
-      } catch (error) {
-        console.log('Could not clear wallet storage:', error);
-      }
-      
-      console.log('Wallet disconnect completed');
-      
+      setLocalError(null);
+      await connect({ connector });
     } catch (error) {
-      console.error('Error during disconnect:', error);
-      // Even if there's an error, we should still disconnect locally
-      setIsConnected(false);
-      setAddress('');
-      onWalletDisconnectedRef.current?.();
-    } finally {
-      // Reset disconnecting state after a delay
-      setTimeout(() => {
-        setIsDisconnecting(false);
-      }, 1500);
+      console.error('[WalletConnect] connect failed', error);
+      setLocalError('Unable to connect wallet. Please try again.');
     }
-  };
-
-  if (!isClient) {
-    return (
-      <button
-        className={`px-4 py-2 bg-liqui-subcard hover:bg-liqui-border rounded-lg text-sm font-normal transition-colors ${className || ''}`}
-        disabled
-      >
-        Connect Wallet
-      </button>
-    );
   }
 
-  if (isConnected && address) {
-    return (
-      <div className={`flex items-center space-x-3 ${className || ''}`}>
-        {/* Flare Network Indicator */}
-        <div className="flex items-center space-x-2 px-3 py-2 rounded-lg">
-          <div className="w-6 h-6 flex items-center justify-center">
-            {renderNetworkIcon(FLARE_NETWORK, 24)}
-          </div>
-          <span className="text-white text-sm font-normal">Flare</span>
-        </div>
-
-        {/* Separator */}
-        <div className="w-px h-6 bg-liqui-border"></div>
-
-        {/* Wallet Info */}
-        <div className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-liqui-hover/20 transition-colors cursor-pointer hover:font-bold">
-          <svg 
-            width="16" 
-            height="16" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            xmlns="http://www.w3.org/2000/svg"
-            className="text-liqui-subtext"
-          >
-            <path 
-              d="M21 12V7H5a2 2 0 0 1 0-4h14v4" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-            />
-            <path 
-              d="M3 5v14a2 2 0 0 0 2 2h16v-5" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-            />
-            <circle 
-              cx="12" 
-              cy="12" 
-              r="1" 
-              fill="currentColor"
-            />
-          </svg>
-          <span className="text-liqui-subtext text-sm font-normal">{formatAddress(address)}</span>
-          <div className="w-1 h-1 bg-liqui-subtext rounded-full"></div>
-          <span className="text-liqui-subtext text-sm font-normal">11.22 FLR</span>
-        </div>
-
-        {/* Disconnect Icon */}
-        <button
-          onClick={handleDisconnect}
-          disabled={isDisconnecting}
-          className="p-2 rounded-lg hover:bg-liqui-hover/20 transition-colors hover:font-bold"
-          title={isDisconnecting ? 'Disconnecting...' : 'Disconnect'}
-        >
-          <svg 
-            width="16" 
-            height="16" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            xmlns="http://www.w3.org/2000/svg"
-            className={`transition-colors ${
-              isDisconnecting 
-                ? 'text-liqui-subtext' 
-                : 'text-liqui-subtext hover:text-white'
-            }`}
-          >
-            <path 
-              d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-            />
-            <polyline 
-              points="16,17 21,12 16,7" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-            />
-            <line 
-              x1="21" 
-              y1="12" 
-              x2="9" 
-              y2="12" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-      </div>
-    );
-  }
+  const buttonLabel = address ? `${address.slice(0, 6)}…${address.slice(-4)}` : 'Connect wallet';
 
   return (
     <>
       <button
-        onClick={() => setShowModal(true)}
-        className={`px-4 py-2 bg-liqui-subcard hover:bg-liqui-border rounded-lg text-sm font-normal transition-colors hover:font-bold ${className || ''}`}
+        type="button"
+        onClick={address ? handleDisconnect : handleOpenModal}
+        className={`inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+          address
+            ? 'border-white/20 bg-white/[0.08] text-white hover:border-white hover:text-white'
+            : 'border-[#6EA8FF] bg-[#6EA8FF] text-[#0A0F1C] hover:shadow-[0_0_18px_rgba(110,168,255,0.3)]'
+        } ${className ?? ''}`.trim()}
       >
-        Connect Wallet
+        {address ? `Disconnect ${buttonLabel}` : buttonLabel}
       </button>
 
-      {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-liqui-card rounded-lg p-6 w-96 max-w-md mx-4">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-white text-xl font-bold">Connect a Wallet</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#05070C]/80 px-4">
+          <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-[rgba(10,15,26,0.95)] p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="font-brand text-2xl font-semibold text-white">Connect your wallet</h2>
+                <p className="mt-1 font-ui text-sm text-[#B0B9C7]">
+                  MetaMask and Rabby connect directly. Bifrost and Xaman support is rolling out via QR flows.
+                </p>
+              </div>
               <button
-                onClick={() => setShowModal(false)}
-                className="text-liqui-subtext hover:text-white transition-colors"
+                type="button"
+                onClick={handleCloseModal}
+                className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/70 transition hover:border-white hover:text-white"
               >
-                ✕
+                Close
               </button>
             </div>
 
-            {/* Recommended */}
-            <div className="mb-6">
-              <h3 className="text-liqui-subtext text-sm font-bold mb-3">Recommended</h3>
-              <div className="space-y-2">
-                <button
-                  onClick={handleConnect}
-                  className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-liqui-subcard transition-colors"
-                >
-                  <div className="w-8 h-8 bg-liqui-subcard rounded-lg flex items-center justify-center">
-                    <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">🦊</span>
-                    </div>
-                  </div>
-                  <span className="text-white font-normal">MetaMask</span>
-                </button>
-                
-                <button
-                  onClick={handleConnect}
-                  className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-liqui-subcard transition-colors"
-                >
-                  <div className="w-8 h-8 bg-liqui-subcard rounded-lg flex items-center justify-center">
-                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">W</span>
-                    </div>
-                  </div>
-                  <span className="text-white font-normal">WalletConnect</span>
-                </button>
-              </div>
-            </div>
+            <ul className="mt-6 space-y-3">
+              {WALLET_OPTIONS.map((option) => {
+                if (option.type === 'connector') {
+                  const connector = connectors.find((item) => item.id === option.connectorId);
+                  const disabled = !connector || isPending;
+                  return (
+                    <li key={option.id}>
+                      <button
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => handleConnect(option.connectorId)}
+                        className={`w-full rounded-2xl border px-5 py-4 text-left transition ${
+                          disabled
+                            ? 'border-white/10 bg-white/[0.03] text-white/40'
+                            : 'border-white/15 bg-white/[0.06] text-white hover:border-[#6EA8FF]/50 hover:bg-[#6EA8FF]/10'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-brand text-lg font-semibold text-white">{option.label}</p>
+                            <p className="font-ui text-xs text-[#B0B9C7]">{option.description}</p>
+                          </div>
+                          {isPending && <span className="font-ui text-xs text-[#6EA8FF]">Connecting…</span>}
+                        </div>
+                      </button>
+                    </li>
+                  );
+                }
 
-            {/* Other */}
-            <div>
-              <h3 className="text-liqui-subtext text-sm font-bold mb-3">Other</h3>
-              <div className="space-y-2">
-                <button
-                  onClick={handleConnect}
-                  className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-liqui-subcard transition-colors"
-                >
-                  <div className="w-8 h-8 bg-liqui-subcard rounded-lg flex items-center justify-center">
-                    <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">🌐</span>
+                if (option.type === 'external') {
+                  return (
+                    <li key={option.id}>
+                      <a
+                        href={option.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block w-full rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 text-left transition hover:border-[#6EA8FF]/40 hover:bg-[#6EA8FF]/10"
+                      >
+                        <p className="font-brand text-lg font-semibold text-white">{option.label}</p>
+                        <p className="font-ui text-xs text-[#B0B9C7]">{option.description}</p>
+                      </a>
+                    </li>
+                  );
+                }
+
+                return (
+                  <li key={option.id}>
+                    <div className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4">
+                      <p className="font-brand text-lg font-semibold text-white/60">{option.label}</p>
+                      <p className="font-ui text-xs text-[#748199]">{option.description}</p>
                     </div>
-                  </div>
-                  <span className="text-white font-normal">Browser Wallet</span>
-                </button>
-              </div>
-            </div>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {(localError || connectError) && (
+              <p className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 font-ui text-xs text-red-200">
+                {localError ?? connectError?.message}
+              </p>
+            )}
           </div>
         </div>
       )}

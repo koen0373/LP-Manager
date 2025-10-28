@@ -15,7 +15,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const seats = { cap, active: null as number | null, waitlistEnabled: waitlist, fastforwardEnabled: fastforward }
 
     res.status(200).json({ ...q, seats })
-  } catch (e: any) {
-    res.status(200).json({ ok: true, placeholder: true, error: e?.message })
+  } catch (e: unknown) {
+    const error = e as Error;
+    res.status(200).json({ ok: true, placeholder: true, error: error?.message })
   }
 }

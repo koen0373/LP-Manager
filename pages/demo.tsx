@@ -39,12 +39,12 @@ async function fetchAnalytics(address: string): Promise<PositionRow[]> {
   const json = await res.json()
   if (!json?.ok) return []
   const items = Array.isArray(json.positions) ? json.positions : []
-  return items.map((p:any) => ({
+  return items.map((p: Record<string, unknown>) => ({
     wallet: address,
-    providerSlug: p.providerSlug,
-    marketId: p.marketId,
-    token0Symbol: p.token0Symbol,
-    token1Symbol: p.token1Symbol,
+    providerSlug: String(p.providerSlug ?? ''),
+    marketId: String(p.marketId ?? ''),
+    token0Symbol: String(p.token0Symbol ?? ''),
+    token1Symbol: String(p.token1Symbol ?? ''),
     tvlUsd: Number(p.tvlUsd ?? 0),
     feesUsd: Number(p.feesUsd ?? 0),
     incentivesUsd: Number(p.incentivesUsd ?? 0),
@@ -59,19 +59,23 @@ async function fetchLive(address: string): Promise<PositionRow[]> {
   const res = await fetch(url)
   const arr = await res.json()
   if (!Array.isArray(arr)) return []
-  return arr.map((p:any) => ({
-    wallet: (p.walletAddress || address)?.toLowerCase(),
-    providerSlug: p.providerSlug || (p.provider || '').toLowerCase().replace(/\s+/g,'-'),
-    marketId: p.poolAddress || p.onchainId || p.id,
-    token0Symbol: p.token0?.symbol || '',
-    token1Symbol: p.token1?.symbol || '',
-    feeTierBps: p.feeTierBps,
-    tvlUsd: Number(p.tvlUsd ?? 0),
-    feesUsd: Number(p.unclaimedFeesUsd ?? p.feesUsd ?? 0),
-    incentivesUsd: Number(p.rewardsUsd ?? p.rflrRewardsUsd ?? 0),
-    inRange: Boolean(p.inRange ?? p.isInRange),
-    ts: new Date().toISOString()
-  }))
+  return arr.map((p: Record<string, unknown>) => {
+    const token0 = p.token0 as Record<string, unknown> | undefined;
+    const token1 = p.token1 as Record<string, unknown> | undefined;
+    return {
+      wallet: String(p.walletAddress ?? address).toLowerCase(),
+      providerSlug: String(p.providerSlug ?? (p.provider ?? '')).toLowerCase().replace(/\s+/g,'-'),
+      marketId: String(p.poolAddress ?? p.onchainId ?? p.id ?? ''),
+      token0Symbol: String(token0?.symbol ?? ''),
+      token1Symbol: String(token1?.symbol ?? ''),
+      feeTierBps: p.feeTierBps as number | undefined,
+      tvlUsd: Number(p.tvlUsd ?? 0),
+      feesUsd: Number(p.unclaimedFeesUsd ?? p.feesUsd ?? 0),
+      incentivesUsd: Number(p.rewardsUsd ?? p.rflrRewardsUsd ?? 0),
+      inRange: Boolean(p.inRange ?? p.isInRange),
+      ts: new Date().toISOString()
+    };
+  })
 }
 
 export default function DemoPortfolioPage() {
@@ -92,8 +96,9 @@ export default function DemoPortfolioPage() {
         addrs.map(a => useLiveFallback ? fetchLive(a) : fetchAnalytics(a))
       )
       setRows(perAddr.flat())
-    } catch (e:any) {
-      setError(e?.message || 'Unexpected error')
+    } catch (e: unknown) {
+      const error = e as Error;
+      setError(error?.message || 'Unexpected error')
     } finally {
       setLoading(false)
     }

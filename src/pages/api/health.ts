@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Minimale healthcheck – app leeft
-  const result: any = { ok: true, app: 'ok' };
+  const result: { ok: boolean; app: string; db?: string; dbError?: string } = { ok: true, app: 'ok' };
 
   // Optionele DB-check: probeert Prisma te importeren en een ping te doen
   try {
@@ -11,9 +11,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       await db.$queryRaw`SELECT 1`;
       result.db = 'ok';
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const error = e as Error;
       result.db = 'error';
-      result.dbError = e?.message ?? String(e);
+      result.dbError = error?.message ?? String(e);
     }
   } catch {
     // Geen Prisma of ander pad? Dan slaan we DB-check over.

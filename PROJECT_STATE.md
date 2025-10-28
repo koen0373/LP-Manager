@@ -312,71 +312,50 @@ Each pool renders as **two table rows** with a **5-column layout**:
 
 **Data Constraints:**
 - Icons + Pool Pair + Fee tag stay on **one line** (no wrapping/truncation)
-- Min–max range centered directly below pool pair
-- All numeric columns use tabular-nums for perfect alignment
-- Status dots align vertically across entire table via fixed-width slider container
+- Range min/max copy now lives inside RangeBand™; pool column no longer repeats range text.
+- RangeBand meta block (width % + strategy) must stay single-line at ≥1280px; wraps gracefully on tablet/mobile.
+- All numeric columns continue to use tabular-nums for perfect alignment.
+- Status dots align via shared RangeBand marker + column-five badges (no standalone slider container).
 
 **Responsive Behavior:**
 - **Desktop (≥1280px):** Full 2-row, 5-column layout as described
 - **Tablet/Mobile (<1280px):** Falls back to stacked card view (not yet implemented)
 
-#### Range Status & Slider (v2025.10 — Animated Indicators)
+#### RangeBand™ (v2025.10.28 — Unified Range & Strategy Visual)
 
-Pool positions use a **3-tier status system** with animated visual indicators:
+RangeBand replaces the legacy slider with a branded, status-colored baseline and inline marker copy.
 
-**Status Rules** (3% near-band buffer):
-- **Out of Range** (red `#E74C3C`): Current price < min OR > max → **No fees earned** → **No animation** (solid dot)
-- **Near Band** (orange `#FFA500`): Current price within 3% of lower or upper bound → **Warning: approaching edge** → **Soft glow animation** (no blinking)
-- **In Range** (green `#00C66B`): Current price safely inside range → **Earns fees** ✓ → **Pulsing heartbeat** (blink + glow)
+**Status Rules** (3% buffer retained):
+- **`out`** — red `#E74C3C`; marker clamps to ends; status dot remains static (no animation).
+- **`near`** — amber `#FFA500`; marker stays inside band; dot gets `animate-glow-orange`.
+- **`in`** — green `#00C66B`; marker floats inside band; dot keeps `animate-pulse-green` heartbeat.
 
-Range status and slider marker color use the same current price value with the 3% near-band buffer described below.
-
-**Visual Implementation**:
-- **Range Slider**: Minimal design with thin line (2px, `rgba(255,255,255,0.15)` background)
-- **Marker**: Single vertical indicator (2px width, 16px height) colored by status
-- **Marker Colors**: Match status (green/orange/red) with animations:
-  - **Green (In Range)**: `animate-pulse-green` — keyframes with `opacity: 0.4 → 1` + `scale(1 → 1.05)`, 2s ease-in-out infinite
-  - **Orange (Near Band)**: `animate-glow-orange` — keyframes with `opacity: 0.6 → 1` + `box-shadow` glow, 3s ease-in-out infinite (slower, no scale)
-  - **Red (Out of Range)**: No animation class — static `box-shadow: 0 0 8px rgba(239,68,68,0.4)`
-- **Status Column**: Colored dot + label with same animation classes applied to the dot
-- **Alignment**: All status dots align vertically via `max-w-[200px] mx-auto` container for the range slider
-
-**Calculation Logic**:
-```javascript
-const width = maxPrice - minPrice;
-const nearBuffer = width * 0.03;         // 3% buffer
-const nearLower = minPrice + nearBuffer; // inside lower edge
-const nearUpper = maxPrice - nearBuffer; // inside upper edge
-
-if (current < minPrice || current > maxPrice) → OUT_OF_RANGE (red, no animation)
-else if (current <= nearLower || current >= nearUpper) → NEAR_BAND (orange, glow only)
-else → IN_RANGE (green, pulse + glow)
+**Strategy Logic (`getStrategy`):**
+```ts
+const RANGE_STRATEGY_THRESHOLDS = { aggressiveMax: 12, balancedMax: 35 };
+// widthPct passed as positive float
+if (pct < aggressiveMax)      return { label: 'Aggressive', tone: 'narrow' };
+if (pct <= balancedMax)       return { label: 'Balanced', tone: 'balanced' };
+return { label: 'Conservative', tone: 'wide' };
 ```
 
-**Tailwind Animation Configuration**:
-```javascript
-// tailwind.config.js
-keyframes: {
-  'pulse-green': {
-    '0%, 100%': { opacity: '0.4', transform: 'scale(1)' },
-    '50%': { opacity: '1', transform: 'scale(1.05)' }
-  },
-  'glow-orange': {
-    '0%, 100%': { 
-      opacity: '0.6', 
-      boxShadow: '0 0 8px rgba(249,115,22,0.3)' 
-    },
-    '50%': { 
-      opacity: '1', 
-      boxShadow: '0 0 16px rgba(249,115,22,0.6)' 
-    }
-  }
-},
-animation: {
-  'pulse-green': 'pulse-green 2s ease-in-out infinite',
-  'glow-orange': 'glow-orange 3s ease-in-out infinite'
+**Marker Position (`calculateMarkerPosition`):**
+```ts
+// Returns 0–100, clamps when current is outside bounds, defaults to 50 when data missing.
+calculateMarkerPosition(min, max, current) {
+  if (!range) return 50;
+  if (current <= min) return 0;
+  if (current >= max) return 100;
+  return ((current - min) / (max - min)) * 100;
 }
 ```
+
+**Visual Implementation:**
+- Track uses CSS custom property `--rangeband-color` + linear gradient baseline.
+- Marker inherits custom color, casts glow via status-specific box shadows.
+- Label & value are centered using CSS var `--marker-left` (set per render).
+- Meta block renders width `%` (1dp) + strategy pill with tone-specific colors.
+- Mobile layout stacks min/current/max vertically; meta block shifts under track with left alignment.
 
 ### Typography — Hybrid Strategy
 
@@ -395,13 +374,13 @@ Rationale:
 
 #### Component Architecture
 - **Primary Components:**
-  - `PositionsTable.tsx` — Main table component with 2-row, 5-column layout per pool
-  - `OriginalRangeSlider.tsx` — Minimal range slider with status-colored animated marker
-  - `PoolRangeIndicator.tsx` — Range status calculation logic (3% near-band buffer)
-  - `DemoPoolsPreview.tsx` — Demo data wrapper for homepage proof section
+  - `PositionsTable.tsx` — Main table component with RangeBand row spanning columns 2–4 + status/CTA column
+  - `PoolRangeIndicator.tsx` — Exports RangeBand™, `getRangeStatus`, `getStrategy`, `calculateMarkerPosition`
+  - `OriginalRangeSlider.tsx` — Legacy slider retained for regression runs (not used in production table)
+  - `DemoPoolsPreview.tsx` — Demo data wrapper for homepage proof section (now consuming RangeBand statuses)
 - **Global Styles:**
-  - `src/styles/globals.css` — Contains `.pool-hover` class for two-row hover synchronization
-  - `tailwind.config.js` — Defines `pulse-green` and `glow-orange` animation keyframes
+  - `src/styles/globals.css` — Houses `.pool-hover` plus new `.ll-rangeband*` utility classes + CSS vars
+  - `tailwind.config.js` — Defines `pulse-green` + `glow-orange` animations for status dots (unchanged)
 
 ---
 
@@ -415,9 +394,9 @@ Rationale:
 - **Hero Section:** Headline "The easy way to manage your liquidity pools" + dual CTAs (Explore demo / Choose journey)
 - **Problem Section:** 3-icon problem statement highlighting LP pain points
 - **Proof Section:** Live demo pools table — 9 real examples across Enosys, SparkDEX, BlazeSwap
-  - Uses `PositionsTable` component with 2-row, 5-column layout
-  - Shows Pool info, Liquidity, Fees, Incentives, Range status, Current price slider, APY, Share button
-  - Fully interactive with hover effects and animated range indicators
+  - Uses `PositionsTable` component with 2-row, 5-column layout (RangeBand row spans columns 2–4)
+  - Shows Pool info, Liquidity, Fees, Incentives, RangeBand™, strategy badge, APY, Share button
+  - Fully interactive with hover effects and animated status dots/RangeBand marker
 - **Subscription Section:** Integrated pricing panel (Shallow / Flow / Depth / Tide) with billing toggle
 - **Footer:** Docs/FAQ/Contact links + brand tagline
 
@@ -579,7 +558,7 @@ FLARESCAN_API_KEY=...          # Optional: reduces 403 errors (not required with
 
 © 2025 LiquiLab — Manage your liquidity pools.
 
-**Last Updated:** October 26, 2025  
+**Last Updated:** October 28, 2025  
 **Version:** 0.1.4  
 **Production URL:** https://liquilab.io  
 **Suggested Subdomains:** app.liquilab.io | api.liquilab.io | docs.liquilab.io
@@ -799,6 +778,18 @@ Updated: Homepage pricing section unified — replaced two existing blocks with 
 - **Status:** Ready for Codex implementation (estimated 2-3 hours)
 - **Purpose:** Provides structured handover from Claude Sonnet (design) to Codex (engineering) following AI Collaboration Protocol
 
+## 2025-10-28 — Wagmi SSR hardening & RangeBand™ rollout
+**Summary** Stabilised client/network providers to avoid SSR crashes and replaced the liquidity slider with the branded RangeBand™ visualization (status + strategy) across desktop/mobile tables.
+**Changelog**
+- chore(wagmi): align `wagmi@2` config with injected connector only, cookie storage + `ssr:true`; expose `getConfig()` helper.
+- feat(core): add `ClientOnly` wrapper + `AppProviders` to gate Wagmi/QueryClient to the browser; update `_app.tsx` import path.
+- ux(wallet): map MetaMask/Rabby options to injected connector, clarify Rabby copy, keep Bifrost/Xaman guidance.
+- feat(rangeband): replace slider rows with RangeBand™ (`PoolRangeIndicator.tsx`), add strategy logic/constants, update `PositionsTable`, `PoolRow`, demo data, and CSS utilities.
+- test(rangeband): expand `__tests__/rangeStatusTests.ts` to cover status logic, strategy thresholds, and marker clamp cases; export `calculateMarkerPosition`.
+- style(globals): scope `.ll-rangeband*` utilities + custom properties; remove legacy slider classes.
+**Files** `src/lib/wagmi.ts`, `src/components/system/ClientOnly.tsx`, `src/providers.tsx`, `pages/_app.tsx`, `src/components/WalletConnect.tsx`, `src/components/pools/PoolRangeIndicator.tsx`, `src/components/pools/OriginalRangeSlider.tsx`, `src/components/PositionsTable.tsx`, `src/features/pools/PoolRow.tsx`, `src/components/waitlist/DemoPoolsPreview.tsx`, `src/components/pools/__tests__/rangeStatusTests.ts`, `src/styles/globals.css`
+**Notes** Wagmi stays injector-only for now (MetaMask/Rabby). RangeBand uses lower-case statuses (`in|near|out`); legacy slider kept only for regression comparisons.
+
 ## 2025-10-26 — Pool Table: 5-column layout (SAFE MODE, scoped)
 **Summary** Locked a 5-column / 2-row Pool Table under data-ll-ui="v2025-10", with divider rgba(110,168,255,0.12), min-row-height 140px, single-marker slider (marker = status color), 3% near-band, APY spacing + tabular numerals, and scoped primary button style.
 **Changelog**
@@ -985,6 +976,78 @@ Updated: Homepage pricing section unified — replaced two existing blocks with 
 - Files: src/data/pricing.ts; pages/api/admin/settings.ts; src/lib/wagmi.ts; pages/_app.tsx; src/components/WalletConnect.tsx; src/components/billing/PricingCalculator.tsx; pages/index.tsx; pages/pricing.tsx; pages/dashboard.tsx; src/features/pools/PoolsOverview.tsx; pages/admin/settings.tsx; scripts/smoke_pricing.sh; src/components/Header.tsx.
 - Resolved issues: placeholder/login visuals persisted (previous entry), pricing model update → **OPGELOST**; waitlist/fast-forward toggles surfaced → **OPGELOST**; wallet onboarding lacked plan guidance → **OPGELOST**.
 
+**2025-10-27 — RangeBand™ implementation & wagmi v2 stabilization (Claude):**
+- **RangeBand™ finalized**: Implemented full branded range visualization component spanning columns 2–4 on desktop, full-width on mobile.
+- Strategy classification thresholds: Aggressive (< 12%), Balanced (12%–35%), Conservative (> 35%).
+- Status visualization: In Range (green/heartbeat), Near Band (amber/glow), Out of Range (red) — with animated status dots.
+- Component: `src/components/pools/PoolRangeIndicator.tsx` — horizontal line with min/max labels, current price marker (clamped positioning), range width percentage, and strategy badge.
+- Accessibility: `role="img"` with descriptive `aria-label` including min/current/max prices, width %, and strategy.
+- CSS styling: Complete RangeBand™ styles in `src/styles/globals.css` under `[data-ll-ui="v2025-10"]` namespace with responsive breakpoints.
+- Integration: `src/features/pools/PoolRow.tsx` — removed inline range text from under pair, integrated RangeBand™ across columns 2–4 (desktop grid) and full-width under pair (mobile).
+- Tests: Created comprehensive test suite at `src/components/pools/__tests__/rangeStatusTests.ts` covering:
+  - Strategy classification at threshold boundaries (11.9%, 12.0%, 35.0%, 35.1%)
+  - Range status detection (in/near/out) with edge cases
+  - Marker positioning (0%, 25%, 50%, 75%, 100%) and clamping
+  - Integration scenarios for typical aggressive/balanced/conservative positions
+- Wagmi v2 stabilization: Confirmed wagmi v2.18.1 integration with `injected()` connector, `cookieStorage`, `createStorage`, SSR-safe config, and client-only provider wrapper via `ClientOnly` component.
+- Files modified/created:
+  - `src/components/pools/PoolRangeIndicator.tsx` (existing, documented)
+  - `src/features/pools/PoolRow.tsx` (existing, integrated RangeBand™)
+  - `src/styles/globals.css` (existing, RangeBand™ styles already present)
+  - `src/components/pools/__tests__/rangeStatusTests.ts` (created)
+  - `src/lib/wagmi.ts` (confirmed SSR-safe)
+  - `src/providers.tsx` (confirmed ClientOnly wrapper)
+  - `src/components/system/ClientOnly.tsx` (confirmed)
+- Resolved issues: RangeBand™ component finalized → **COMPLETE**; strategy thresholds documented → **COMPLETE**; tests cover edge cases → **COMPLETE**; wagmi SSR crashes → **RESOLVED** (client-only provider); pools table crashes without wallet → **RESOLVED** (safe null handling).
+
+**2025-10-28 — RangeBand™ V2 Compact Redesign (Claude) — ⚠️ OUTAGE:**
+- **Redesign objective**: Super compact range slider with line length = strategy visualization
+- **Changes implemented:**
+  - Rewrote `PoolRangeIndicator.tsx` to minimal 3-line design: label → horizontal line → value
+  - Line width dynamically set by strategy: 30% (aggressive), 60% (balanced), 90% (conservative)
+  - Removed pool pair text from RangeBand (kept in PoolRow column 1 with token icons)
+  - New CSS classes: `.ll-rangeband-v2`, `.ll-range-label`, `.ll-range-track`, `.ll-range-marker`, `.ll-range-value`
+  - Token icons moved to PoolRow column 1 with 30% overlap (`-space-x-2`)
+  - Removed range label from desktop layout (info now in compact RangeBand)
+- **Files modified:**
+  - `src/components/pools/PoolRangeIndicator.tsx` (full rewrite)
+  - `src/features/pools/PoolRow.tsx` (removed range label line 277, updated RangeBand integration)
+  - `src/styles/globals.css` (added `.ll-rangeband-v2` styles + responsive rules)
+- **⚠️ CRITICAL ISSUE — HTTP 500 Internal Server Error:**
+  - **Symptoms**: All pages return HTTP 500; plain text "Internal Server Error" (no HTML)
+  - **Started**: Immediately after RangeBand V2 changes deployed to dev server
+  - **Impact**: Complete development outage; no pages accessible
+  - **Suspected cause**: React rendering failure (CSS class mismatch, SSR hydration error, or component prop issue)
+  - **Status**: **UNRESOLVED** — handover created in `HANDOVER_TO_GPT.md`
+  - **Next steps**: Kill dev server (PID 89814), clean `.next/`, restart, capture error logs; rollback if needed
+- **Known issues (new):**
+  - Dev server returns HTTP 500 on all routes
+  - No build artifacts in `.next/` (Turbopack may be using stale cache)
+  - No visible TypeScript/ESLint errors in source files
+  - Browser console not yet checked for React hydration errors
+- **Open actions:**
+  - Diagnose root cause (React error, CSS scope, HMR failure)
+  - Fix or rollback RangeBand V2 changes
+  - Verify homepage returns HTTP 200
+  - Test pool rendering with new compact design
+
+### RangeBand™ Strategy Thresholds (tunable constants)
+These thresholds are documented in `src/components/pools/PoolRangeIndicator.tsx` as `RANGE_STRATEGY_THRESHOLDS`:
+- **Aggressive (Narrow)**: Range width < 12% of mid-price
+- **Balanced (Medium)**: Range width 12%–35% of mid-price
+- **Conservative (Wide)**: Range width > 35% of mid-price
+
+Formula: `rangeWidthPct = (max - min) / ((min + max) / 2) × 100`
+
+These can be adjusted based on user feedback and real-world LP behavior patterns. The classification impacts UI badge color and copy, but not billing or business logic.
+
+### Future RangeBand™ Enhancements
+- Tooltip on hover showing detailed range metrics (APY, fees 24h, liquidity share)
+- Toggle between token0/token1 price display (currently shows token1/token0)
+- Historical range performance overlay (in/near/out % over time)
+- Customizable strategy thresholds per user preference
+- Integration with notifications when position approaches "Near Band" status
+
 ## Backlog & Decisions
 - Ideas backlog: `docs/IDEAS.md` (Inbox → Next → Doing → Done).
 - Decisions: `docs/ADRs/` (ADR-YYYYMMDD-*.md).
@@ -992,4 +1055,3 @@ Updated: Homepage pricing section unified — replaced two existing blocks with 
   - Daily: capture ideas via `scripts/idea_add.sh "…"`.
   - Weekly: triage Inbox → Next; promote to Doing; belangrijke besluiten vastleggen met `scripts/adr_new.sh`.
 - Rule: external comms in **English** (B2B/B2C/investors), direct chat with founder in Dutch.
-

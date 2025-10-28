@@ -15,9 +15,9 @@ function clamp(value: number, min: number, max: number) {
 }
 
 const STATUS_COLORS: Record<RangeStatus, string> = {
-  IN_RANGE: '#00C66B',
-  NEAR_BAND: '#FFA500',
-  OUT_OF_RANGE: '#E74C3C',
+  in: '#00C66B',
+  near: '#FFA500',
+  out: '#E74C3C',
 };
 
 export function OriginalRangeSlider({
@@ -47,7 +47,7 @@ export function OriginalRangeSlider({
 
   const markerPosition = React.useMemo(() => {
     if (!hasRange || typeof currentPrice !== 'number' || !Number.isFinite(currentPrice)) {
-      return derivedStatus === 'OUT_OF_RANGE' ? (currentPrice && currentPrice < (lowerPrice ?? 0) ? 0 : 100) : 50;
+      return derivedStatus === 'out' ? (currentPrice && currentPrice < (lowerPrice ?? 0) ? 0 : 100) : 50;
     }
 
     const ratio = (currentPrice - (lowerPrice as number)) / ((upperPrice as number) - (lowerPrice as number));
@@ -55,16 +55,16 @@ export function OriginalRangeSlider({
   }, [currentPrice, derivedStatus, hasRange, lowerPrice, upperPrice]);
 
   const markerColor = STATUS_COLORS[derivedStatus];
-  const labelStatus = derivedStatus.replace(/_/g, ' ').toLowerCase();
+  const labelStatus = derivedStatus;
 
   // Animation classes based on status
   const markerAnimationClass = 
-    derivedStatus === 'IN_RANGE' ? 'animate-pulse-green' :
-    derivedStatus === 'NEAR_BAND' ? 'animate-glow-orange' :
+    derivedStatus === 'in' ? 'animate-pulse-green' :
+    derivedStatus === 'near' ? 'animate-glow-orange' :
     '';
 
   // Static shadow for red (no animation)
-  const staticShadow = derivedStatus === 'OUT_OF_RANGE' ? `0 0 8px ${markerColor}60` : undefined;
+  const staticShadow = derivedStatus === 'out' ? `0 0 8px ${markerColor}60` : undefined;
 
   const ariaLabel =
     typeof currentPrice === 'number' && typeof lowerPrice === 'number' && typeof upperPrice === 'number'

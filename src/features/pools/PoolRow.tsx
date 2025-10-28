@@ -4,7 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 
 import { TokenIcon } from '@/components/TokenIcon';
-import PoolRangeIndicator, { RangeStatus } from '@/components/pools/PoolRangeIndicator';
+import RangeBand, { RangeStatus } from '@/components/pools/PoolRangeIndicator';
 
 interface PoolRowToken {
   symbol: string;
@@ -43,17 +43,17 @@ interface PoolRowProps {
 }
 
 const STATUS_CONFIG: Record<PoolRangeStatus, { label: string; color: string; animation?: string }> = {
-  IN_RANGE: {
+  in: {
     label: 'In Range',
     color: '#00C66B',
     animation: 'heartbeat 1.5s ease-in-out infinite',
   },
-  NEAR_BAND: {
+  near: {
     label: 'Near Band',
     color: '#FFA500',
     animation: 'rangeGlow 2s ease-in-out infinite',
   },
-  OUT_OF_RANGE: {
+  out: {
     label: 'Out of Range',
     color: '#E74C3C',
   },
@@ -228,11 +228,13 @@ export function PoolRow({ pool, onNavigate, onShare }: PoolRowProps) {
         </div>
 
         <div className="mt-4">
-          <PoolRangeIndicator
-            lowerPrice={lowerPrice}
-            upperPrice={upperPrice}
-            currentPrice={currentPrice}
-            status={status}
+          <RangeBand
+            min={lowerPrice}
+            max={upperPrice}
+            current={currentPrice}
+            status={status ?? 'out'}
+            token0Symbol={token0.symbol}
+            token1Symbol={token1.symbol}
           />
         </div>
 
@@ -272,7 +274,7 @@ export function PoolRow({ pool, onNavigate, onShare }: PoolRowProps) {
                 {feeTier}
               </span>
             </div>
-            <div className="text-sm text-white/60">Range {rangeLabel}</div>
+            {/* Range label verwijderd - info zit nu in de compacte RangeBand */}
           </div>
         </div>
 
@@ -292,11 +294,13 @@ export function PoolRow({ pool, onNavigate, onShare }: PoolRowProps) {
         </div>
 
         <div className="col-span-3">
-          <PoolRangeIndicator
-            lowerPrice={lowerPrice}
-            upperPrice={upperPrice}
-            currentPrice={currentPrice}
-            status={status}
+          <RangeBand
+            min={lowerPrice}
+            max={upperPrice}
+            current={currentPrice}
+            status={status ?? 'out'}
+            token0Symbol={token0.symbol}
+            token1Symbol={token1.symbol}
           />
         </div>
 

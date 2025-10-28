@@ -1,7 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { TokenIcon } from './TokenIcon';
-import type { RangeStatus } from '@/components/pools/PoolRangeIndicator';
+import RangeBand, { RangeStatus } from '@/components/pools/PoolRangeIndicator';
 import { formatUsd } from '@/utils/format';
 
 export interface PositionData {
@@ -30,35 +30,12 @@ interface PositionsTableProps {
 }
 
 const STATUS_CONFIG: Record<RangeStatus, { label: string; dotColor: string }> = {
-  IN_RANGE: { label: 'In Range', dotColor: '#00C66B' },
-  NEAR_BAND: { label: 'Near Band', dotColor: '#FFA500' },
-  OUT_OF_RANGE: { label: 'Out of Range', dotColor: '#E74C3C' },
+  in: { label: 'In Range', dotColor: '#00C66B' },
+  near: { label: 'Near Band', dotColor: '#FFA500' },
+  out: { label: 'Out of Range', dotColor: '#E74C3C' },
 };
 
 const APY_PLACEHOLDER = '12.4%';
-
-const formatPrice = (value?: number, fallback = '—'): string => {
-  if (typeof value !== 'number' || Number.isNaN(value)) {
-    return fallback;
-  }
-  return value.toFixed(5);
-};
-
-const getSliderProps = (position: PositionData) => {
-  const min = typeof position.rangeMin === 'number' && Number.isFinite(position.rangeMin) ? position.rangeMin : 0;
-  const max =
-    typeof position.rangeMax === 'number' && Number.isFinite(position.rangeMax) && position.rangeMax !== position.rangeMin
-      ? position.rangeMax
-      : min + 1;
-  const current =
-    typeof position.currentPrice === 'number' && Number.isFinite(position.currentPrice)
-      ? Math.min(Math.max(position.currentPrice, min), max)
-      : min;
-  const disabled = !Number.isFinite(min) || !Number.isFinite(max) || min === max;
-  const step = disabled ? undefined : Number(((max - min) / 1000).toPrecision(4));
-
-  return { min, max, current, step, disabled };
-};
 
 export function PositionsTable({ positions, onRowClick }: PositionsTableProps) {
   if (positions.length === 0) {
@@ -93,18 +70,9 @@ export function PositionsTable({ positions, onRowClick }: PositionsTableProps) {
 
         <div role="rowgroup">
           {positions.map((position) => {
-            const statusMeta = STATUS_CONFIG[position.status];
+            const rowStatus: RangeStatus = position.status ?? 'out';
+            const statusMeta = STATUS_CONFIG[rowStatus] ?? STATUS_CONFIG.out;
             const statusColor = statusMeta.dotColor;
-            const slider = getSliderProps(position);
-            const sliderId = `price-${position.tokenId}`;
-            const currentPriceLabel =
-              typeof position.currentPrice === 'number' && Number.isFinite(position.currentPrice)
-                ? position.currentPrice.toFixed(5)
-                : '—';
-            const rangeLabel =
-              position.rangeMin !== undefined && position.rangeMax !== undefined
-                ? `${formatPrice(position.rangeMin)} – ${formatPrice(position.rangeMax)}`
-                : '—';
 
             return (
               <React.Fragment key={position.tokenId}>
@@ -150,7 +118,6 @@ export function PositionsTable({ positions, onRowClick }: PositionsTableProps) {
                           {position.feeTier}
                         </span>
                       </div>
-                      <div className="ll-minmax text-[13px] text-[#B0B9C7]">{rangeLabel}</div>
                     </div>
                   </div>
 
@@ -205,34 +172,19 @@ export function PositionsTable({ positions, onRowClick }: PositionsTableProps) {
                 >
                   <div role="cell" className="px-6" aria-hidden="true" />
 
-                  <div role="cell" className="px-5">
-                    <div className="flex flex-col gap-3 font-ui">
-                      <label htmlFor={sliderId} id={`${sliderId}-label`} className="text-[12px] font-medium text-[#9AA1AB]">
-                        Current price
-                      </label>
-                      <input
-                        id={sliderId}
-                        type="range"
-                        min={slider.min}
-                        max={slider.max}
-                        step={slider.step}
-                        value={slider.current}
-                        aria-labelledby={`${sliderId}-label`}
-                        disabled={slider.disabled}
-                        className="ll-price-slider"
-                        style={{ '--status-color': statusColor } as React.CSSProperties}
-                        readOnly
-                      />
-                      <div className="tnum text-sm text-[#9AA1AB]">{currentPriceLabel}</div>
-                    </div>
-                  </div>
-
-                  <div role="cell" className="px-5 text-sm text-[#9AA1AB]" aria-hidden="true">
-                    —
-                  </div>
-
-                  <div role="cell" className="px-5 text-sm text-[#9AA1AB]" aria-hidden="true">
-                    —
+                  <div
+                    role="cell"
+                    className="px-5"
+                    style={{ gridColumn: '2 / span 3' }}
+                  >
+                    <RangeBand
+                      min={position.rangeMin}
+                      max={position.rangeMax}
+                      current={position.currentPrice}
+                      status={rowStatus}
+                      token0Symbol={position.token0Symbol}
+                      token1Symbol={position.token1Symbol}
+                    />
                   </div>
 
                   <div role="cell" className="px-5">
@@ -265,7 +217,8 @@ export function PositionsTable({ positions, onRowClick }: PositionsTableProps) {
 
       <div className="divide-y divide-[rgba(255,255,255,0.1)] font-ui lg:hidden">
         {positions.map((position) => {
-          const statusMeta = STATUS_CONFIG[position.status];
+          const rowStatus: RangeStatus = position.status ?? 'out';
+          const statusMeta = STATUS_CONFIG[rowStatus] ?? STATUS_CONFIG.out;
 
           return (
             <div
@@ -332,11 +285,16 @@ export function PositionsTable({ positions, onRowClick }: PositionsTableProps) {
                 </div>
               </div>
 
-              {position.rangeMin !== undefined && position.rangeMax !== undefined && (
-                <div className="mt-2 text-center text-xs text-[#9AA1AB]">
-                  Range: <span className="tnum">{position.rangeMin.toFixed(5)} – {position.rangeMax.toFixed(5)}</span>
-                </div>
-              )}
+              <div className="mt-4">
+                <RangeBand
+                  min={position.rangeMin}
+                  max={position.rangeMax}
+                  current={position.currentPrice}
+                  status={rowStatus}
+                  token0Symbol={position.token0Symbol}
+                  token1Symbol={position.token1Symbol}
+                />
+              </div>
             </div>
           );
         })}

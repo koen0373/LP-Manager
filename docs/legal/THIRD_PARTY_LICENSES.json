@@ -1,0 +1,3097 @@
+{
+  "@adraffy/ens-normalize@1.11.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/adraffy/ens-normalize.js",
+    "publisher": "raffy.eth",
+    "url": "http://raffy.antistupid.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@adraffy/ens-normalize",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@adraffy/ens-normalize/LICENSE"
+  },
+  "@babel/runtime@7.28.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/babel/babel",
+    "publisher": "The Babel Team",
+    "url": "https://babel.dev/team",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@babel/runtime",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@babel/runtime/LICENSE"
+  },
+  "@base-org/account@1.1.1": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/base/account-sdk",
+    "publisher": "Base",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@base-org/account",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@base-org/account/LICENSE"
+  },
+  "@coinbase/wallet-sdk@3.9.3": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/coinbase/coinbase-wallet-sdk",
+    "publisher": "Coinbase, Inc.",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/cbw-sdk",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/cbw-sdk/LICENSE"
+  },
+  "@coinbase/wallet-sdk@4.3.6": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/coinbase/coinbase-wallet-sdk",
+    "publisher": "Coinbase, Inc.",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@coinbase/wallet-sdk",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@coinbase/wallet-sdk/LICENSE"
+  },
+  "@ecies/ciphers@0.2.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ecies/js-ciphers",
+    "publisher": "Weiliang Li",
+    "email": "to.be.impressive@gmail.com",
+    "url": "https://github.com/kigawas",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@ecies/ciphers",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@ecies/ciphers/LICENSE"
+  },
+  "@ethereumjs/common@3.2.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ethereumjs/ethereumjs-monorepo",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@ethereumjs/common",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@ethereumjs/common/LICENSE"
+  },
+  "@ethereumjs/rlp@4.0.1": {
+    "licenses": "MPL-2.0",
+    "repository": "https://github.com/ethereumjs/ethereumjs-monorepo",
+    "publisher": "martin becze",
+    "email": "mjbecze@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@ethereumjs/rlp",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@ethereumjs/rlp/LICENSE"
+  },
+  "@ethereumjs/tx@4.2.0": {
+    "licenses": "MPL-2.0",
+    "repository": "https://github.com/ethereumjs/ethereumjs-monorepo",
+    "publisher": "mjbecze",
+    "email": "mb@ethdev.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@ethereumjs/tx",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@ethereumjs/tx/LICENSE"
+  },
+  "@ethereumjs/util@8.1.0": {
+    "licenses": "MPL-2.0",
+    "repository": "https://github.com/ethereumjs/ethereumjs-monorepo",
+    "publisher": "EthereumJS Team",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@ethereumjs/util",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@ethereumjs/util/LICENSE"
+  },
+  "@gemini-wallet/core@0.2.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/gemini/gemini-wallet-core",
+    "publisher": "Gemini",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@gemini-wallet/core",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@gemini-wallet/core/LICENSE"
+  },
+  "@img/colour@1.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/lovell/colour",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@img/colour",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@img/colour/LICENSE.md"
+  },
+  "@img/sharp-darwin-arm64@0.34.4": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/lovell/sharp",
+    "publisher": "Lovell Fuller",
+    "email": "npm@lovell.info",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@img/sharp-darwin-arm64",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@img/sharp-darwin-arm64/LICENSE"
+  },
+  "@img/sharp-libvips-darwin-arm64@1.2.3": {
+    "licenses": "LGPL-3.0-or-later",
+    "repository": "https://github.com/lovell/sharp-libvips",
+    "publisher": "Lovell Fuller",
+    "email": "npm@lovell.info",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@img/sharp-libvips-darwin-arm64",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@img/sharp-libvips-darwin-arm64/README.md"
+  },
+  "@lit-labs/ssr-dom-shim@1.4.0": {
+    "licenses": "BSD-3-Clause",
+    "repository": "https://github.com/lit/lit",
+    "publisher": "Google LLC",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@lit-labs/ssr-dom-shim",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@lit-labs/ssr-dom-shim/README.md"
+  },
+  "@lit/reactive-element@2.1.1": {
+    "licenses": "BSD-3-Clause",
+    "repository": "https://github.com/lit/lit",
+    "publisher": "Google LLC",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@lit/reactive-element",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@lit/reactive-element/LICENSE"
+  },
+  "@metamask/eth-json-rpc-provider@1.0.1": {
+    "licenses": "Custom: https://github.com/MetaMask/json-rpc-engine",
+    "repository": "https://github.com/MetaMask/eth-json-rpc-provider",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/eth-json-rpc-provider",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/eth-json-rpc-provider/README.md"
+  },
+  "@metamask/json-rpc-engine@7.3.3": {
+    "licenses": "ISC",
+    "repository": "https://github.com/MetaMask/core",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/eth-json-rpc-provider/node_modules/@metamask/json-rpc-engine",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/eth-json-rpc-provider/node_modules/@metamask/json-rpc-engine/LICENSE"
+  },
+  "@metamask/json-rpc-engine@8.0.2": {
+    "licenses": "ISC",
+    "repository": "https://github.com/MetaMask/core",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/json-rpc-engine",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/json-rpc-engine/LICENSE"
+  },
+  "@metamask/json-rpc-middleware-stream@7.0.2": {
+    "licenses": "ISC",
+    "repository": "https://github.com/MetaMask/core",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/json-rpc-middleware-stream",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/json-rpc-middleware-stream/LICENSE"
+  },
+  "@metamask/object-multiplex@2.1.0": {
+    "licenses": "ISC",
+    "repository": "https://github.com/MetaMask/object-multiplex",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/object-multiplex",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/object-multiplex/LICENSE"
+  },
+  "@metamask/onboarding@1.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/MetaMask/metamask-onboarding",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/onboarding",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/onboarding/LICENSE"
+  },
+  "@metamask/providers@16.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/MetaMask/providers",
+    "publisher": "MetaMask",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/providers",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/providers/LICENSE"
+  },
+  "@metamask/rpc-errors@6.4.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/MetaMask/rpc-errors",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/json-rpc-engine/node_modules/@metamask/rpc-errors",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/json-rpc-engine/node_modules/@metamask/rpc-errors/LICENSE"
+  },
+  "@metamask/rpc-errors@7.0.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/MetaMask/rpc-errors",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/rpc-errors",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/rpc-errors/LICENSE"
+  },
+  "@metamask/safe-event-emitter@2.0.0": {
+    "licenses": "ISC",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/json-rpc-engine/node_modules/@metamask/safe-event-emitter",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/json-rpc-engine/node_modules/@metamask/safe-event-emitter/LICENSE"
+  },
+  "@metamask/safe-event-emitter@3.1.2": {
+    "licenses": "ISC",
+    "repository": "https://github.com/MetaMask/safe-event-emitter",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/safe-event-emitter",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/safe-event-emitter/LICENSE"
+  },
+  "@metamask/sdk-analytics@0.0.5": {
+    "licenses": "MIT",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/sdk-analytics",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/sdk-analytics/README.md"
+  },
+  "@metamask/sdk-communication-layer@0.33.1": {
+    "licenses": "Custom: https://metamask.app.link/connect",
+    "repository": "https://github.com/MetaMask/metamask-sdk",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/sdk-communication-layer",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/sdk-communication-layer/LICENSE"
+  },
+  "@metamask/sdk-install-modal-web@0.32.1": {
+    "licenses": "UNKNOWN",
+    "repository": "https://github.com/MetaMask/metamask-sdk",
+    "publisher": "MetaMask",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/sdk-install-modal-web",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/sdk-install-modal-web/LICENSE"
+  },
+  "@metamask/sdk@0.33.1": {
+    "licenses": "Custom: https://docs.metamask.io/guide/ethereum-provider.html",
+    "repository": "https://github.com/MetaMask/metamask-sdk",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/sdk",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/sdk/LICENSE"
+  },
+  "@metamask/superstruct@3.2.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/MetaMask/superstruct",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/superstruct",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/superstruct/LICENSE.md"
+  },
+  "@metamask/utils@11.8.1": {
+    "licenses": "ISC",
+    "repository": "https://github.com/MetaMask/utils",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/utils",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/utils/LICENSE"
+  },
+  "@metamask/utils@5.0.2": {
+    "licenses": "ISC",
+    "repository": "https://github.com/MetaMask/utils",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/eth-json-rpc-provider/node_modules/@metamask/utils",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/eth-json-rpc-provider/node_modules/@metamask/utils/LICENSE"
+  },
+  "@metamask/utils@8.5.0": {
+    "licenses": "ISC",
+    "repository": "https://github.com/MetaMask/utils",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/json-rpc-engine/node_modules/@metamask/utils",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/json-rpc-engine/node_modules/@metamask/utils/LICENSE"
+  },
+  "@metamask/utils@9.3.0": {
+    "licenses": "ISC",
+    "repository": "https://github.com/MetaMask/utils",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/json-rpc-engine/node_modules/@metamask/rpc-errors/node_modules/@metamask/utils",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/json-rpc-engine/node_modules/@metamask/rpc-errors/node_modules/@metamask/utils/LICENSE"
+  },
+  "@next/env@15.5.6": {
+    "licenses": "MIT",
+    "repository": "https://github.com/vercel/next.js",
+    "publisher": "Next.js Team",
+    "email": "support@vercel.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@next/env",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@next/env/README.md"
+  },
+  "@next/swc-darwin-arm64@15.5.6": {
+    "licenses": "MIT",
+    "repository": "https://github.com/vercel/next.js",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@next/swc-darwin-arm64",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@next/swc-darwin-arm64/README.md"
+  },
+  "@noble/ciphers@1.2.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/noble-ciphers",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@noble/ciphers",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@noble/ciphers/LICENSE"
+  },
+  "@noble/ciphers@1.3.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/noble-ciphers",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/viem/node_modules/@noble/ciphers",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/viem/node_modules/@noble/ciphers/LICENSE"
+  },
+  "@noble/curves@1.4.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/noble-curves",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/ethereum-cryptography/node_modules/@noble/curves",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/ethereum-cryptography/node_modules/@noble/curves/LICENSE"
+  },
+  "@noble/curves@1.8.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/noble-curves",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@noble/curves",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@noble/curves/LICENSE"
+  },
+  "@noble/curves@1.8.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/noble-curves",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@noble/curves",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@noble/curves/LICENSE"
+  },
+  "@noble/curves@1.9.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/noble-curves",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/viem/node_modules/@noble/curves",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/viem/node_modules/@noble/curves/LICENSE"
+  },
+  "@noble/curves@1.9.7": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/noble-curves",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/ox/node_modules/@noble/curves",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/ox/node_modules/@noble/curves/LICENSE"
+  },
+  "@noble/hashes@1.4.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/noble-hashes",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@noble/hashes",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@noble/hashes/LICENSE"
+  },
+  "@noble/hashes@1.7.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/noble-hashes",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@noble/curves/node_modules/@noble/hashes",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@noble/curves/node_modules/@noble/hashes/LICENSE"
+  },
+  "@noble/hashes@1.7.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/noble-hashes",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@noble/hashes",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@noble/hashes/LICENSE"
+  },
+  "@noble/hashes@1.8.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/noble-hashes",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/ox/node_modules/@noble/hashes",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/ox/node_modules/@noble/hashes/LICENSE"
+  },
+  "@paulmillr/qr@0.2.1": {
+    "licenses": "(MIT OR Apache-2.0)",
+    "repository": "https://github.com/paulmillr/qr",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@paulmillr/qr",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@paulmillr/qr/LICENSE"
+  },
+  "@prisma/client@6.18.0": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/prisma/prisma",
+    "publisher": "Tim Suchanek",
+    "email": "suchanek@prisma.io",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@prisma/client",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@prisma/client/LICENSE"
+  },
+  "@prisma/config@6.18.0": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/prisma/prisma",
+    "publisher": "Alberto Schiabel",
+    "email": "schiabel@prisma.io",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@prisma/config",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@prisma/config/LICENSE"
+  },
+  "@prisma/debug@6.18.0": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/prisma/prisma",
+    "publisher": "Tim Suchanek",
+    "email": "suchanek@prisma.io",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@prisma/debug",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@prisma/debug/LICENSE"
+  },
+  "@prisma/engines-version@6.18.0-8.34b5a692b7bd79939a9a2c3ef97d816e749cda2f": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/prisma/engines-wrapper",
+    "publisher": "Tim Suchanek",
+    "email": "suchanek@prisma.io",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@prisma/engines-version",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@prisma/engines-version/LICENSE"
+  },
+  "@prisma/engines@6.18.0": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/prisma/prisma",
+    "publisher": "Tim Suchanek",
+    "email": "suchanek@prisma.io",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@prisma/engines",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@prisma/engines/LICENSE"
+  },
+  "@prisma/fetch-engine@6.18.0": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/prisma/prisma",
+    "publisher": "Tim Suchanek",
+    "email": "suchanek@prisma.io",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@prisma/fetch-engine",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@prisma/fetch-engine/LICENSE"
+  },
+  "@prisma/get-platform@6.18.0": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/prisma/prisma",
+    "publisher": "Tim Suchanek",
+    "email": "suchanek@prisma.io",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@prisma/get-platform",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@prisma/get-platform/LICENSE"
+  },
+  "@radix-ui/primitive@1.1.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/primitive",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/primitive/LICENSE"
+  },
+  "@radix-ui/react-collection@1.1.7": {
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-collection",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-collection/LICENSE"
+  },
+  "@radix-ui/react-compose-refs@1.1.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-compose-refs",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-compose-refs/README.md"
+  },
+  "@radix-ui/react-context@1.1.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-context",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-context/README.md"
+  },
+  "@radix-ui/react-direction@1.1.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-direction",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-direction/README.md"
+  },
+  "@radix-ui/react-id@1.1.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-id",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-id/README.md"
+  },
+  "@radix-ui/react-presence@1.1.5": {
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-presence",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-presence/LICENSE"
+  },
+  "@radix-ui/react-primitive@2.1.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-primitive",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-primitive/LICENSE"
+  },
+  "@radix-ui/react-roving-focus@1.1.11": {
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-roving-focus",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-roving-focus/LICENSE"
+  },
+  "@radix-ui/react-slot@1.2.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-slot",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-slot/LICENSE"
+  },
+  "@radix-ui/react-tabs@1.1.13": {
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-tabs",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-tabs/LICENSE"
+  },
+  "@radix-ui/react-use-callback-ref@1.1.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-use-callback-ref",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-use-callback-ref/README.md"
+  },
+  "@radix-ui/react-use-controllable-state@1.2.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-use-controllable-state",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-use-controllable-state/LICENSE"
+  },
+  "@radix-ui/react-use-effect-event@0.0.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-use-effect-event",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-use-effect-event/LICENSE"
+  },
+  "@radix-ui/react-use-layout-effect@1.1.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-use-layout-effect",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@radix-ui/react-use-layout-effect/README.md"
+  },
+  "@reown/appkit-common@1.7.8": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/reown-com/appkit",
+    "publisher": "Reown",
+    "email": "support@reown.com",
+    "url": "https://reown.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-common",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-common/LICENSE"
+  },
+  "@reown/appkit-controllers@1.7.8": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/reown-com/appkit",
+    "publisher": "Reown",
+    "email": "support@reown.com",
+    "url": "https://reown.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-controllers",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-controllers/LICENSE"
+  },
+  "@reown/appkit-pay@1.7.8": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/reown-com/appkit",
+    "publisher": "Reown",
+    "email": "support@reown.com",
+    "url": "https://reown.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-pay",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-pay/LICENSE"
+  },
+  "@reown/appkit-polyfills@1.7.8": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/reown-com/appkit",
+    "publisher": "Reown",
+    "email": "support@reown.com",
+    "url": "https://reown.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-polyfills",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-polyfills/LICENSE"
+  },
+  "@reown/appkit-scaffold-ui@1.7.8": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/reown-com/appkit",
+    "publisher": "Reown",
+    "email": "support@reown.com",
+    "url": "https://reown.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-scaffold-ui",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-scaffold-ui/LICENSE"
+  },
+  "@reown/appkit-ui@1.7.8": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/reown-com/appkit",
+    "publisher": "Reown",
+    "email": "support@reown.com",
+    "url": "https://reown.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-ui",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-ui/LICENSE"
+  },
+  "@reown/appkit-utils@1.7.8": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/reown-com/appkit",
+    "publisher": "Reown",
+    "email": "support@reown.com",
+    "url": "https://reown.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-utils",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-utils/LICENSE"
+  },
+  "@reown/appkit-wallet@1.7.8": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/reown-com/appkit",
+    "publisher": "Reown",
+    "email": "support@reown.com",
+    "url": "https://reown.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-wallet",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-wallet/LICENSE"
+  },
+  "@reown/appkit@1.7.8": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/reown-com/appkit",
+    "publisher": "Reown",
+    "email": "support@reown.com",
+    "url": "https://reown.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/LICENSE"
+  },
+  "@safe-global/safe-apps-provider@0.18.6": {
+    "licenses": "MIT",
+    "repository": "https://github.com/safe-global/safe-apps-sdk",
+    "publisher": "Safe",
+    "url": "https://safe.global",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@safe-global/safe-apps-provider",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@safe-global/safe-apps-provider/README.md"
+  },
+  "@safe-global/safe-apps-sdk@9.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/safe-global/safe-apps-sdk",
+    "publisher": "Safe",
+    "url": "https://safe.global",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@safe-global/safe-apps-sdk",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@safe-global/safe-apps-sdk/README.md"
+  },
+  "@safe-global/safe-gateway-typescript-sdk@3.23.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/safe-global/safe-gateway-typescript-sdk",
+    "publisher": "katspaugh",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@safe-global/safe-gateway-typescript-sdk",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@safe-global/safe-gateway-typescript-sdk/LICENSE.md"
+  },
+  "@scure/base@1.1.9": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/scure-base",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@scure/bip32/node_modules/@scure/base",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@scure/bip32/node_modules/@scure/base/LICENSE"
+  },
+  "@scure/base@1.2.6": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/scure-base",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@scure/base",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@scure/base/LICENSE"
+  },
+  "@scure/bip32@1.4.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/scure-bip32",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@scure/bip32",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@scure/bip32/LICENSE"
+  },
+  "@scure/bip32@1.6.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/scure-bip32",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@scure/bip32",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@scure/bip32/LICENSE"
+  },
+  "@scure/bip32@1.7.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/scure-bip32",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/ox/node_modules/@scure/bip32",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/ox/node_modules/@scure/bip32/LICENSE"
+  },
+  "@scure/bip39@1.3.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/scure-bip39",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@scure/bip39",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@scure/bip39/LICENSE"
+  },
+  "@scure/bip39@1.5.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/scure-bip39",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@scure/bip39",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@scure/bip39/LICENSE"
+  },
+  "@scure/bip39@1.6.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/scure-bip39",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/ox/node_modules/@scure/bip39",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/ox/node_modules/@scure/bip39/LICENSE"
+  },
+  "@socket.io/component-emitter@3.1.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/socketio/emitter",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@socket.io/component-emitter",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@socket.io/component-emitter/LICENSE"
+  },
+  "@stablelib/base64@1.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/StableLib/stablelib",
+    "publisher": "Dmitry Chestnykh",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@stablelib/base64",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@stablelib/base64/LICENSE"
+  },
+  "@standard-schema/spec@1.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/standard-schema/standard-schema",
+    "publisher": "Colin McDonnell",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@standard-schema/spec",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@standard-schema/spec/LICENSE"
+  },
+  "@swc/helpers@0.5.15": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/swc-project/swc",
+    "publisher": "강동윤",
+    "email": "kdy1997.dev@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@swc/helpers",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@swc/helpers/LICENSE"
+  },
+  "@tanstack/query-core@5.90.5": {
+    "licenses": "MIT",
+    "repository": "https://github.com/TanStack/query",
+    "publisher": "tannerlinsley",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@tanstack/query-core",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@tanstack/query-core/LICENSE"
+  },
+  "@tanstack/react-query@5.90.5": {
+    "licenses": "MIT",
+    "repository": "https://github.com/TanStack/query",
+    "publisher": "tannerlinsley",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@tanstack/react-query",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@tanstack/react-query/LICENSE"
+  },
+  "@types/debug@4.1.12": {
+    "licenses": "MIT",
+    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@types/debug",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@types/debug/LICENSE"
+  },
+  "@types/lodash@4.17.20": {
+    "licenses": "MIT",
+    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@types/lodash",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@types/lodash/LICENSE"
+  },
+  "@types/ms@2.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@types/ms",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@types/ms/LICENSE"
+  },
+  "@types/node@22.18.12": {
+    "licenses": "MIT",
+    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/svix/node_modules/@types/node",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/svix/node_modules/@types/node/LICENSE"
+  },
+  "@types/prop-types@15.7.15": {
+    "licenses": "MIT",
+    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@types/prop-types",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@types/prop-types/LICENSE"
+  },
+  "@types/react-dom@18.3.7": {
+    "licenses": "MIT",
+    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@types/react-dom",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@types/react-dom/LICENSE"
+  },
+  "@types/react@18.3.26": {
+    "licenses": "MIT",
+    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@types/react",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@types/react/LICENSE"
+  },
+  "@types/trusted-types@2.0.7": {
+    "licenses": "MIT",
+    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@types/trusted-types",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@types/trusted-types/LICENSE"
+  },
+  "@wagmi/connectors@6.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/wevm/wagmi",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@wagmi/connectors",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@wagmi/connectors/LICENSE"
+  },
+  "@wagmi/core@2.22.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/wevm/wagmi",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@wagmi/core",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@wagmi/core/LICENSE"
+  },
+  "@walletconnect/core@2.21.0": {
+    "licenses": "Apache-2.0",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@walletconnect/core",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@walletconnect/core/LICENSE"
+  },
+  "@walletconnect/core@2.21.1": {
+    "licenses": "Apache-2.0",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/core",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/core/LICENSE"
+  },
+  "@walletconnect/environment@1.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/walletconnect/walletconnect-utils",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/environment",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/environment/LICENSE"
+  },
+  "@walletconnect/ethereum-provider@2.21.1": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/walletconnect/walletconnect-monorepo",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/ethereum-provider",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/ethereum-provider/LICENSE"
+  },
+  "@walletconnect/events@1.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/WalletConnect/walletconnect-utils",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/events",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/events/LICENSE"
+  },
+  "@walletconnect/heartbeat@1.2.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/walletconnect/walletconnect-utils",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/heartbeat",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/heartbeat/LICENSE"
+  },
+  "@walletconnect/jsonrpc-http-connection@1.0.8": {
+    "licenses": "MIT",
+    "repository": "https://github.com/WalletConnect/walletconnect-utils",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/jsonrpc-http-connection",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/jsonrpc-http-connection/LICENSE"
+  },
+  "@walletconnect/jsonrpc-provider@1.0.14": {
+    "licenses": "MIT",
+    "repository": "https://github.com/WalletConnect/walletconnect-utils",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/jsonrpc-provider",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/jsonrpc-provider/LICENSE"
+  },
+  "@walletconnect/jsonrpc-types@1.0.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/WalletConnect/walletconnect-utils",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/jsonrpc-types",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/jsonrpc-types/LICENSE"
+  },
+  "@walletconnect/jsonrpc-utils@1.0.8": {
+    "licenses": "MIT",
+    "repository": "https://github.com/WalletConnect/walletconnect-utils",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/jsonrpc-utils",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/jsonrpc-utils/LICENSE"
+  },
+  "@walletconnect/jsonrpc-ws-connection@1.0.16": {
+    "licenses": "MIT",
+    "repository": "https://github.com/WalletConnect/walletconnect-utils",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/jsonrpc-ws-connection",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/jsonrpc-ws-connection/LICENSE"
+  },
+  "@walletconnect/keyvaluestorage@1.1.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/walletconnect/walletconnect-utils",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@walletconnect/keyvaluestorage",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@walletconnect/keyvaluestorage/LICENSE"
+  },
+  "@walletconnect/logger@2.1.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/WalletConnect/walletconnect-utils",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/logger",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/logger/LICENSE"
+  },
+  "@walletconnect/relay-api@1.0.11": {
+    "licenses": "MIT",
+    "repository": "https://github.com/walletconnect/walletconnect-utils",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/relay-api",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/relay-api/LICENSE"
+  },
+  "@walletconnect/relay-auth@1.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/walletconnect/walletconnect-utils",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/relay-auth",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/relay-auth/LICENSE"
+  },
+  "@walletconnect/safe-json@1.0.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/walletconnect/walletconnect-utils",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/safe-json",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/safe-json/LICENSE"
+  },
+  "@walletconnect/sign-client@2.21.0": {
+    "licenses": "Apache-2.0",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@walletconnect/sign-client",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@walletconnect/sign-client/LICENSE"
+  },
+  "@walletconnect/sign-client@2.21.1": {
+    "licenses": "Apache-2.0",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/sign-client",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/sign-client/LICENSE"
+  },
+  "@walletconnect/time@1.0.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/walletconnect/walletconnect-utils",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/time",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/time/LICENSE"
+  },
+  "@walletconnect/types@2.21.0": {
+    "licenses": "Apache-2.0",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@walletconnect/types",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@walletconnect/types/LICENSE"
+  },
+  "@walletconnect/types@2.21.1": {
+    "licenses": "Apache-2.0",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/types",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/types/LICENSE"
+  },
+  "@walletconnect/universal-provider@2.21.0": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/walletconnect/walletconnect-monorepo",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@walletconnect/universal-provider",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@walletconnect/universal-provider/LICENSE"
+  },
+  "@walletconnect/universal-provider@2.21.1": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/walletconnect/walletconnect-monorepo",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/universal-provider",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/universal-provider/LICENSE"
+  },
+  "@walletconnect/utils@2.21.0": {
+    "licenses": "Apache-2.0",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@walletconnect/utils",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@walletconnect/utils/LICENSE"
+  },
+  "@walletconnect/utils@2.21.1": {
+    "licenses": "Apache-2.0",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/utils",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/utils/LICENSE"
+  },
+  "@walletconnect/window-getters@1.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/walletconnect/walletconnect-utils",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/window-getters",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/window-getters/LICENSE"
+  },
+  "@walletconnect/window-metadata@1.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/walletconnect/walletconnect-utils",
+    "publisher": "WalletConnect, Inc.",
+    "email": "walletconnect.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/window-metadata",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/window-metadata/LICENSE"
+  },
+  "abitype@1.0.8": {
+    "licenses": "MIT",
+    "repository": "https://github.com/wevm/abitype",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/abitype",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/abitype/LICENSE"
+  },
+  "abitype@1.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/wevm/abitype",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/viem/node_modules/abitype",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/viem/node_modules/abitype/LICENSE"
+  },
+  "abitype@1.1.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/wevm/abitype",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/abitype",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/abitype/LICENSE"
+  },
+  "ansi-regex@5.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/chalk/ansi-regex",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/cliui/node_modules/ansi-regex",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/cliui/node_modules/ansi-regex/license"
+  },
+  "ansi-styles@4.3.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/chalk/ansi-styles",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/ansi-styles",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/ansi-styles/license"
+  },
+  "anymatch@3.1.3": {
+    "licenses": "ISC",
+    "repository": "https://github.com/micromatch/anymatch",
+    "publisher": "Elan Shanker",
+    "url": "https://github.com/es128",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/anymatch",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/anymatch/LICENSE"
+  },
+  "async-mutex@0.2.6": {
+    "licenses": "MIT",
+    "repository": "https://github.com/DirtyHairy/async-mutex",
+    "publisher": "Christian Speckner",
+    "email": "cnspeckn@googlemail.com",
+    "url": "https://github.com/DirtyHairy/",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/async-mutex",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/async-mutex/LICENSE"
+  },
+  "atomic-sleep@1.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/davidmarkclements/atomic-sleep",
+    "publisher": "David Mark Clements",
+    "url": "@davidmarkclem",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/atomic-sleep",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/atomic-sleep/LICENSE"
+  },
+  "available-typed-arrays@1.0.7": {
+    "licenses": "MIT",
+    "repository": "https://github.com/inspect-js/available-typed-arrays",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/available-typed-arrays",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/available-typed-arrays/LICENSE"
+  },
+  "base-x@5.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/cryptocoinjs/base-x",
+    "publisher": "Daniel Cousens",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/base-x",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/base-x/LICENSE.md"
+  },
+  "base64-js@1.5.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/beatgammit/base64-js",
+    "publisher": "T. Jameson Little",
+    "email": "t.jameson.little@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/base64-js",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/base64-js/LICENSE"
+  },
+  "big.js@6.2.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/MikeMcl/big.js",
+    "publisher": "Michael Mclaughlin",
+    "email": "M8ch88l@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/big.js",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/big.js/LICENCE.md"
+  },
+  "bn.js@5.2.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/indutny/bn.js",
+    "publisher": "Fedor Indutny",
+    "email": "fedor@indutny.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/bn.js",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/bn.js/LICENSE"
+  },
+  "bowser@2.12.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/lancedikson/bowser",
+    "publisher": "Dustin Diaz",
+    "email": "dustin@dustindiaz.com",
+    "url": "http://dustindiaz.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/bowser",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/bowser/LICENSE"
+  },
+  "bs58@6.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/cryptocoinjs/bs58",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/bs58",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/bs58/LICENSE"
+  },
+  "buffer@6.0.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/feross/buffer",
+    "publisher": "Feross Aboukhadijeh",
+    "email": "feross@feross.org",
+    "url": "https://feross.org",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/buffer",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/buffer/LICENSE"
+  },
+  "bufferutil@4.0.9": {
+    "licenses": "MIT",
+    "repository": "https://github.com/websockets/bufferutil",
+    "publisher": "Einar Otto Stangvik",
+    "email": "einaros@gmail.com",
+    "url": "http://2x.io",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/bufferutil",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/bufferutil/LICENSE"
+  },
+  "c12@3.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/c12",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/c12",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/c12/LICENSE"
+  },
+  "call-bind-apply-helpers@1.0.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ljharb/call-bind-apply-helpers",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/call-bind-apply-helpers",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/call-bind-apply-helpers/LICENSE"
+  },
+  "call-bind@1.0.8": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ljharb/call-bind",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/call-bind",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/call-bind/LICENSE"
+  },
+  "call-bound@1.0.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ljharb/call-bound",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/call-bound",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/call-bound/LICENSE"
+  },
+  "camelcase@5.3.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/camelcase",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/camelcase",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/camelcase/license"
+  },
+  "caniuse-lite@1.0.30001751": {
+    "licenses": "CC-BY-4.0",
+    "repository": "https://github.com/browserslist/caniuse-lite",
+    "publisher": "Ben Briggs",
+    "email": "beneb.info@gmail.com",
+    "url": "http://beneb.info",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/caniuse-lite",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/caniuse-lite/LICENSE"
+  },
+  "chokidar@4.0.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/chokidar",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/chokidar",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/chokidar/LICENSE"
+  },
+  "citty@0.1.6": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/citty",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/citty",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/citty/LICENSE"
+  },
+  "class-variance-authority@0.7.1": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/joe-bell/cva",
+    "publisher": "Joe Bell",
+    "url": "https://joebell.co.uk",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/class-variance-authority",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/class-variance-authority/LICENSE"
+  },
+  "client-only@0.0.1": {
+    "licenses": "MIT",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/client-only"
+  },
+  "cliui@6.0.0": {
+    "licenses": "ISC",
+    "repository": "https://github.com/yargs/cliui",
+    "publisher": "Ben Coe",
+    "email": "ben@npmjs.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/cliui",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/cliui/LICENSE.txt"
+  },
+  "clsx@1.2.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/lukeed/clsx",
+    "publisher": "Luke Edwards",
+    "email": "luke.edwards05@gmail.com",
+    "url": "https://lukeed.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@base-org/account/node_modules/clsx",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@base-org/account/node_modules/clsx/license"
+  },
+  "clsx@2.1.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/lukeed/clsx",
+    "publisher": "Luke Edwards",
+    "email": "luke.edwards05@gmail.com",
+    "url": "https://lukeed.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/clsx",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/clsx/license"
+  },
+  "color-convert@2.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/Qix-/color-convert",
+    "publisher": "Heather Arthur",
+    "email": "fayearthur@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/color-convert",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/color-convert/LICENSE"
+  },
+  "color-name@1.1.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/colorjs/color-name",
+    "publisher": "DY",
+    "email": "dfcreative@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/color-name",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/color-name/LICENSE"
+  },
+  "confbox@0.2.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/confbox",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/confbox",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/confbox/LICENSE"
+  },
+  "consola@3.4.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/consola",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/consola",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/consola/LICENSE"
+  },
+  "cookie-es@1.2.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/cookie-es",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/cookie-es",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/cookie-es/LICENSE"
+  },
+  "cookie@1.0.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/jshttp/cookie",
+    "publisher": "Roman Shtylman",
+    "email": "shtylman@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/cookie",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/cookie/LICENSE"
+  },
+  "core-util-is@1.0.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/isaacs/core-util-is",
+    "publisher": "Isaac Z. Schlueter",
+    "email": "i@izs.me",
+    "url": "http://blog.izs.me/",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/core-util-is",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/core-util-is/LICENSE"
+  },
+  "crc-32@1.2.2": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/SheetJS/js-crc32",
+    "publisher": "sheetjs",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/crc-32",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/crc-32/LICENSE"
+  },
+  "cross-fetch@3.2.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/lquixada/cross-fetch",
+    "publisher": "Leonardo Quixada",
+    "email": "lquixada@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/jsonrpc-http-connection/node_modules/cross-fetch",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/jsonrpc-http-connection/node_modules/cross-fetch/LICENSE"
+  },
+  "cross-fetch@4.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/lquixada/cross-fetch",
+    "publisher": "Leonardo Quixada",
+    "email": "lquixada@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/cross-fetch",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/cross-fetch/LICENSE"
+  },
+  "crossws@0.3.5": {
+    "licenses": "MIT",
+    "repository": "https://github.com/h3js/crossws",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/crossws",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/crossws/LICENSE"
+  },
+  "csstype@3.1.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/frenic/csstype",
+    "publisher": "Fredrik Nicol",
+    "email": "fredrik.nicol@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/csstype",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/csstype/LICENSE"
+  },
+  "date-fns@2.30.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/date-fns/date-fns",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/date-fns",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/date-fns/LICENSE.md"
+  },
+  "dayjs@1.11.13": {
+    "licenses": "MIT",
+    "repository": "https://github.com/iamkun/dayjs",
+    "publisher": "iamkun",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-common/node_modules/dayjs",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-common/node_modules/dayjs/LICENSE"
+  },
+  "dayjs@1.11.18": {
+    "licenses": "MIT",
+    "repository": "https://github.com/iamkun/dayjs",
+    "publisher": "iamkun",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/dayjs",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/dayjs/LICENSE"
+  },
+  "debug@4.3.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/debug-js/debug",
+    "publisher": "Josh Junon",
+    "email": "josh.junon@protonmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/sdk-communication-layer/node_modules/debug",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/sdk-communication-layer/node_modules/debug/LICENSE"
+  },
+  "debug@4.3.7": {
+    "licenses": "MIT",
+    "repository": "https://github.com/debug-js/debug",
+    "publisher": "Josh Junon",
+    "url": "https://github.com/qix-",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/socket.io-client/node_modules/debug",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/socket.io-client/node_modules/debug/LICENSE"
+  },
+  "debug@4.4.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/debug-js/debug",
+    "publisher": "Josh Junon",
+    "url": "https://github.com/qix-",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/debug",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/debug/LICENSE"
+  },
+  "decamelize@1.2.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/decamelize",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/decamelize",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/decamelize/license"
+  },
+  "decode-uri-component@0.2.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/SamVerschueren/decode-uri-component",
+    "publisher": "Sam Verschueren",
+    "email": "sam.verschueren@gmail.com",
+    "url": "github.com/SamVerschueren",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/decode-uri-component",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/decode-uri-component/license"
+  },
+  "deepmerge-ts@7.1.5": {
+    "licenses": "BSD-3-Clause",
+    "repository": "https://github.com/RebeccaStevens/deepmerge-ts",
+    "publisher": "Rebecca Stevens",
+    "email": "rebecca.stevens@outlook.co.nz",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/deepmerge-ts",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/deepmerge-ts/LICENSE"
+  },
+  "define-data-property@1.1.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ljharb/define-data-property",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/define-data-property",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/define-data-property/LICENSE"
+  },
+  "defu@6.1.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/defu",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/defu",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/defu/LICENSE"
+  },
+  "dequal@2.0.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/lukeed/dequal",
+    "publisher": "Luke Edwards",
+    "email": "luke.edwards05@gmail.com",
+    "url": "https://lukeed.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/dequal",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/dequal/license"
+  },
+  "derive-valtio@0.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/dai-shi/derive-valtio",
+    "publisher": "Daishi Kato",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/derive-valtio",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/derive-valtio/LICENSE"
+  },
+  "destr@2.0.5": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/destr",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/destr",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/destr/LICENSE"
+  },
+  "detect-browser@5.3.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/DamonOehlman/detect-browser",
+    "publisher": "Damon Oehlman",
+    "email": "damon.oehlman@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/detect-browser",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/detect-browser/LICENSE"
+  },
+  "detect-libc@2.1.2": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/lovell/detect-libc",
+    "publisher": "Lovell Fuller",
+    "email": "npm@lovell.info",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/detect-libc",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/detect-libc/LICENSE"
+  },
+  "dijkstrajs@1.0.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/tcort/dijkstrajs",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/dijkstrajs",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/dijkstrajs/LICENSE.md"
+  },
+  "dotenv@16.6.1": {
+    "licenses": "BSD-2-Clause",
+    "repository": "https://github.com/motdotla/dotenv",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/dotenv",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/dotenv/LICENSE"
+  },
+  "dunder-proto@1.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/es-shims/dunder-proto",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/dunder-proto",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/dunder-proto/LICENSE"
+  },
+  "duplexify@4.1.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/mafintosh/duplexify",
+    "publisher": "Mathias Buus",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/duplexify",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/duplexify/LICENSE"
+  },
+  "echarts-for-react@3.0.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/hustcc/echarts-for-react",
+    "publisher": "hustcc",
+    "url": "http://github.com/hustcc",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/echarts-for-react",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/echarts-for-react/LICENSE"
+  },
+  "echarts@5.6.0": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/apache/echarts",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/echarts",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/echarts/LICENSE",
+    "noticeFile": "/Users/koen/Desktop/Liquilab/node_modules/echarts/NOTICE"
+  },
+  "eciesjs@0.4.16": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ecies/js",
+    "publisher": "Weiliang Li",
+    "email": "to.be.impressive@gmail.com",
+    "url": "https://github.com/kigawas",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/eciesjs",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/eciesjs/LICENSE"
+  },
+  "effect@3.18.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/Effect-TS/effect",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/effect",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/effect/LICENSE"
+  },
+  "emoji-regex@8.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/mathiasbynens/emoji-regex",
+    "publisher": "Mathias Bynens",
+    "url": "https://mathiasbynens.be/",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/cliui/node_modules/emoji-regex",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/cliui/node_modules/emoji-regex/LICENSE-MIT.txt"
+  },
+  "empathic@2.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/lukeed/empathic",
+    "publisher": "Luke Edwards",
+    "email": "luke.edwards05@gmail.com",
+    "url": "https://lukeed.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/empathic",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/empathic/license"
+  },
+  "encode-utf8@1.0.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/LinusU/encode-utf8",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/encode-utf8",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/encode-utf8/readme.md"
+  },
+  "end-of-stream@1.4.5": {
+    "licenses": "MIT",
+    "repository": "https://github.com/mafintosh/end-of-stream",
+    "publisher": "Mathias Buus",
+    "email": "mathiasbuus@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/end-of-stream",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/end-of-stream/LICENSE"
+  },
+  "engine.io-client@6.6.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/socketio/socket.io",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/engine.io-client",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/engine.io-client/LICENSE"
+  },
+  "engine.io-parser@5.2.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/socketio/socket.io",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/engine.io-parser",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/engine.io-parser/LICENSE"
+  },
+  "es-define-property@1.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ljharb/es-define-property",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/es-define-property",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/es-define-property/LICENSE"
+  },
+  "es-errors@1.3.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ljharb/es-errors",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/es-errors",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/es-errors/LICENSE"
+  },
+  "es-object-atoms@1.1.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ljharb/es-object-atoms",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/es-object-atoms",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/es-object-atoms/LICENSE"
+  },
+  "es-toolkit@1.33.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/toss/es-toolkit",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/es-toolkit",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/es-toolkit/LICENSE"
+  },
+  "es6-promise@4.2.8": {
+    "licenses": "MIT",
+    "repository": "https://github.com/stefanpenner/es6-promise",
+    "publisher": "Yehuda Katz, Tom Dale, Stefan Penner and contributors",
+    "url": "Conversion to ES6 API by Jake Archibald",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/es6-promise",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/es6-promise/LICENSE"
+  },
+  "eth-block-tracker@7.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/MetaMask/eth-block-tracker",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/eth-block-tracker",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/eth-block-tracker/LICENSE"
+  },
+  "eth-json-rpc-filters@6.0.1": {
+    "licenses": "ISC",
+    "repository": "https://github.com/MetaMask/eth-json-rpc-filters",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/eth-json-rpc-filters",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/eth-json-rpc-filters/LICENSE"
+  },
+  "eth-query@2.1.2": {
+    "licenses": "ISC",
+    "repository": "https://github.com/ethereumjs/eth-query",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/eth-query",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/eth-query/README.md"
+  },
+  "eth-rpc-errors@4.0.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/MetaMask/eth-rpc-errors",
+    "publisher": "Erik Marks",
+    "email": "rekmarks@protonmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/eth-rpc-errors",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/eth-rpc-errors/LICENSE"
+  },
+  "ethereum-cryptography@2.2.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ethereum/js-ethereum-cryptography",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/ethereum-cryptography",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/ethereum-cryptography/LICENSE"
+  },
+  "eventemitter2@6.4.9": {
+    "licenses": "MIT",
+    "repository": "https://github.com/hij1nx/EventEmitter2",
+    "publisher": "hij1nx",
+    "email": "paolo@async.ly",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/eventemitter2",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/eventemitter2/LICENSE.txt"
+  },
+  "eventemitter3@5.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/primus/eventemitter3",
+    "publisher": "Arnout Kazemier",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/eventemitter3",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/eventemitter3/LICENSE"
+  },
+  "events@3.3.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/Gozala/events",
+    "publisher": "Irakli Gozalishvili",
+    "email": "rfobic@gmail.com",
+    "url": "http://jeditoolkit.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/events",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/events/LICENSE"
+  },
+  "exsolve@1.0.7": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/exsolve",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/exsolve",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/exsolve/LICENSE"
+  },
+  "extension-port-stream@3.0.0": {
+    "licenses": "ISC",
+    "repository": "git+https://git@github.com/MetaMask/extension-port-stream",
+    "publisher": "Dan Finlay",
+    "email": "dan@danfinlay.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/extension-port-stream",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/extension-port-stream/LICENSE"
+  },
+  "fast-check@3.23.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/dubzzz/fast-check",
+    "publisher": "Nicolas DUBIEN",
+    "email": "github@dubien.org",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/fast-check",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/fast-check/LICENSE"
+  },
+  "fast-deep-equal@3.1.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/epoberezkin/fast-deep-equal",
+    "publisher": "Evgeny Poberezkin",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/fast-deep-equal",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/fast-deep-equal/LICENSE"
+  },
+  "fast-redact@3.5.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/davidmarkclements/fast-redact",
+    "publisher": "David Mark Clements",
+    "email": "david.clements@nearform.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/fast-redact",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/fast-redact/LICENSE"
+  },
+  "fast-safe-stringify@2.1.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/davidmarkclements/fast-safe-stringify",
+    "publisher": "David Mark Clements",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/fast-safe-stringify",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/fast-safe-stringify/LICENSE"
+  },
+  "fast-sha256@1.3.0": {
+    "licenses": "Unlicense",
+    "repository": "https://github.com/dchest/fast-sha256-js",
+    "publisher": "Dmitry Chestnykh",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/fast-sha256",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/fast-sha256/LICENSE"
+  },
+  "filter-obj@1.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/filter-obj",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/filter-obj",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/filter-obj/license"
+  },
+  "find-up@4.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/find-up",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/yargs/node_modules/find-up",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/yargs/node_modules/find-up/license"
+  },
+  "for-each@0.3.5": {
+    "licenses": "MIT",
+    "repository": "https://github.com/Raynos/for-each",
+    "publisher": "Raynos",
+    "email": "raynos2@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/for-each",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/for-each/LICENSE"
+  },
+  "function-bind@1.1.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/Raynos/function-bind",
+    "publisher": "Raynos",
+    "email": "raynos2@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/function-bind",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/function-bind/LICENSE"
+  },
+  "generator-function@2.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/TimothyGu/generator-function",
+    "publisher": "Jordan Harbamd",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/generator-function",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/generator-function/LICENSE.md"
+  },
+  "get-caller-file@2.0.5": {
+    "licenses": "ISC",
+    "repository": "https://github.com/stefanpenner/get-caller-file",
+    "publisher": "Stefan Penner",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/get-caller-file",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/get-caller-file/LICENSE.md"
+  },
+  "get-intrinsic@1.3.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ljharb/get-intrinsic",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/get-intrinsic",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/get-intrinsic/LICENSE"
+  },
+  "get-proto@1.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ljharb/get-proto",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/get-proto",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/get-proto/LICENSE"
+  },
+  "giget@2.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/giget",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/giget",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/giget/LICENSE"
+  },
+  "gopd@1.2.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ljharb/gopd",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/gopd",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/gopd/LICENSE"
+  },
+  "h3@1.15.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/h3js/h3",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/h3",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/h3/LICENSE"
+  },
+  "has-property-descriptors@1.0.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/inspect-js/has-property-descriptors",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/has-property-descriptors",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/has-property-descriptors/LICENSE"
+  },
+  "has-symbols@1.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/inspect-js/has-symbols",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "url": "http://ljharb.codes",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/has-symbols",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/has-symbols/LICENSE"
+  },
+  "has-tostringtag@1.0.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/inspect-js/has-tostringtag",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "url": "http://ljharb.codes",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/has-tostringtag",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/has-tostringtag/LICENSE"
+  },
+  "hasown@2.0.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/inspect-js/hasOwn",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/hasown",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/hasown/LICENSE"
+  },
+  "hono@4.10.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/honojs/hono",
+    "publisher": "Yusuke Wada",
+    "email": "yusuke@kamawada.com",
+    "url": "https://github.com/yusukebe",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/hono",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/hono/LICENSE"
+  },
+  "idb-keyval@6.2.1": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/jakearchibald/idb-keyval",
+    "publisher": "Jake Archibald",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/idb-keyval",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/idb-keyval/LICENCE"
+  },
+  "ieee754@1.2.1": {
+    "licenses": "BSD-3-Clause",
+    "repository": "https://github.com/feross/ieee754",
+    "publisher": "Feross Aboukhadijeh",
+    "email": "feross@feross.org",
+    "url": "https://feross.org",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/ieee754",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/ieee754/LICENSE"
+  },
+  "inherits@2.0.4": {
+    "licenses": "ISC",
+    "repository": "https://github.com/isaacs/inherits",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/inherits",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/inherits/LICENSE"
+  },
+  "iron-webcrypto@1.2.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/brc-dd/iron-webcrypto",
+    "publisher": "Divyansh Singh",
+    "email": "brc-dd@hotmail.com",
+    "url": "https://github.com/brc-dd",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/iron-webcrypto",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/iron-webcrypto/LICENSE.md"
+  },
+  "is-arguments@1.2.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/inspect-js/is-arguments",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "url": "http://ljharb.codes",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/is-arguments",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/is-arguments/LICENSE"
+  },
+  "is-callable@1.2.7": {
+    "licenses": "MIT",
+    "repository": "https://github.com/inspect-js/is-callable",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "url": "http://ljharb.codes",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/is-callable",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/is-callable/LICENSE"
+  },
+  "is-fullwidth-code-point@3.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/is-fullwidth-code-point",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/is-fullwidth-code-point",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/is-fullwidth-code-point/license"
+  },
+  "is-generator-function@1.1.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/inspect-js/is-generator-function",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/is-generator-function",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/is-generator-function/LICENSE"
+  },
+  "is-regex@1.2.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/inspect-js/is-regex",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/is-regex",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/is-regex/LICENSE"
+  },
+  "is-stream@2.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/is-stream",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "https://sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/is-stream",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/is-stream/license"
+  },
+  "is-typed-array@1.1.15": {
+    "licenses": "MIT",
+    "repository": "https://github.com/inspect-js/is-typed-array",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "url": "http://ljharb.codes",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/is-typed-array",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/is-typed-array/LICENSE"
+  },
+  "isarray@1.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/juliangruber/isarray",
+    "publisher": "Julian Gruber",
+    "email": "mail@juliangruber.com",
+    "url": "http://juliangruber.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/obj-multiplex/node_modules/isarray",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/obj-multiplex/node_modules/isarray/README.md"
+  },
+  "isarray@2.0.5": {
+    "licenses": "MIT",
+    "repository": "https://github.com/juliangruber/isarray",
+    "publisher": "Julian Gruber",
+    "email": "mail@juliangruber.com",
+    "url": "http://juliangruber.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/isarray",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/isarray/LICENSE"
+  },
+  "isows@1.0.6": {
+    "licenses": "MIT",
+    "repository": "https://github.com/wevm/isows",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/isows",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/isows/LICENSE"
+  },
+  "isows@1.0.7": {
+    "licenses": "MIT",
+    "repository": "https://github.com/wevm/isows",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/isows",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/isows/LICENSE"
+  },
+  "jiti@2.6.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/jiti",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/jiti",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/jiti/LICENSE"
+  },
+  "js-tokens@4.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/lydell/js-tokens",
+    "publisher": "Simon Lydell",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/js-tokens",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/js-tokens/LICENSE"
+  },
+  "json-rpc-engine@6.1.0": {
+    "licenses": "ISC",
+    "repository": "https://github.com/MetaMask/json-rpc-engine",
+    "publisher": "kumavis",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/json-rpc-engine",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/json-rpc-engine/LICENSE"
+  },
+  "json-rpc-random-id@1.0.1": {
+    "licenses": "ISC",
+    "repository": "https://github.com/kumavis/json-rpc-random-id",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/json-rpc-random-id",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/json-rpc-random-id/README.md"
+  },
+  "keccak@3.0.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/cryptocoinjs/keccak",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/keccak",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/keccak/LICENSE"
+  },
+  "keyvaluestorage-interface@1.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/pedrouid/keyvaluestorage-interface",
+    "publisher": "Pedro Gomes",
+    "email": "github.com/pedrouid",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/keyvaluestorage-interface",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/keyvaluestorage-interface/LICENSE"
+  },
+  "liquilab-lp-manager@0.1.3": {
+    "licenses": "UNLICENSED",
+    "private": true,
+    "path": "/Users/koen/Desktop/Liquilab",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/LICENSE"
+  },
+  "lit-element@4.2.1": {
+    "licenses": "BSD-3-Clause",
+    "repository": "https://github.com/lit/lit",
+    "publisher": "Google LLC",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/lit-element",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/lit-element/LICENSE"
+  },
+  "lit-html@3.3.1": {
+    "licenses": "BSD-3-Clause",
+    "repository": "https://github.com/lit/lit",
+    "publisher": "Google LLC",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/lit-html",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/lit-html/LICENSE"
+  },
+  "lit@3.3.0": {
+    "licenses": "BSD-3-Clause",
+    "repository": "https://github.com/lit/lit",
+    "publisher": "Google LLC",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/lit",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/lit/LICENSE"
+  },
+  "locate-path@5.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/locate-path",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/yargs/node_modules/locate-path",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/yargs/node_modules/locate-path/license"
+  },
+  "lodash@4.17.21": {
+    "licenses": "MIT",
+    "repository": "https://github.com/lodash/lodash",
+    "publisher": "John-David Dalton",
+    "email": "john.david.dalton@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/lodash",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/lodash/LICENSE"
+  },
+  "loose-envify@1.4.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/zertosh/loose-envify",
+    "publisher": "Andres Suarez",
+    "email": "zertosh@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/loose-envify",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/loose-envify/LICENSE"
+  },
+  "lru-cache@10.4.3": {
+    "licenses": "ISC",
+    "repository": "https://github.com/isaacs/node-lru-cache",
+    "publisher": "Isaac Z. Schlueter",
+    "email": "i@izs.me",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/lru-cache",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/lru-cache/LICENSE"
+  },
+  "lucide-react@0.546.0": {
+    "licenses": "ISC",
+    "repository": "https://github.com/lucide-icons/lucide",
+    "publisher": "Eric Fennis",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/lucide-react",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/lucide-react/LICENSE"
+  },
+  "math-intrinsics@1.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/es-shims/math-intrinsics",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/math-intrinsics",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/math-intrinsics/LICENSE"
+  },
+  "micro-ftch@0.3.1": {
+    "licenses": "MIT",
+    "publisher": "Paul Miller",
+    "url": "https://paulmillr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/micro-ftch",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/micro-ftch/LICENSE"
+  },
+  "mipd@0.0.7": {
+    "licenses": "MIT",
+    "repository": "https://github.com/wagmi-dev/mipd",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/mipd",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/mipd/LICENSE"
+  },
+  "ms@2.1.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/zeit/ms",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/sdk-communication-layer/node_modules/ms",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/sdk-communication-layer/node_modules/ms/license.md"
+  },
+  "ms@2.1.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/vercel/ms",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/ms",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/ms/license.md"
+  },
+  "multiformats@9.9.0": {
+    "licenses": "(Apache-2.0 AND MIT)",
+    "repository": "https://github.com/multiformats/js-multiformats",
+    "publisher": "Mikeal Rogers",
+    "email": "mikeal.rogers@gmail.com",
+    "url": "https://www.mikealrogers.com/",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/multiformats",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/multiformats/LICENSE-APACHE"
+  },
+  "nanoid@3.3.11": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ai/nanoid",
+    "publisher": "Andrey Sitnik",
+    "email": "andrey@sitnik.ru",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/nanoid",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/nanoid/LICENSE"
+  },
+  "next@15.5.6": {
+    "licenses": "MIT",
+    "repository": "https://github.com/vercel/next.js",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/next",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/next/license.md"
+  },
+  "node-addon-api@2.0.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/nodejs/node-addon-api",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/node-addon-api",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/node-addon-api/LICENSE.md"
+  },
+  "node-fetch-native@1.6.7": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/node-fetch-native",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/node-fetch-native",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/node-fetch-native/LICENSE"
+  },
+  "node-fetch@2.7.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/bitinn/node-fetch",
+    "publisher": "David Frank",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/node-fetch",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/node-fetch/LICENSE.md"
+  },
+  "node-gyp-build@4.8.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/prebuild/node-gyp-build",
+    "publisher": "Mathias Buus",
+    "url": "@mafintosh",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/node-gyp-build",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/node-gyp-build/LICENSE"
+  },
+  "node-mock-http@1.0.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/node-mock-http",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/node-mock-http",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/node-mock-http/LICENSE"
+  },
+  "normalize-path@3.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/jonschlinkert/normalize-path",
+    "publisher": "Jon Schlinkert",
+    "url": "https://github.com/jonschlinkert",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/normalize-path",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/normalize-path/LICENSE"
+  },
+  "nypm@0.6.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/nypm",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/nypm",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/nypm/LICENSE"
+  },
+  "obj-multiplex@1.0.0": {
+    "licenses": "ISC",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/obj-multiplex",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/obj-multiplex/README.md"
+  },
+  "ofetch@1.4.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/ofetch",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/ofetch",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/ofetch/LICENSE"
+  },
+  "ohash@2.0.11": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/ohash",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/ohash",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/ohash/LICENSE"
+  },
+  "on-exit-leak-free@0.2.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/mcollina/on-exit-or-gc",
+    "publisher": "Matteo Collina",
+    "email": "hello@matteocollina.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/on-exit-leak-free",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/on-exit-leak-free/LICENSE"
+  },
+  "once@1.4.0": {
+    "licenses": "ISC",
+    "repository": "https://github.com/isaacs/once",
+    "publisher": "Isaac Z. Schlueter",
+    "email": "i@izs.me",
+    "url": "http://blog.izs.me/",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/once",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/once/LICENSE"
+  },
+  "openapi-fetch@0.13.8": {
+    "licenses": "MIT",
+    "repository": "https://github.com/openapi-ts/openapi-typescript",
+    "publisher": "Drew Powers",
+    "email": "drew@pow.rs",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/openapi-fetch",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/openapi-fetch/LICENSE"
+  },
+  "openapi-typescript-helpers@0.0.15": {
+    "licenses": "MIT",
+    "repository": "https://github.com/openapi-ts/openapi-typescript",
+    "publisher": "Drew Powers",
+    "email": "drew@pow.rs",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/openapi-typescript-helpers",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/openapi-typescript-helpers/LICENSE"
+  },
+  "ox@0.6.7": {
+    "licenses": "MIT",
+    "repository": "https://github.com/wevm/ox",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/ox",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/ox/LICENSE"
+  },
+  "ox@0.6.9": {
+    "licenses": "MIT",
+    "repository": "https://github.com/wevm/ox",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/ox",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/ox/LICENSE"
+  },
+  "ox@0.9.12": {
+    "licenses": "MIT",
+    "repository": "https://github.com/wevm/ox",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/porto/node_modules/ox",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/porto/node_modules/ox/LICENSE"
+  },
+  "ox@0.9.6": {
+    "licenses": "MIT",
+    "repository": "https://github.com/wevm/ox",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/viem/node_modules/ox",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/viem/node_modules/ox/LICENSE"
+  },
+  "p-limit@2.3.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/p-limit",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/yargs/node_modules/p-limit",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/yargs/node_modules/p-limit/license"
+  },
+  "p-limit@6.2.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/p-limit",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "https://sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/p-limit",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/p-limit/license"
+  },
+  "p-locate@4.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/p-locate",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/yargs/node_modules/p-locate",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/yargs/node_modules/p-locate/license"
+  },
+  "p-try@2.2.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/p-try",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/p-try",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/p-try/license"
+  },
+  "path-exists@4.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/path-exists",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/path-exists",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/path-exists/license"
+  },
+  "pathe@2.0.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/pathe",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/pathe",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/pathe/LICENSE"
+  },
+  "perfect-debounce@1.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/perfect-debounce",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/perfect-debounce",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/perfect-debounce/LICENSE"
+  },
+  "picocolors@1.1.1": {
+    "licenses": "ISC",
+    "repository": "https://github.com/alexeyraspopov/picocolors",
+    "publisher": "Alexey Raspopov",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/picocolors",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/picocolors/LICENSE"
+  },
+  "picomatch@2.3.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/micromatch/picomatch",
+    "publisher": "Jon Schlinkert",
+    "url": "https://github.com/jonschlinkert",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/picomatch",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/picomatch/LICENSE"
+  },
+  "pify@3.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/pify",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/pify",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/pify/license"
+  },
+  "pify@5.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/pify",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "https://sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/eth-json-rpc-filters/node_modules/pify",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/eth-json-rpc-filters/node_modules/pify/license"
+  },
+  "pino-abstract-transport@0.5.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/pinojs/pino-abstract-transport",
+    "publisher": "Matteo Collina",
+    "email": "hello@matteocollina.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/pino-abstract-transport",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/pino-abstract-transport/LICENSE"
+  },
+  "pino-std-serializers@4.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/pinojs/pino-std-serializers",
+    "publisher": "James Sumners",
+    "email": "james.sumners@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/pino-std-serializers",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/pino-std-serializers/LICENSE"
+  },
+  "pino@7.11.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/pinojs/pino",
+    "publisher": "Matteo Collina",
+    "email": "hello@matteocollina.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/pino",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/pino/LICENSE"
+  },
+  "pkg-types@2.3.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/pkg-types",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/pkg-types",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/pkg-types/LICENSE"
+  },
+  "pngjs@5.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/lukeapage/pngjs",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/pngjs",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/pngjs/LICENSE"
+  },
+  "pony-cause@2.1.11": {
+    "licenses": "0BSD",
+    "repository": "https://github.com/voxpelli/pony-cause",
+    "publisher": "Pelle Wessman",
+    "email": "pelle@kodfabrik.se",
+    "url": "http://kodfabrik.se/",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/pony-cause",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/pony-cause/LICENSE"
+  },
+  "porto@0.2.19": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ithacaxyz/porto",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/porto",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/porto/README.md"
+  },
+  "possible-typed-array-names@1.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ljharb/possible-typed-array-names",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/possible-typed-array-names",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/possible-typed-array-names/LICENSE"
+  },
+  "postcss@8.4.31": {
+    "licenses": "MIT",
+    "repository": "https://github.com/postcss/postcss",
+    "publisher": "Andrey Sitnik",
+    "email": "andrey@sitnik.ru",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/next/node_modules/postcss",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/next/node_modules/postcss/LICENSE"
+  },
+  "preact@10.24.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/preactjs/preact",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/preact",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/preact/LICENSE"
+  },
+  "prisma@6.18.0": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/prisma/prisma",
+    "publisher": "Tim Suchanek",
+    "email": "suchanek@prisma.io",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/prisma",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/prisma/LICENSE"
+  },
+  "process-nextick-args@2.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/calvinmetcalf/process-nextick-args",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/process-nextick-args",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/process-nextick-args/license.md"
+  },
+  "process-warning@1.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/fastify/processs-warning",
+    "publisher": "Tomas Della Vedova",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/process-warning",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/process-warning/LICENSE"
+  },
+  "proxy-compare@2.6.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/dai-shi/proxy-compare",
+    "publisher": "Daishi Kato",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/proxy-compare",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/proxy-compare/LICENSE"
+  },
+  "pump@3.0.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/mafintosh/pump",
+    "publisher": "Mathias Buus Madsen",
+    "email": "mathiasbuus@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/pump",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/pump/LICENSE"
+  },
+  "pure-rand@6.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/dubzzz/pure-rand",
+    "publisher": "Nicolas DUBIEN",
+    "email": "github@dubien.org",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/pure-rand",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/pure-rand/LICENSE"
+  },
+  "qrcode@1.5.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/soldair/node-qrcode",
+    "publisher": "Ryan Day",
+    "email": "soldair@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/qrcode",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/qrcode/license"
+  },
+  "query-string@7.1.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/query-string",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "https://sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/query-string",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/query-string/license"
+  },
+  "querystringify@2.2.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unshiftio/querystringify",
+    "publisher": "Arnout Kazemier",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/querystringify",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/querystringify/LICENSE"
+  },
+  "quick-format-unescaped@4.0.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/davidmarkclements/quick-format",
+    "publisher": "David Mark Clements",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/quick-format-unescaped",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/quick-format-unescaped/LICENSE"
+  },
+  "radix3@1.1.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/radix3",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/radix3",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/radix3/LICENSE"
+  },
+  "rc9@2.1.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/rc9",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/rc9",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/rc9/LICENSE"
+  },
+  "react-dom@18.3.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/react",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/react-dom",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/react-dom/LICENSE"
+  },
+  "react@18.3.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/react",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/react",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/react/LICENSE"
+  },
+  "readable-stream@2.3.8": {
+    "licenses": "MIT",
+    "repository": "https://github.com/nodejs/readable-stream",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/obj-multiplex/node_modules/readable-stream",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/obj-multiplex/node_modules/readable-stream/LICENSE"
+  },
+  "readable-stream@3.6.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/nodejs/readable-stream",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/readable-stream",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/readable-stream/LICENSE"
+  },
+  "readdirp@4.1.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/paulmillr/readdirp",
+    "publisher": "Thorsten Lorenz",
+    "email": "thlorenz@gmx.de",
+    "url": "thlorenz.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/readdirp",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/readdirp/LICENSE"
+  },
+  "real-require@0.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/pinojs/real-require",
+    "publisher": "Paolo Insogna",
+    "email": "shogun@cowtech.it",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/real-require",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/real-require/LICENSE"
+  },
+  "require-directory@2.1.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/troygoode/node-require-directory",
+    "publisher": "Troy Goode",
+    "email": "troygoode@gmail.com",
+    "url": "http://github.com/troygoode/",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/require-directory",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/require-directory/LICENSE"
+  },
+  "require-main-filename@2.0.0": {
+    "licenses": "ISC",
+    "repository": "https://github.com/yargs/require-main-filename",
+    "publisher": "Ben Coe",
+    "email": "ben@npmjs.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/require-main-filename",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/require-main-filename/LICENSE.txt"
+  },
+  "requires-port@1.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unshiftio/requires-port",
+    "publisher": "Arnout Kazemier",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/requires-port",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/requires-port/LICENSE"
+  },
+  "resend@6.3.0-canary.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/resend/resend-node",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/resend",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/resend/LICENSE"
+  },
+  "safe-buffer@5.1.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/feross/safe-buffer",
+    "publisher": "Feross Aboukhadijeh",
+    "email": "feross@feross.org",
+    "url": "http://feross.org",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/obj-multiplex/node_modules/safe-buffer",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/obj-multiplex/node_modules/safe-buffer/LICENSE"
+  },
+  "safe-buffer@5.2.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/feross/safe-buffer",
+    "publisher": "Feross Aboukhadijeh",
+    "email": "feross@feross.org",
+    "url": "https://feross.org",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/safe-buffer",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/safe-buffer/LICENSE"
+  },
+  "safe-regex-test@1.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ljharb/safe-regex-test",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/safe-regex-test",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/safe-regex-test/LICENSE"
+  },
+  "safe-stable-stringify@2.5.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/BridgeAR/safe-stable-stringify",
+    "publisher": "Ruben Bridgewater",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/safe-stable-stringify",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/safe-stable-stringify/LICENSE"
+  },
+  "scheduler@0.23.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/react",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/scheduler",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/scheduler/LICENSE"
+  },
+  "semver@7.7.3": {
+    "licenses": "ISC",
+    "repository": "https://github.com/npm/node-semver",
+    "publisher": "GitHub Inc.",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/semver",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/semver/LICENSE"
+  },
+  "set-blocking@2.0.0": {
+    "licenses": "ISC",
+    "repository": "https://github.com/yargs/set-blocking",
+    "publisher": "Ben Coe",
+    "email": "ben@npmjs.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/set-blocking",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/set-blocking/LICENSE.txt"
+  },
+  "set-function-length@1.2.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ljharb/set-function-length",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/set-function-length",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/set-function-length/LICENSE"
+  },
+  "sha.js@2.4.12": {
+    "licenses": "(MIT AND BSD-3-Clause)",
+    "repository": "https://github.com/crypto-browserify/sha.js",
+    "publisher": "Dominic Tarr",
+    "email": "dominic.tarr@gmail.com",
+    "url": "dominictarr.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/sha.js",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/sha.js/LICENSE"
+  },
+  "sharp@0.34.4": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/lovell/sharp",
+    "publisher": "Lovell Fuller",
+    "email": "npm@lovell.info",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/sharp",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/sharp/LICENSE"
+  },
+  "size-sensor@1.0.2": {
+    "licenses": "ISC",
+    "repository": "https://github.com/hustcc/size-sensor",
+    "publisher": "hustcc",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/size-sensor",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/size-sensor/README.md"
+  },
+  "socket.io-client@4.8.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/socketio/socket.io",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/socket.io-client",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/socket.io-client/LICENSE"
+  },
+  "socket.io-parser@4.2.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/socketio/socket.io-parser",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/socket.io-parser",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/socket.io-parser/LICENSE"
+  },
+  "sonic-boom@2.8.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/pinojs/sonic-boom",
+    "publisher": "Matteo Collina",
+    "email": "hello@matteocollina.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/sonic-boom",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/sonic-boom/LICENSE"
+  },
+  "source-map-js@1.2.1": {
+    "licenses": "BSD-3-Clause",
+    "repository": "https://github.com/7rulnik/source-map-js",
+    "publisher": "Valentin 7rulnik Semirulnik",
+    "email": "v7rulnik@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/source-map-js",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/source-map-js/LICENSE"
+  },
+  "split-on-first@1.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/split-on-first",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/split-on-first",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/split-on-first/license"
+  },
+  "split2@4.2.0": {
+    "licenses": "ISC",
+    "repository": "https://github.com/mcollina/split2",
+    "publisher": "Matteo Collina",
+    "email": "hello@matteocollina.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/split2",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/split2/LICENSE"
+  },
+  "stream-shift@1.0.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/mafintosh/stream-shift",
+    "publisher": "Mathias Buus",
+    "url": "@mafintosh",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/stream-shift",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/stream-shift/LICENSE"
+  },
+  "strict-uri-encode@2.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/kevva/strict-uri-encode",
+    "publisher": "Kevin Mårtensson",
+    "email": "kevinmartensson@gmail.com",
+    "url": "github.com/kevva",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/strict-uri-encode",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/strict-uri-encode/license"
+  },
+  "string-width@4.2.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/string-width",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/cliui/node_modules/string-width",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/cliui/node_modules/string-width/license"
+  },
+  "string_decoder@1.1.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/nodejs/string_decoder",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/obj-multiplex/node_modules/string_decoder",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/obj-multiplex/node_modules/string_decoder/LICENSE"
+  },
+  "string_decoder@1.3.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/nodejs/string_decoder",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/string_decoder",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/string_decoder/LICENSE"
+  },
+  "strip-ansi@6.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/chalk/strip-ansi",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/cliui/node_modules/strip-ansi",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/cliui/node_modules/strip-ansi/license"
+  },
+  "styled-jsx@5.1.6": {
+    "licenses": "MIT",
+    "repository": "https://github.com/vercel/styled-jsx",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/styled-jsx",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/styled-jsx/license.md"
+  },
+  "superstruct@1.0.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ianstormtaylor/superstruct",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/superstruct",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/superstruct/License.md"
+  },
+  "svix@1.76.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/svix/svix-libs",
+    "publisher": "svix",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/svix",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/svix/README.md"
+  },
+  "swr@2.3.6": {
+    "licenses": "MIT",
+    "repository": "https://github.com/vercel/swr",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/swr",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/swr/LICENSE"
+  },
+  "tailwind-merge@3.3.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/dcastil/tailwind-merge",
+    "publisher": "Dany Castillo",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/tailwind-merge",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/tailwind-merge/LICENSE.md"
+  },
+  "thread-stream@0.15.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/mcollina/thread-stream",
+    "publisher": "Matteo Collina",
+    "email": "hello@matteocollina.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/thread-stream",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/thread-stream/LICENSE"
+  },
+  "tinyexec@1.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/tinylibs/tinyexec",
+    "publisher": "James Garbutt",
+    "url": "https://github.com/43081j",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/tinyexec",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/tinyexec/LICENSE"
+  },
+  "to-buffer@1.2.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/browserify/to-buffer",
+    "publisher": "Mathias Buus",
+    "url": "@mafintosh",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/to-buffer",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/to-buffer/LICENSE"
+  },
+  "tr46@0.0.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/Sebmaster/tr46.js",
+    "publisher": "Sebastian Mayr",
+    "email": "npm@smayr.name",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/tr46"
+  },
+  "tslib@1.14.1": {
+    "licenses": "0BSD",
+    "repository": "https://github.com/Microsoft/tslib",
+    "publisher": "Microsoft Corp.",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/events/node_modules/tslib",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@walletconnect/events/node_modules/tslib/LICENSE.txt"
+  },
+  "tslib@2.3.0": {
+    "licenses": "0BSD",
+    "repository": "https://github.com/Microsoft/tslib",
+    "publisher": "Microsoft Corp.",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/echarts/node_modules/tslib",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/echarts/node_modules/tslib/LICENSE.txt"
+  },
+  "tslib@2.8.1": {
+    "licenses": "0BSD",
+    "repository": "https://github.com/Microsoft/tslib",
+    "publisher": "Microsoft Corp.",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/tslib",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/tslib/LICENSE.txt"
+  },
+  "typed-array-buffer@1.0.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/inspect-js/typed-array-buffer",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/typed-array-buffer",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/typed-array-buffer/LICENSE"
+  },
+  "typescript@5.9.3": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/microsoft/TypeScript",
+    "publisher": "Microsoft Corp.",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/typescript",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/typescript/LICENSE.txt"
+  },
+  "ufo@1.6.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/ufo",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/ufo",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/ufo/LICENSE"
+  },
+  "uint8arrays@3.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/achingbrain/uint8arrays",
+    "publisher": "Alex Potsides",
+    "email": "alex@achingbrain.net",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/uint8arrays",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/uint8arrays/README.md"
+  },
+  "uncrypto@0.1.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/uncrypto",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/uncrypto",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/uncrypto/LICENSE"
+  },
+  "undici-types@6.21.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/nodejs/undici",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/undici-types",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/undici-types/LICENSE"
+  },
+  "unstorage@1.17.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unjs/unstorage",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/unstorage",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/unstorage/LICENSE"
+  },
+  "url-parse@1.5.10": {
+    "licenses": "MIT",
+    "repository": "https://github.com/unshiftio/url-parse",
+    "publisher": "Arnout Kazemier",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/url-parse",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/url-parse/LICENSE"
+  },
+  "use-sync-external-store@1.2.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/react",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/valtio/node_modules/use-sync-external-store",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/valtio/node_modules/use-sync-external-store/LICENSE"
+  },
+  "use-sync-external-store@1.4.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/react",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/wagmi/node_modules/use-sync-external-store",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/wagmi/node_modules/use-sync-external-store/LICENSE"
+  },
+  "use-sync-external-store@1.6.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/react",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/use-sync-external-store",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/use-sync-external-store/LICENSE"
+  },
+  "utf-8-validate@5.0.10": {
+    "licenses": "MIT",
+    "repository": "https://github.com/websockets/utf-8-validate",
+    "publisher": "Einar Otto Stangvik",
+    "email": "einaros@gmail.com",
+    "url": "http://2x.io",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/utf-8-validate",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/utf-8-validate/LICENSE"
+  },
+  "util-deprecate@1.0.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/TooTallNate/util-deprecate",
+    "publisher": "Nathan Rajlich",
+    "email": "nathan@tootallnate.net",
+    "url": "http://n8.io/",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/util-deprecate",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/util-deprecate/LICENSE"
+  },
+  "util@0.12.5": {
+    "licenses": "MIT",
+    "repository": "https://github.com/browserify/node-util",
+    "publisher": "Joyent",
+    "url": "http://www.joyent.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/util",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/util/LICENSE"
+  },
+  "uuid@10.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/uuidjs/uuid",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/svix/node_modules/uuid",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/svix/node_modules/uuid/LICENSE.md"
+  },
+  "uuid@8.3.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/uuidjs/uuid",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/uuid",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/uuid/LICENSE.md"
+  },
+  "uuid@9.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/uuidjs/uuid",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/utils/node_modules/uuid",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@metamask/utils/node_modules/uuid/LICENSE.md"
+  },
+  "valtio@1.13.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/pmndrs/valtio",
+    "publisher": "Daishi Kato",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/valtio",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/valtio/LICENSE"
+  },
+  "viem@2.23.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/wevm/viem",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@walletconnect/utils/node_modules/viem",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/@walletconnect/utils/node_modules/viem/LICENSE"
+  },
+  "viem@2.38.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/wevm/viem",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/viem",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/viem/LICENSE"
+  },
+  "wagmi@2.18.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/wevm/wagmi",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/wagmi",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/wagmi/LICENSE"
+  },
+  "webextension-polyfill@0.10.0": {
+    "licenses": "MPL-2.0",
+    "repository": "https://github.com/mozilla/webextension-polyfill",
+    "publisher": "Mozilla",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/webextension-polyfill",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/webextension-polyfill/LICENSE"
+  },
+  "webidl-conversions@3.0.1": {
+    "licenses": "BSD-2-Clause",
+    "repository": "https://github.com/jsdom/webidl-conversions",
+    "publisher": "Domenic Denicola",
+    "email": "d@domenic.me",
+    "url": "https://domenic.me/",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/webidl-conversions",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/webidl-conversions/LICENSE.md"
+  },
+  "whatwg-url@5.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/jsdom/whatwg-url",
+    "publisher": "Sebastian Mayr",
+    "email": "github@smayr.name",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/whatwg-url",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/whatwg-url/LICENSE.txt"
+  },
+  "which-module@2.0.1": {
+    "licenses": "ISC",
+    "repository": "https://github.com/nexdrew/which-module",
+    "publisher": "nexdrew",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/which-module",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/which-module/LICENSE"
+  },
+  "which-typed-array@1.1.19": {
+    "licenses": "MIT",
+    "repository": "https://github.com/inspect-js/which-typed-array",
+    "publisher": "Jordan Harband",
+    "email": "ljharb@gmail.com",
+    "url": "http://ljharb.codes",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/which-typed-array",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/which-typed-array/LICENSE"
+  },
+  "wrap-ansi@6.2.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/chalk/wrap-ansi",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/cliui/node_modules/wrap-ansi",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/cliui/node_modules/wrap-ansi/license"
+  },
+  "wrappy@1.0.2": {
+    "licenses": "ISC",
+    "repository": "https://github.com/npm/wrappy",
+    "publisher": "Isaac Z. Schlueter",
+    "email": "i@izs.me",
+    "url": "http://blog.izs.me/",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/wrappy",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/wrappy/LICENSE"
+  },
+  "ws@7.5.10": {
+    "licenses": "MIT",
+    "repository": "https://github.com/websockets/ws",
+    "publisher": "Einar Otto Stangvik",
+    "email": "einaros@gmail.com",
+    "url": "http://2x.io",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/ws",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/ws/LICENSE"
+  },
+  "ws@8.17.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/websockets/ws",
+    "publisher": "Einar Otto Stangvik",
+    "email": "einaros@gmail.com",
+    "url": "http://2x.io",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/engine.io-client/node_modules/ws",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/engine.io-client/node_modules/ws/LICENSE"
+  },
+  "ws@8.18.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/websockets/ws",
+    "publisher": "Einar Otto Stangvik",
+    "email": "einaros@gmail.com",
+    "url": "http://2x.io",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/ws",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit/node_modules/ws/LICENSE"
+  },
+  "ws@8.18.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/websockets/ws",
+    "publisher": "Einar Otto Stangvik",
+    "email": "einaros@gmail.com",
+    "url": "http://2x.io",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/viem/node_modules/ws",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/viem/node_modules/ws/LICENSE"
+  },
+  "xmlhttprequest-ssl@2.1.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/mjwwit/node-XMLHttpRequest",
+    "publisher": "Michael de Wit",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/xmlhttprequest-ssl",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/xmlhttprequest-ssl/LICENSE"
+  },
+  "xtend@4.0.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/Raynos/xtend",
+    "publisher": "Raynos",
+    "email": "raynos2@gmail.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/xtend",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/xtend/LICENSE"
+  },
+  "y18n@4.0.3": {
+    "licenses": "ISC",
+    "repository": "https://github.com/yargs/y18n",
+    "publisher": "Ben Coe",
+    "email": "ben@npmjs.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/y18n",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/y18n/LICENSE"
+  },
+  "yargs-parser@18.1.3": {
+    "licenses": "ISC",
+    "repository": "https://github.com/yargs/yargs-parser",
+    "publisher": "Ben Coe",
+    "email": "ben@npmjs.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/yargs-parser",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/yargs-parser/LICENSE.txt"
+  },
+  "yargs@15.4.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/yargs/yargs",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/yargs",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/yargs/LICENSE"
+  },
+  "yocto-queue@1.2.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/yocto-queue",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "https://sindresorhus.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/yocto-queue",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/yocto-queue/license"
+  },
+  "zod@3.22.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/colinhacks/zod",
+    "publisher": "Colin McDonnell",
+    "email": "colin@colinhacks.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-wallet/node_modules/zod",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@reown/appkit-wallet/node_modules/zod/LICENSE"
+  },
+  "zod@4.1.12": {
+    "licenses": "MIT",
+    "repository": "https://github.com/colinhacks/zod",
+    "publisher": "Colin McDonnell",
+    "email": "zod@colinhacks.com",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/zod",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/zod/LICENSE"
+  },
+  "zrender@5.6.1": {
+    "licenses": "BSD-3-Clause",
+    "repository": "https://github.com/ecomfe/zrender",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/zrender",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/zrender/LICENSE"
+  },
+  "zustand@5.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/pmndrs/zustand",
+    "publisher": "Paul Henschel",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/@wagmi/core/node_modules/zustand",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/@wagmi/core/node_modules/zustand/LICENSE"
+  },
+  "zustand@5.0.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/pmndrs/zustand",
+    "publisher": "Paul Henschel",
+    "path": "/Users/koen/Desktop/Liquilab/node_modules/zustand",
+    "licenseFile": "/Users/koen/Desktop/Liquilab/node_modules/zustand/LICENSE"
+  }
+}
+

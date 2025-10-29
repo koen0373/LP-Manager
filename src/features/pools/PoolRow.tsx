@@ -5,6 +5,7 @@ import Image from 'next/image';
 
 import { TokenIcon } from '@/components/TokenIcon';
 import RangeBand, { RangeStatus } from '@/components/pools/PoolRangeIndicator';
+import { calcApr24h } from '@/lib/metrics';
 
 interface PoolRowToken {
   symbol: string;
@@ -31,6 +32,12 @@ export interface PoolRowViewModel {
   lowerPrice?: number | null;
   upperPrice?: number | null;
   currentPrice?: number | null;
+  apr24hLabel?: string;
+  apr24hValue?: number;
+  dailyFeesUsdValue?: number;
+  dailyIncentivesUsdValue?: number;
+  tvlUsdValue?: number;
+  /** @deprecated — use apr24hLabel */
   apy24hLabel?: string;
   status: PoolRangeStatus;
   shareUrl?: string;
@@ -42,25 +49,49 @@ interface PoolRowProps {
   onShare?: (poolId: string) => void;
 }
 
-const STATUS_CONFIG: Record<PoolRangeStatus, { label: string; color: string; animation?: string }> = {
-  in: {
-    label: 'In Range',
-    color: '#00C66B',
-    animation: 'heartbeat 1.5s ease-in-out infinite',
-  },
-  near: {
-    label: 'Near Band',
-    color: '#FFA500',
-    animation: 'rangeGlow 2s ease-in-out infinite',
-  },
-  out: {
-    label: 'Out of Range',
-    color: '#E74C3C',
-  },
-};
-
 const metricLabelClass = 'font-ui text-xs font-medium uppercase tracking-wide text-white/60';
 const metricValueClass = 'font-ui tnum text-right text-base font-semibold text-white';
+
+/**
+ * Robust formatter that accepts multiple fee encodings.
+ * Uniswap v3 onchain "fee" is *hundredths of a bip* (1e-6): 3000 -> 0.3%.
+ * Some APIs provide bps (30 -> 0.30%), or direct pct (0.003 -> 0.3% or 0.3 -> 0.3%).
+ */
+function toFeePercentNumber(input: unknown): number {
+  const v = Number(input ?? 0);
+  if (!isFinite(v) || v <= 0) return 0;
+
+  // Heuristics:
+  // - Common Uniswap-style (hundredths of a bip): 500, 3000, 10000 -> 0.05/0.3/1.0 %
+  if (v >= 500 && v <= 10000) return v / 1e4; // 3000 => 0.3
+
+  // - True bps: 5, 30, 100 -> 0.05/0.3/1.0 %
+  if (v <= 100) return v / 100;
+
+  // - Already percent fraction (0.003) or percent number (0.3)
+  if (v > 0 && v < 2) return v >= 1 ? v : v * 100; // 0.3 -> 0.3% | 1.2 -> 1.2%
+
+  // Fallback: assume hundredths-of-bip
+  return v / 1e4;
+}
+
+function formatFeePercent(input: unknown): string {
+  const n = toFeePercentNumber(input);
+  // Show up to one decimal for typical tiers (0.3%, 1.0%), two decimals for small values (0.05%)
+  const decimals = n < 0.1 ? 2 : 1;
+  return `${n.toFixed(decimals)}%`;
+}
+
+function coerceNumeric(value: string | number | null | undefined): number | undefined {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : undefined;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value.replace(/[^0-9.-]/g, ''));
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
 
 function TokenStack({ token, tokenKey }: { token: PoolRowToken; tokenKey: string }) {
   const { symbol, iconSrc, name } = token;
@@ -127,12 +158,15 @@ export function PoolRow({ pool, onNavigate, onShare }: PoolRowProps) {
     lowerPrice,
     upperPrice,
     currentPrice,
+    apr24hLabel,
+    apr24hValue,
+    dailyFeesUsdValue,
+    dailyIncentivesUsdValue,
+    tvlUsdValue,
     apy24hLabel,
     status,
     shareUrl,
   } = pool;
-
-  const statusMeta = STATUS_CONFIG[status];
 
   const handleNavigate = React.useCallback(() => {
     if (onNavigate) {
@@ -166,6 +200,44 @@ export function PoolRow({ pool, onNavigate, onShare }: PoolRowProps) {
     [id, onShare, pairLabel, shareUrl],
   );
 
+  const STATUS_CONFIG: Record<PoolRangeStatus, { label: string; color: string; animation?: string }> = {
+    in: {
+      label: 'In Range',
+      color: '#00C66B',
+      animation: 'heartbeat 1.5s ease-in-out infinite',
+    },
+    near: {
+      label: 'Near Band',
+      color: '#FFA500',
+      animation: 'rangeGlow 2s ease-in-out infinite',
+    },
+    out: {
+      label: 'Out of Range',
+      color: '#E74C3C',
+    },
+  };
+
+  const statusMeta = STATUS_CONFIG[status];
+  const explicitAprValue =
+    typeof apr24hValue === 'number' && Number.isFinite(apr24hValue) ? apr24hValue : undefined;
+  const resolvedTvl =
+    typeof tvlUsdValue === 'number' && Number.isFinite(tvlUsdValue)
+      ? tvlUsdValue
+      : coerceNumeric(liquidityUsd);
+  const aprFromMetrics = calcApr24h({
+    tvlUsd: resolvedTvl,
+    dailyFeesUsd: dailyFeesUsdValue,
+    dailyIncentivesUsd: dailyIncentivesUsdValue,
+  });
+  const aprRawValue = explicitAprValue ?? aprFromMetrics;
+  const fallbackAprLabel = Number.isFinite(aprRawValue)
+    ? `${Math.min(aprRawValue, 999).toFixed(1)}%`
+    : '—';
+  const displayApr = apr24hLabel ?? apy24hLabel ?? fallbackAprLabel;
+
+  // Format fee percentage robustly
+  const formattedFee = formatFeePercent(feeTier);
+
   return (
     <div
       data-ll-ui="v2025-10"
@@ -193,12 +265,14 @@ export function PoolRow({ pool, onNavigate, onShare }: PoolRowProps) {
 
       {/* Mobile layout */}
       <div className="md:hidden">
-        <div className="flex items-start justify-between gap-4 pr-10">
+        <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-white/60">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-white/60">
               <span>{providerName}</span>
               <span className="text-white/30">•</span>
-              <span>{poolDisplayId}</span>
+              <span>#{poolDisplayId}</span>
+              <span className="text-white/30">•</span>
+              <span>{formattedFee}</span>
             </div>
             <div className="flex items-center gap-3 text-sm font-semibold text-white">
               <div className="flex items-center -space-x-2">
@@ -206,9 +280,6 @@ export function PoolRow({ pool, onNavigate, onShare }: PoolRowProps) {
                 <TokenStack token={token1} tokenKey={`${id}-token1`} />
               </div>
               <span className="font-ui">{pairLabel}</span>
-            </div>
-            <div className="text-xs text-white/60">
-              {feeTier} • Range {rangeLabel}
             </div>
           </div>
         </div>
@@ -241,7 +312,7 @@ export function PoolRow({ pool, onNavigate, onShare }: PoolRowProps) {
 
         <div className="mt-4 flex items-center justify-between text-sm">
           <span className="bg-gradient-to-r from-[#00E6FF] to-[#007FFF] bg-clip-text font-semibold text-transparent">
-            {apy24hLabel ?? '—'}
+            {displayApr}
           </span>
           <button
             type="button"
@@ -260,10 +331,12 @@ export function PoolRow({ pool, onNavigate, onShare }: PoolRowProps) {
       <div className="hidden grid-cols-[minmax(0,2.6fr)_repeat(3,minmax(0,1fr))_minmax(120px,1fr)] grid-rows-[auto_auto] gap-x-6 gap-y-4 md:grid">
         <div className="flex items-center gap-4">
           <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-white/60">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-white/60">
               <span>{providerName}</span>
               <span className="text-white/30">•</span>
-              <span>{poolDisplayId}</span>
+              <span>#{poolDisplayId}</span>
+              <span className="text-white/30">•</span>
+              <span>{formattedFee}</span>
             </div>
             <div className="flex items-center gap-3 text-base font-semibold text-white">
               <div className="flex items-center -space-x-2">
@@ -271,11 +344,7 @@ export function PoolRow({ pool, onNavigate, onShare }: PoolRowProps) {
                 <TokenStack token={token1} tokenKey={`${id}-desktop-token1`} />
               </div>
               <span className="font-ui">{pairLabel}</span>
-              <span className="rounded-full border border-white/10 px-2 py-0.5 text-xs font-medium text-white/70">
-                {feeTier}
-              </span>
             </div>
-            {/* Range label verwijderd - info zit nu in de compacte RangeBand */}
           </div>
         </div>
 
@@ -307,7 +376,7 @@ export function PoolRow({ pool, onNavigate, onShare }: PoolRowProps) {
 
         <div className="flex items-center justify-end">
           <span className="bg-gradient-to-r from-[#00E6FF] to-[#007FFF] bg-clip-text text-base font-semibold text-transparent">
-            {apy24hLabel ?? '—'}
+            {displayApr}
           </span>
         </div>
 

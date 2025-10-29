@@ -212,7 +212,7 @@ export default function CheckoutPage() {
                 <button
                   type="button"
                   onClick={handleToggleBilling}
-                  className="self-start text-sm font-semibold text-[#6EA8FF] underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6EA8FF]/60"
+                  className="self-start text-sm font-semibold text-[#3B82F6] underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B82F6]/60"
                 >
                   {billingCycle === 'month' ? 'Pay annually — 2 months free' : 'Switch to monthly billing'}
                 </button>
@@ -225,7 +225,7 @@ export default function CheckoutPage() {
                       Included capacity
                     </span>
                     <div className="flex flex-wrap items-center gap-3 text-lg font-semibold text-white">
-                      <span className="rounded-full bg-[#6EA8FF]/10 px-3 py-1 text-[#6EA8FF]">
+                      <span className="rounded-full bg-[#3B82F6]/10 px-3 py-1 text-[#3B82F6]">
                         You can follow{' '}
                         <span className="tnum text-white">{capacity}</span>{' '}
                         pools now
@@ -277,7 +277,7 @@ export default function CheckoutPage() {
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
                       required
-                      className="h-12 rounded-xl border border-white/15 bg-black/30 px-4 text-sm text-white placeholder:text-white/30 focus:border-[#6EA8FF] focus:outline-none focus:ring-2 focus:ring-[#6EA8FF]/40"
+                      className="h-12 rounded-xl border border-white/15 bg-black/30 px-4 text-sm text-white placeholder:text-white/30 focus:border-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#60A5FA]/40"
                       placeholder="founder@liquilab.io"
                     />
                     {!emailValid && email.length > 0 ? (
@@ -289,7 +289,7 @@ export default function CheckoutPage() {
                     <button
                       type="button"
                       onClick={() => setShowInvoiceFields((value) => !value)}
-                      className="flex items-center justify-between text-sm font-semibold text-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6EA8FF]/60"
+                      className="flex items-center justify-between text-sm font-semibold text-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B82F6]/60"
                     >
                       Company & VAT details (optional)
                       <span className="text-xs text-white/50">{showInvoiceFields ? 'Hide' : 'Add'}</span>
@@ -304,7 +304,7 @@ export default function CheckoutPage() {
                             id="company"
                             value={company}
                             onChange={(event) => setCompany(event.target.value)}
-                            className="h-11 rounded-xl border border-white/15 bg-black/30 px-4 text-sm text-white placeholder:text-white/30 focus:border-[#6EA8FF] focus:outline-none focus:ring-2 focus:ring-[#6EA8FF]/40"
+                            className="h-11 rounded-xl border border-white/15 bg-black/30 px-4 text-sm text-white placeholder:text-white/30 focus:border-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#60A5FA]/40"
                             placeholder="LiquiLab BV"
                           />
                         </div>
@@ -316,7 +316,7 @@ export default function CheckoutPage() {
                             id="vat"
                             value={vat}
                             onChange={(event) => setVat(event.target.value)}
-                            className="h-11 rounded-xl border border-white/15 bg-black/30 px-4 text-sm text-white placeholder:text-white/30 focus:border-[#6EA8FF] focus:outline-none focus:ring-2 focus:ring-[#6EA8FF]/40"
+                            className="h-11 rounded-xl border border-white/15 bg-black/30 px-4 text-sm text-white placeholder:text-white/30 focus:border-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#60A5FA]/40"
                             placeholder="NL123456789B01"
                           />
                         </div>

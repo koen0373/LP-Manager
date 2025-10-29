@@ -1,0 +1,31 @@
+#!/bin/sh
+# LiquiLab commit message hook — enforces IP declaration.
+
+set -eu
+
+if [ "${LL_BYPASS_IP_HOOK:-0}" = "1" ]; then
+  exit 0
+fi
+
+COMMIT_MSG_FILE="$1"
+
+if [ ! -s "$COMMIT_MSG_FILE" ]; then
+  echo "LiquiLab commit aborted: empty commit messages are not allowed." >&2
+  exit 1
+fi
+
+if grep -qi '^IP-CLAIM:[[:space:]]*\(yes\|no\)' "$COMMIT_MSG_FILE"; then
+  exit 0
+fi
+
+cat >&2 <<'WARN'
+LiquiLab IP policy requires an explicit declaration in each commit message.
+Please add a line in the template:
+
+  IP-CLAIM: yes
+
+Use "no" only when the commit contains no new LiquiLab-owned IP (e.g., tooling tweaks).
+To bypass temporarily, export LL_BYPASS_IP_HOOK=1 (logged for audit purposes).
+WARN
+
+exit 1

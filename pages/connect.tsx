@@ -275,7 +275,7 @@ export default function ConnectPage() {
                       value={manualInput}
                       onChange={(event) => setManualInput(event.target.value)}
                       placeholder="0x…"
-                      className="h-11 flex-1 rounded-xl border border-white/20 bg-black/20 px-4 font-mono text-sm text-white placeholder:text-white/30 focus:border-[#6EA8FF] focus:outline-none focus:ring-2 focus:ring-[#6EA8FF]/40"
+                      className="h-11 flex-1 rounded-xl border border-white/20 bg-black/20 px-4 font-mono text-sm text-white placeholder:text-white/30 focus:border-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#60A5FA]/40"
                     />
                     <Button type="submit" variant="ghost" className="whitespace-nowrap">
                       Preview
@@ -293,7 +293,7 @@ export default function ConnectPage() {
                     </span>
                     <h2 className="font-brand text-2xl font-semibold text-white">
                       We can follow up to{' '}
-                      <span className="tnum text-[#6EA8FF]">
+                      <span className="tnum text-[#3B82F6]">
                         {totalCapacity}
                       </span>{' '}
                       pool{totalCapacity === 1 ? '' : 's'}

@@ -210,22 +210,21 @@ When creating custom assets, deliver:
 
 | Color Name | HEX | RGB | Usage |
 |------------|-----|-----|-------|
-| **LiquiLab Aqua** | `#6EA8FF` | `110, 168, 255` | Primary brand color, CTA buttons, links |
+| **Signal Aqua** | `#1BE8D2` | `27, 232, 210` | Checkmarks, success signals, decorative accents |
 | **LiquiLab Navy** | `#0A0F1C` | `10, 15, 28` | Background, depth |
 | **Slate Grey** | `#1E2533` | `30, 37, 51` | Cards, UI surfaces |
-| **Electric Blue** | `#3B82F6` | `59, 130, 246` | Charts, highlights |
+| **Electric Blue** | `#3B82F6` | `59, 130, 246` | Primary actions, links, hover/focus states |
 | **Accent Green** | `#00C66B` | `0, 198, 107` | Success, In Range status |
 | **Accent Orange** | `#FFA500` | `255, 165, 0` | Warning, Near Band status |
 | **Accent Red** | `#E74C3C` | `231, 76, 60` | Error, Out of Range status |
-| **LiquiLab Mist** | `#9AA1AB` | `154, 161, 171` | Secondary text, muted UI |
-| **Secondary Gray** | `#B0B9C7` | `176, 185, 199` | Body text, labels |
+| **LiquiLab Mist** | `#9CA3AF` | `156, 163, 175` | Secondary text, muted UI |
 
 ### Semantic Colors
 
 - **Success / In Range:** `#00C66B` (green)
 - **Warning / Near Band:** `#FFA500` (orange)  
 - **Error / Out of Range:** `#E74C3C` (red)
-- **Info / Neutral:** `#6EA8FF` (aqua)
+- **Info / Neutral:** `#3B82F6` (electric blue)
 
 ---
 
@@ -409,4 +408,3 @@ gap-12: 48px
 **Last Updated:** October 26, 2025  
 **Version:** 1.0.0  
 **Maintained by:** LiquiLab Design System
-

@@ -33,7 +33,7 @@ export function ProgressSteps({ current, className }: ProgressStepsProps) {
               className={clsx(
                 'flex items-center gap-2 uppercase tracking-[0.16em]',
                 isCurrent
-                  ? 'text-[#6EA8FF]'
+                  ? 'text-[#3B82F6]'
                   : isCompleted
                     ? 'text-white/70'
                     : 'text-white/40',
@@ -43,7 +43,7 @@ export function ProgressSteps({ current, className }: ProgressStepsProps) {
                 className={clsx(
                   'flex h-6 w-6 items-center justify-center rounded-full border text-xs',
                   isCurrent
-                    ? 'border-[#6EA8FF] text-[#6EA8FF]'
+                    ? 'border-[#3B82F6] text-[#3B82F6]'
                     : isCompleted
                       ? 'border-white/40 text-white/70'
                       : 'border-white/20 text-white/40',
@@ -62,4 +62,3 @@ export function ProgressSteps({ current, className }: ProgressStepsProps) {
     </nav>
   );
 }
-

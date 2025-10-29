@@ -30,12 +30,12 @@ export default function Login() {
           type="password"
           value={password}
           onChange={(e)=>setPassword(e.target.value)}
-          className="w-full rounded-lg bg-black/30 border border-white/10 px-3 py-2 outline-none focus:border-[#6EA8FF]"
+          className="w-full rounded-lg bg-black/30 border border-white/10 px-3 py-2 outline-none focus:border-[#3B82F6]"
           placeholder="Enter password"
           required
         />
         {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
-        <button type="submit" className="mt-4 w-full rounded-lg bg-[#6EA8FF] text-[#0A0F1C] font-semibold py-2 hover:bg-[#78B5FF] transition">
+        <button type="submit" className="mt-4 w-full rounded-lg bg-[#3B82F6] text-white font-semibold py-2 transition hover:bg-[#60A5FA]">
           Enter
         </button>
       </form>

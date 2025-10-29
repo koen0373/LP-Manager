@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const responseBody = {
       ok: true as const,
       pricing: {
-        billingCycle,
+        billingCycle: billing,
         pricePerPoolUsd: PRICE_PER_POOL_USD,
         freePools: FREE_POOLS,
         paidPools,

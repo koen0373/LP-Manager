@@ -2,6 +2,7 @@
 
 import React from 'react';
 import PositionsTable, { PositionData } from '@/components/PositionsTable';
+import { calcApr24h } from '@/lib/metrics';
 
 const providerLabelMap: Record<string, string> = {
   Enosys: 'ENOSYS V3',
@@ -24,6 +25,8 @@ interface DemoPoolRow {
   token0Icon: string;
   token1Icon: string;
   provider: string;
+  dailyFeesUsd?: string;
+  dailyIncentivesUsd?: string;
 }
 
 const demoPools: DemoPoolRow[] = [
@@ -178,10 +181,21 @@ function toPositionData(row: DemoPoolRow): PositionData {
   const liquidityValue = Number(row.liquidityUsd.replace(/[^0-9.-]/g, ''));
   const feesValue = Number(row.feesUsd.replace(/[^0-9.-]/g, ''));
   const incentivesValue = Number(row.incentivesUsd.replace(/[^0-9.-]/g, ''));
+  const dailyFeesValue =
+    row.dailyFeesUsd !== undefined ? Number(row.dailyFeesUsd.replace(/[^0-9.-]/g, '')) : feesValue / 14;
+  const dailyIncentivesValue =
+    row.dailyIncentivesUsd !== undefined
+      ? Number(row.dailyIncentivesUsd.replace(/[^0-9.-]/g, ''))
+      : incentivesValue / 14;
   const share = Number(row.liquidityShare.replace(/[^0-9.-]/g, ''));
   const rangeParts = row.range.includes('–')
     ? row.range.split('–').map((value) => Number(value.trim()))
     : [undefined, undefined];
+  const apr24h = calcApr24h({
+    tvlUsd: liquidityValue,
+    dailyFeesUsd: dailyFeesValue,
+    dailyIncentivesUsd: dailyIncentivesValue,
+  });
 
   return {
     tokenId: row.tokenId.replace('#', ''),
@@ -201,11 +215,14 @@ function toPositionData(row: DemoPoolRow): PositionData {
     incentivesToken: row.incentivesToken,
     currentPrice: Number(row.currentPrice),
     status: row.status,
+    apr24h,
+    dailyFeesUsd: dailyFeesValue,
+    dailyIncentivesUsd: dailyIncentivesValue,
   };
 }
 
 export function DemoPoolsPreview() {
   const demoData = React.useMemo(() => demoPools.map(toPositionData), []);
 
-  return <PositionsTable positions={demoData} />;
+  return <PositionsTable positions={demoData} hideClaimLink />;
 }

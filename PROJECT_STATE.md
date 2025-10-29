@@ -1280,5 +1280,148 @@ These can be adjusted based on user feedback and real-world LP behavior patterns
 
 ### 2025-10-28 (evening)
 - Changed: `/src/components/onboarding/ConnectWalletModal.tsx`, `/pages/index.tsx`, `/src/components/marketing/Proposition.tsx`, `/src/components/marketing/TrialAcquisition.tsx`, `/src/components/demo/DemoSection.tsx`, `/src/components/ui/Button.tsx`, `/src/components/PositionsTable.tsx`, `/src/styles/globals.css` — refined top pool + color audit + wallet improvements
-- Notes: Top pool card with current price, 4-col grid (TVL, FEES, INCENTIVES, 24h APR), RangeBand + status; **COLOR AUDIT**: Aqua `#1BE8D2` ONLY for checkmarks, Electric Blue `#3B82F6` for all actions/highlights, Mist `#9CA3AF` for muted; **PRICING COPY**: bundles of 5; **WALLET**: local icons, browser detection, "INSTALLED" badge; **POOL HOVER FIX**: removed divider margin (was my-2), moved spacing to rows (pt-4 row1, pb-4 row2), hover now extends from first pixel to divider with no gap, flat Electric Blue `rgba(59,130,246,0.06)`
-- Open actions: none
+- Notes: Top pool card with current price, 4-col grid (TVL, FEES, INCENTIVES, 24h APR), RangeBand + status; **COLOR AUDIT**: Aqua `#1BE8D2` ONLY for checkmarks, Electric Blue `#3B82F6` for all actions/highlights, Mist `#9CA3AF` for muted; **PRICING COPY**: bundles of 5; **WALLET**: local icons, browser detection, "INSTALLED" badge; **POOL HOVER FIX**: removed divider margin, moved spacing to rows (pt-4/pb-4), hover extends to divider, Electric Blue `rgba(59,130,246,0.06)`
+- Open actions: **See CODEX_HANDOVER_2025-10-28.md** for integration tasks (wallet icon assets, API mapping verification, component cleanup, end-to-end testing, color audit final sweep)
+
+- **Today (2025-10-28):** Added temporary Rabby/Bifrost wallet icons (`public/icons/rabby.webp`, `public/icons/bifrost.webp`), hardened the connect modal mapping and pricing flow (`src/components/onboarding/ConnectWalletModal.tsx`, `pages/api/billing/preview.ts`, `pages/connect.tsx`, `pages/checkout.tsx`, `src/lib/analytics.ts`), refreshed demo pool APR data (`pages/api/demo/pools.ts`, `src/components/demo/DemoPoolsTable.tsx`), aligned pool tables and color tokens (`src/components/PositionsTable.tsx`, `src/components/ui/Button.tsx`, `src/components/ui/ProgressSteps.tsx`, `src/styles/globals.css`, `pages/login.tsx`, `pages/placeholder.tsx`), removed unused marketing components, and documented verification steps (`docs/SMOKE_TEST.md`, `docs/STYLEGUIDE.md`). Rabby/Bifrost icons reuse the WalletConnect asset until official downloads are available locally.
+
+## Product Naming — RangeBand™ (Official)
+
+> This section establishes the official product name, rationale, usage rules, and implementation guidance for LiquiLab’s signature range visualization. External product/docs/investor materials are in **English** (per LiquiLab comms policy).
+
+---
+
+### Brand Card (for Comms/UX)
+
+**One-liner**  
+**RangeBand™** is LiquiLab’s signature visualization that makes concentrated liquidity **visible and actionable**: one horizontal band with **Min–Max** price and a **Current** marker, so LPs instantly see if they are *in band* and what to do next.
+
+**Why this name (rationale)**  
+- **Precise & intuitive:** “Range” (price bounds) + “Band” (bandwidth; *in-band/out-of-band*) matches how LPs think.  
+- **Visually congruent:** the UI literally is a band with a marker; the term describes the graphic.  
+- **Distinct & protectable:** not a generic “range slider”; supports ™ and *patent pending*.  
+- **Searchable & brandable:** unique term (e.g., #RangeBand), easy to reference in docs and social.  
+- **Extensible family:** Band Alerts, Band Health, Band Insights, Band Shift.
+
+**Usage rules (brand & copy)**  
+- Spelling: **RangeBand™** (CamelCase). Use **™** at the first mention per page/section; “RangeBand” thereafter.  
+- Avoid generic phrasing like “range slider” in UI copy—use “RangeBand”.  
+- Plural: “RangeBands” (use sparingly).  
+- Footers/disclaimers (where appropriate):  
+  *“All intellectual property belongs to LiquiLab. **RangeBand™** patent pending.”*
+
+**Microcopy library**  
+- “**Stay in the Band.**”  
+- “**Re-band in seconds when price moves.**”  
+- “**Band width {x}% · Strategy: {Aggressive|Balanced|Conservative}.**”  
+- “**You’re out of band — claim & adjust on {Provider}.**”
+
+---
+
+### Engineering Annex (for Implementation)
+
+**Definition**  
+A **RangeBand** is the price band (Min ↔ Max) an LP sets in a CLMM (v3-style AMM). The UI renders:  
+- A horizontal **band** (the visual width reflects band width).  
+- A **marker** at the **Current** price.  
+- Labels for **Min**, **Current**, **Max**; plus **Range Width %** and a **Strategy** tag.  
+- Status color reflects in-band state: **In Range**, **Near Band**, **Out of Range**.
+
+**Component conventions**  
+- Name: `RangeBand` (presentational; read-only by default).  
+- Path: `src/components/pools/RangeBand.tsx` (or keep in the existing `PoolRangeIndicator.tsx` and export `RangeBand`).  
+- Numbers use **tabular numerals** for alignment.
+
+**Suggested props (TypeScript)**  
+```ts
+export type RangeStatus = 'in' | 'near' | 'out';
+
+export interface RangeBandProps {
+  min: number;             // min price
+  max: number;             // max price
+  current: number;         // current price
+  status: RangeStatus;     // 'in' | 'near' | 'out'
+  token0Symbol: string;    // e.g., WFLR
+  token1Symbol: string;    // e.g., USD₮0
+}
+
+Computation & thresholds
+	•	Range width (mid-price normalization):
+bandWidthPct = (max - min) / ((min + max) / 2) * 100
+	•	Default Strategy thresholds (tunable; document changes here if updated):
+	•	Aggressive (Narrow): < 12%
+	•	Balanced: 12% – 35%
+	•	Conservative (Wide): > 35%
+	•	Helper mapping:
+
+function getStrategy(pct: number) {
+  if (pct < 12) return { label: 'Aggressive', tone: 'narrow' };
+  if (pct <= 35) return { label: 'Balanced',  tone: 'medium' };
+  return { label: 'Conservative', tone: 'wide' };
+}
+
+
+	•	Marker position: clamp to [0%, 100%] if current lies outside [min, max].
+
+Status colors (tokens)
+	•	In Range: #00C66B
+	•	Near Band: #FFA500
+	•	Out of Range: #E74C3C
+(Keep consistent with global status palette.)
+
+Accessibility (read-only)
+	•	role="img" with ARIA summary:
+aria-label="RangeBand: Min {min}, Current {current}, Max {max}, Width {pct}%, Strategy {label}, Status {in|near|out}."
+	•	Ensure sufficient contrast for line/marker/labels on dark backgrounds.
+
+Telemetry (optional, for analytics)
+	•	rangeband_render_ms, rangeband_marker_clamped (boolean), rangeband_status (in/near/out), rangeband_width_pct (bucketed).
+
+Testing checklist
+	•	Marker at Min, Mid, Max renders correctly; clamping when out-of-range.
+	•	Labels: Min, Current (text above + number below), Max present and readable.
+	•	Status color matches status prop.
+	•	Strategy tag matches thresholds for edge values (11.9%, 12.0%, 35.0%, 35.1%).
+	•	Tabular numerals applied to numeric text.
+	•	Mobile layout stacks full-width under the pair; desktop spans the specified columns.
+
+⸻
+
+Legal & IP
+	•	Trademark: Mark first mention as RangeBand™; maintain consistent capitalization in code/docs/UI.
+	•	Ownership notice: “All intellectual property belongs to LiquiLab. RangeBand™ patent pending.”
+	•	Partner brands: Reference names only (no third-party logos without explicit approval).
+
+⸻
+
+Changelog (RangeBand)
+	•	2025-10-28 — Established official naming (RangeBand™), brand rules, rationale, default strategy thresholds (<12 / 12–35 / >35), status colors, ARIA pattern, telemetry suggestions, and testing checklist.
+
+
+- **Today (2025-10-28):** Add `/api/health` JSON heartbeat for smoke tests.
+- **Today (2025-10-29):** Tweaked dev server binding to fix local ERR_CONNECTION_REFUSED (`package.json`, `scripts/dev_up.sh`).
+- **Today (2025-10-29, evening):** Added guidance note to wallet connect modal result phase (`src/components/onboarding/ConnectWalletModal.tsx`, `src/components/ui/InfoNote.tsx`) — helps users understand they should choose their free pool based on TVL, Fees, or 24h APR. InfoNote is a new reusable component with brand-aligned subtle styling (left border, muted/blue variants, ARIA support).
+- **Today (2025-10-29, evening):** Added 'incentives' sortKey to wallet connect pool selector (`src/components/onboarding/ConnectWalletModal.tsx`). Order: 'tvl' | 'fees' | 'incentives' | 'apr'. Implemented tolerant mapping with fallback chain (incentives24hUsd → incentivesUsd → rflrUsd) and added UI pill set (4 sort options). Top pool label dynamically reflects selected sort key. Default remains TVL.
+- **Today (2025-10-29, evening):** Added "RangeBand™" product label to range visualization (`src/components/pools/PoolRangeIndicator.tsx`). Label appears above range line with muted styling (11px uppercase, Mist #9CA3AF), updated ARIA label to include trademark, and enhanced tooltip with "RangeBand™:" prefix. Brand-aligned, accessible, non-intrusive placement consistent across all pool tables (desktop/mobile, demo/live). Satisfies trademark visibility requirement while maintaining visual hierarchy.
+- **Today (2025-10-29, evening):** Added Strategy classification to RangeBand™ visualization (`src/components/pools/PoolRangeIndicator.tsx`). Exported constants: `PRODUCT_NAME = 'RangeBand™'`, `STRATEGY_THRESHOLDS = { aggressiveLt: 12, conservativeGt: 35 }`. Implemented `getRangeWidthPct()` and `getStrategy()` functions. Strategy label displays inline (desktop: right-aligned with header; mobile: below current price) with format "Strategy: {Aggressive|Balanced|Conservative} ({pct}%)". Updated marker tooltip and ARIA label to include strategy. All UI copy uses exact capitalization "RangeBand™" (capital R and B + ™ symbol). Updated tests (`src/components/pools/__tests__/rangeStatusTests.ts`) to verify PRODUCT_NAME constant, strategy boundaries (12.0%, 35.0%), and ARIA label format.
+- **Today (2025-10-29, evening):** Refactored RangeBand™ layout for calmer composition (`src/components/pools/PoolRangeIndicator.tsx`). Header row now displays: "RangeBand™" (top-left, standalone) + Strategy + Status (right side desktop, stacked mobile). Current price moved to separate centered section below band with "Current price" label. Vertical spacing: header mb-2, band mb-2, current-price mt-1. Typography refined: 12px semibold product name, 11px muted strategy, 10px uppercase label, 16px semibold price value. Responsive: desktop shows horizontal header (justify-between), mobile stacks vertically (flex-col). ARIA label and tooltip updated to include status. Tests updated to verify new layout structure and accessibility.
+- **Today (2025-10-29, evening):** RangeBand™ header tightened (`src/components/pools/PoolRangeIndicator.tsx`). Removed "Strategy:" word from visible UI; header now shows: "RangeBand™ | Balanced (16.2%)" with strategy only. Removed status pill from RangeBand header; status now displays ONLY in PoolRow card (top-right). ARIA label and tooltip retain "Strategy:" prefix for accessibility clarity. Visual text format: "{label} ({pct}%)" without word. Tests updated (`src/components/pools/__tests__/rangeStatusTests.ts`) to verify: no "Strategy:" literal in rendered text, aria-label includes "Strategy: {label} ({pct}%)" for screen readers.
+- **Today (2025-10-29, evening):** Restored status indicator to PoolRow card position (`src/features/pools/PoolRow.tsx`). Status dot + label now appears at top-right of each pool card (absolute positioning mobile, grid positioning desktop). RangeBand™ header shows only product name and strategy classification, keeping status separate as intended. Single status indicator per pool at card level, not within RangeBand component.
+- **Today (2025-10-29, evening):** RangeBand™ header alignment refined and band extended to full width (`src/components/pools/PoolRangeIndicator.tsx`, `src/styles/globals.css`). Header: left-aligned "RangeBand™" flush to card edge; right-aligned group with strategy text "Balanced (16.2%)" (no "Strategy:" word visible) + single status pill (dot + label). Band track container now `w-full` with `justify-content: space-between` and `flex-grow: 1` for maximum width coverage (subject to card padding). Strategy span includes `aria-label` and `title` with "Strategy: {label} ({pct}%)" for accessibility. Line width increased to clamp(8%, 98%). Tests updated to verify single status pill in RangeBand header and full-width band container class.
+- **Today (2025-10-29, evening):** RangeBand™ status moved from header to band row; track width now reflects strategy classification (`src/components/pools/PoolRangeIndicator.tsx`, `src/components/pools/__tests__/rangeStatusTests.ts`). Header contains ONLY "RangeBand™" (left) + strategy text (right, no "Strategy:" literal). Single status pill placed at far right of band row (after max label). Implemented `computeTrackWidthFactor()`: aggressive (< 12%) = 52% width factor, balanced (12–35%) = 70%, conservative (> 35%) = 88%. Track width computed via ResizeObserver with min 320px desktop / 260px mobile, max 980px. Visual result: conservative pools show noticeably longer tracks than aggressive pools; marker movement clearly visible across strategy classes. Tests verify header structure (no status), band row structure (one status at far right), and track width scaling.
+- **Today (2025-10-29, evening):** Removed duplicate "Current Price" panel above RangeBand™ (`src/components/onboarding/ConnectWalletModal.tsx`). The standalone "CURRENT PRICE" card that displayed above the RangeBand component in the wallet connect modal has been removed. Current price is now shown only once: inside the RangeBand™ component (below the track). Moved pair subtitle (e.g., "USD₮0/FXRP") from the deleted panel to the pool header line next to the pair name with muted text styling. Cleaned spacing above RangeBand for deliberate visual rhythm. Single status pill remains on band row at far right as intended.
+- **Today (2025-10-29, evening):** Copy: shortened choose-pool subtext to "Choose your free pool to try LiquiLab." (`src/components/onboarding/ConnectWalletModal.tsx`). Replaced longer helper text under "Choose your free pool" title in wallet connect modal with concise one-sentence copy for clearer user guidance.
+- **Today (2025-10-29, evening):** Compact onboarding choose-pool header (`src/components/onboarding/ConnectWalletModal.tsx`). Desktop (≥640px): single-row layout with title "CHOOSE YOUR FREE POOL" (left) + segmented control for sort options TVL/FEES/INCENTIVES/APR (right); helper text "Choose your free pool to try LiquiLab." sits below with 8px top margin. Mobile (≤640px): title + native select dropdown (no large pills); helper text below. Segmented control: role="tablist", keyboard nav (arrow keys), Electric Blue active state, focus ring visible. Reduced vertical spacing ~35% (py-2, gap-2, mt-2). Copy unchanged. Accessibility preserved with aria-labels and aria-live announcements.
+- **Today (2025-10-29, evening):** RangeBand: removed visible status pill from header; status now SR-only via enhanced aria-label and marker tooltip (`src/components/pools/PoolRangeIndicator.tsx`). Header shows only "RangeBand™" (left) + strategy label (right). Marker color (green/amber/red) is sole visual status indicator. Status info preserved for screen readers via: (1) enhanced aria-label on container includes "Status: {In Range|Near Band|Out of Range}", (2) sr-only span inside marker, (3) tooltip on marker. Header spacing refined after pill removal. No business logic changes.
+- **Today (2025-10-30):** Unified 24h APR calculation (fees + incentives) across wallet modal, positions table, and legacy pool cards; added resilient resize handling (`src/components/onboarding/ConnectWalletModal.tsx`, `src/components/PositionsTable.tsx`, `src/features/pools/PoolRow.tsx`, `src/components/pools/PoolRangeIndicator.tsx`).
+- **Changelog — 2025-10-30:** Established IP/legal baseline artifacts (files: `.gitignore`, `.gitattributes`, `LICENSE`, `docs/legal/*`, `docs/ip/IP_EVIDENCE_LOG.md`, `scripts/ip_repo_bootstrap.sh`, `scripts/git/commit-msg`, `scripts/git/setup_hooks.sh`, `.gitmessage`).
+- **Today (2025-10-30):** Pool row layout restructured: "Provider · #Pool ID · Fee %" now appears as first line (top/primary), token pair ("WFLR / USD₮0") moved to second line. Removed "USD₮0/WFLR" subtitle from ConnectWalletModal. Robust fee formatter handles multiple encodings (Uniswap v3 hundredths-of-bip, bps, direct percent). Files: `src/features/pools/PoolRow.tsx`, `src/components/onboarding/ConnectWalletModal.tsx`, `src/components/PositionsTable.tsx`. Example layout (mobile & desktop): Line 1: "ENOSYS V3 · #22003 · 0.3%" (muted, xs), Line 2: "🪙🪙 WFLR / USD₮0" (white, semibold). Fee formatter converts: 3000 → 0.3%, 500 → 0.05%, 10000 → 1.0% (1 decimal for typical tiers, 2 for small values).
+- **Today (2025-10-30):** RangeBand component: removed "RangeBand™" header title; added "Powered by [icon] RangeBand™" footer (right-bottom corner, subtle). Footer uses Inter for "Powered by", 21×21px icon in the middle, and Quicksand Bold for "RangeBand™" (with TM symbol). Icon from `/icons/RangeBand-icon.svg`. Strategy label now right-aligned only (no product name in header). No business logic changes. Files: `src/components/pools/PoolRangeIndicator.tsx`.
+- **Today (2025-10-30):** Pool table overhaul: unified 24h APR (fees + incentives), removed redundant status badge cell, added provider subline (PROVIDER · #ID · 0.30%), incentive token details (e.g., "1.1k rFLR"). Files: `src/components/PositionsTable.tsx`, `src/components/demo/DemoPoolsTable.tsx`, `src/lib/metrics.ts` (added `formatFeeTier`, `formatCompactNumber`), `pages/api/demo/pools.ts` (added `incentivesTokenAmount` field). Desktop table: 5 columns (Pool, Liquidity, Fees, Incentives with token sublabel, 24h APR). Mobile: 4-column metrics grid. RangeBand spans full width below metrics. APR calculation: `((dailyFeesUsd + dailyIncentivesUsd) / tvlUsd) * 365 * 100`. Demo pools now include realistic incentive amounts (450-18.3k rFLR).
+- **Today (2025-10-30):** Demo data strategy distribution: ensured 3 aggressive (<12% range width), 6 balanced/conservative pools. Files: `pages/api/demo/pools.ts`. Handler logic filters aggressive pools (range width <12%) and always includes 3 in final selection. Added new aggressive pools: Enosys #22145 (USDT0/WFLR, 10.9% width), BlazeSwap #41203 (WFLR/SGB, 10.3% width), SparkDEX DX-404 (EXFI/USDT0, 10.2% width). Adjusted existing pools' ranges for realistic strategy mix.
+- **Today (2025-10-30):** RangeBand marker health animation: subtle heartbeat pulse for green (1.5s) and amber (2.5s), static for red. Files: `src/components/pools/PoolRangeIndicator.tsx`, `src/styles/globals.css`. Added `@keyframes rb-heartbeat` with 6% scale + radial glow (6px spread, 10% opacity), `.rb-heartbeat-fast`, `.rb-heartbeat-slow`, and `.rb-status-{in|near|out}` classes. Marker uses `currentColor` for color/glow inheritance. Respects `prefers-reduced-motion` (disables animation + reduces glow).
+- **Today (2025-10-30):** Hidden "Claim →" link in demo pools. Files: `src/components/PositionsTable.tsx`, `src/components/demo/DemoPoolsTable.tsx`, `src/components/waitlist/DemoPoolsPreview.tsx`. Added optional `hideClaimLink` prop to `PositionsTable` (default `false`). Demo components pass `hideClaimLink={true}` to hide claim functionality in public/demo views. Claim links remain visible in authenticated customer dashboards.
+- **Today (2025-10-30):** Demo overview diversity enforcement: ensures ≥3 strategies (Aggressive/Balanced/Conservative), ≥3 range statuses (In/Near/Out), coverage across all 3 providers (Enosys/SparkDEX/BlazeSwap). Files: `src/lib/demoSelection.ts` (selection logic with greedy diversity algorithm), `pages/api/demo/pools.ts` (applies `pickDiverse` selector with 60s cache + 120s stale-while-revalidate). Selection algorithm: (1) ensures ≥1 pool per provider (top 2 by TVL), (2) ensures ≥1 pool per strategy (top 2 by TVL), (3) ensures ≥1 pool per status band (top 2 by TVL), (4) fills remaining slots by TVL/APR quality. Graceful degradation if constraints cannot be fully met. Enriches pools with computed strategy, rangeWidthPct, and apr24h fields. Includes `validateDiversity` helper for testing/monitoring.
+- **Today (2025-10-30):** Live demo pools implementation using real-time data from seeded wallets. Files: `data/demo_wallets.json` (5 starter wallet addresses), `data/README_DEMO_WALLETS.md` (curation rules), `src/lib/demoLiveSelector.ts` (selection utilities: `pickCandidateWallets`, `selectDiversePools`, `computeAPR24h`, `TtlCache`), `pages/api/demo/pools-live.ts` (new endpoint fetches positions from 3-5 random seed wallets per minute, enforces diversity, 60s cache), `src/components/demo/DemoPoolsTable.tsx` (updated to use `/api/demo/pools-live` endpoint), `scripts/seed_demo_wallets.mjs` (scaffold for automated wallet discovery). Endpoint flow: (1) load seed wallets, (2) pick 3-5 candidates via seeded shuffle (changes per minute), (3) fetch positions from `/api/positions`, (4) map to LivePool format with computed APR (fees + incentives), (5) apply diversity selector, (6) return 9 pools with cache headers. APR calculation includes both fees AND incentives: `((fees24hUsd + incentives24hUsd) / tvlUsd) * 365 * 100`. Graceful degradation: never returns 500, always valid JSON with `placeholder: true` on errors. Diversity warnings shown to users when constraints partially met. Seed wallet list not exposed publicly; only pool-level data returned.
+
+

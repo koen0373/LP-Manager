@@ -9,6 +9,7 @@ type ButtonBaseProps = {
   loading?: boolean;
   className?: string;
   children: React.ReactNode;
+  disabled?: boolean;
 };
 
 type ButtonAsButton = ButtonBaseProps &

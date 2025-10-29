@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-HOST="${HOST:-127.0.0.1}"
+LISTEN_HOST="${HOST:-0.0.0.0}"
+ACCESS_HOST="${ACCESS_HOST:-127.0.0.1}"
 PORT="${PORT:-3000}"
-BASE="http://$HOST:$PORT"
+BASE="http://$ACCESS_HOST:$PORT"
 LOG="${LOG:-/tmp/liquilab_dev_3000.log}"
 
 # 0) Zorg dat Postgres (Homebrew) actief is
@@ -38,6 +39,6 @@ if lsof -t -iTCP:$PORT -sTCP:LISTEN >/dev/null 2>&1; then
   kill -9  $(lsof -t -iTCP:$PORT -sTCP:LISTEN) || true
 fi
 
-nohup npx --yes next dev --turbopack --hostname "$HOST" --port "$PORT" >"$LOG" 2>&1 &
+nohup npx --yes next dev --turbopack --hostname "$LISTEN_HOST" --port "$PORT" >"$LOG" 2>&1 &
 for i in {1..120}; do curl -sf "$BASE/" >/dev/null && break || sleep 1; done
 echo "✅ Dev up: $BASE (log: $LOG)"

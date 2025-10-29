@@ -1,0 +1,37 @@
+* text=auto eol=lf
+
+*.sh text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.less text eol=lf
+
+# Ensure legal docs remain normalized
+docs/legal/** text eol=lf
+docs/ip/** text eol=lf
+
+# Large binary/design assets via Git LFS
+public/media/*.png filter=lfs diff=lfs merge=lfs -text
+public/media/*.webp filter=lfs diff=lfs merge=lfs -text
+public/media/*.svg filter=lfs diff=lfs merge=lfs -text
+brandguide/** filter=lfs diff=lfs merge=lfs -text
+*.psd filter=lfs diff=lfs merge=lfs -text
+*.tif filter=lfs diff=lfs merge=lfs -text
+*.tiff filter=lfs diff=lfs merge=lfs -text
+*.ai filter=lfs diff=lfs merge=lfs -text
+*.fig filter=lfs diff=lfs merge=lfs -text
+*.sketch filter=lfs diff=lfs merge=lfs -text
+*.xd filter=lfs diff=lfs merge=lfs -text
+*.pdf filter=lfs diff=lfs merge=lfs -text
+
+# Ensure fonts remain as binary
+*.woff filter=lfs diff=lfs merge=lfs -text
+*.woff2 filter=lfs diff=lfs merge=lfs -text

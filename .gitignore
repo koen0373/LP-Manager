@@ -1,7 +1,7 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# LiquiLab — Git ignore rules (macOS + Node/Next.js)
 
-# dependencies
-/node_modules
+# Package management
+node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -9,35 +9,68 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# Build outputs
+.next/
+.next.cache/
+out/
+build/
+dist/
+coverage/
+reports/
 
-# vercel
-.vercel
-
-# typescript
+# TypeScript & SWC artifacts
 *.tsbuildinfo
 next-env.d.ts
 
+# Environment configuration
+.env
+.env.*
+!.env.example
+
+# Logs & diagnostics
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+logs/
+*.log
+
+# OS / macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Editor / tooling
+.idea/
+.vscode/
+*.swp
+*.swo
+*.orig
+
+# Runtime caches
+tmp/
+temp/
+.cache/
+.parcel-cache/
+
+# Prisma / generated code
 /src/generated/prisma
+
+# Storybook / design exports
+storybook-static/
+
+# Docker / deployment
+.vercel
+.fleet/
+
+# Misc credentials
+*.pem
+*.key
+*.p12
+
+# Respect gitkeep scaffolding
+!.gitkeep

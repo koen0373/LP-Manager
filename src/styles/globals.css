@@ -119,29 +119,29 @@ body {
 }
 
 .text-mist {
-  color: #B9C7DA; /* liqui.mist */
+  color: #9CA3AF; /* liqui.mist */
 }
 
 .text-aqua {
-  color: #75C4FF; /* liqui.aqua */
+  color: #1BE8D2; /* liqui.aqua (signals only) */
 }
 
 /* Pool table hover effect - highlight both rows of the same pool */
 /* When hovering row 1, also highlight row 2 (next sibling) */
 tr.pool-row-1:hover,
 tr.pool-row-1:hover + tr.pool-row-2 {
-  background-color: rgba(0, 230, 255, 0.05);
+  background-color: rgba(59, 130, 246, 0.06);
 }
 
 /* When hovering row 2, only highlight row 2 (CSS can't select previous sibling) */
 /* We'll need to use a different approach - wrapping or JS */
 tr.pool-row-2:hover {
-  background-color: rgba(0, 230, 255, 0.05);
+  background-color: rgba(59, 130, 246, 0.06);
 }
 
 /* JS-controlled hover class for both rows of same pool */
 tr.pool-hover {
-  background-color: rgba(0, 230, 255, 0.05);
+  background-color: rgba(59, 130, 246, 0.06);
 }
 
 [data-ll-ui="v2025-10"] .pool-hover {
@@ -152,8 +152,8 @@ tr.pool-hover {
 
 
 [data-ll-ui="v2025-10"]{
-  --ll-aqua:#6EA8FF;
-  --ll-divider:rgba(110,168,255,0.12);
+  --ll-aqua:#3B82F6;
+  --ll-divider:rgba(59,130,246,0.18);
 }
 
 [data-ll-ui="v2025-10"] .ll-grid{
@@ -169,7 +169,7 @@ tr.pool-hover {
 }
 
 [data-ll-ui="v2025-10"] .ll-row{
-  min-height:60px;
+  min-height:76px;
   align-items:start;
 }
 
@@ -244,7 +244,7 @@ tr.pool-hover {
   align-items: center;
   gap: 12px;
   width: 100%;
-  justify-content: center;
+  justify-content: space-between;
 }
 
 [data-ll-ui="v2025-10"] .ll-range-bound {
@@ -272,6 +272,8 @@ tr.pool-hover {
   display: flex;
   align-items: center;
   flex-shrink: 0;
+  flex-grow: 1;
+  max-width: 100%;
 }
 
 [data-ll-ui="v2025-10"] .ll-range-line {
@@ -645,5 +647,65 @@ tr.pool-hover {
   [data-ll-ui="v2025-10"] .ll-rangeband-meta{
     align-items:flex-start;
     text-align:left;
+  }
+}
+
+/* === RangeBand™ marker health animations === */
+:root {
+  --rb-green: #00C66B;
+  --rb-amber: #FFA500;
+  --rb-red: #E74C3C;
+}
+
+@keyframes rb-heartbeat {
+  0% {
+    transform: translateX(-50%) scale(1);
+    box-shadow: 0 0 6px currentColor, 0 0 0 2px rgba(255,255,255,0.2);
+  }
+  35% {
+    transform: translateX(-50%) scale(1.06);
+    box-shadow: 0 0 8px currentColor, 0 0 0 2px rgba(255,255,255,0.2), 0 0 0 6px color-mix(in srgb, currentColor 10%, transparent);
+  }
+  70% {
+    transform: translateX(-50%) scale(1);
+    box-shadow: 0 0 6px currentColor, 0 0 0 2px rgba(255,255,255,0.2), 0 0 0 0 transparent;
+  }
+  100% {
+    transform: translateX(-50%) scale(1);
+    box-shadow: 0 0 6px currentColor, 0 0 0 2px rgba(255,255,255,0.2);
+  }
+}
+
+.rb-heartbeat-fast {
+  animation: rb-heartbeat 1.5s ease-in-out infinite;
+}
+
+.rb-heartbeat-slow {
+  animation: rb-heartbeat 2.5s ease-in-out infinite;
+}
+
+/* Status color helpers (use currentColor so glow matches) */
+.rb-status-in {
+  color: var(--rb-green);
+}
+
+.rb-status-near {
+  color: var(--rb-amber);
+}
+
+.rb-status-out {
+  color: var(--rb-red);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rb-heartbeat-fast,
+  .rb-heartbeat-slow {
+    animation: none !important;
+  }
+  
+  /* Reduce glow for reduced motion */
+  .rb-heartbeat-fast,
+  .rb-heartbeat-slow {
+    box-shadow: 0 0 4px currentColor, 0 0 0 2px rgba(255,255,255,0.2) !important;
   }
 }

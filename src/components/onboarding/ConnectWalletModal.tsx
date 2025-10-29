@@ -5,7 +5,8 @@ import Image from 'next/image';
 import { useAccount, useConnect } from 'wagmi';
 import { TokenIcon } from '@/components/TokenIcon';
 import { formatUsd } from '@/utils/format';
-import RangeBand, { getRangeStatus, RangeStatus } from '@/components/pools/PoolRangeIndicator';
+import RangeBand, { getRangeStatus } from '@/components/pools/PoolRangeIndicator';
+import { calcApr24h } from '@/lib/metrics';
 
 type ConnectWalletModalProps = {
   isOpen: boolean;
@@ -21,16 +22,25 @@ type WalletOption = {
   disabled?: boolean;
 };
 
+type SortKey = 'tvl' | 'fees' | 'incentives' | 'apr';
+
+type SortOption = {
+  key: SortKey;
+  label: string;
+};
+
 type PoolSummary = {
   tokenId: string;
   pair: string;
   provider: string;
   poolId: string;
   feeTier: string;
+  feeTierBps?: number;
   tvlUsd: number;
   feesUsd: number;
   dailyFeesUsd: number;
   incentivesUsd: number;
+  dailyIncentivesUsd: number;
   rangeMin?: number;
   rangeMax?: number;
   currentPrice?: number;
@@ -42,6 +52,61 @@ type PoolSummary = {
   token0Icon?: string;
   token1Icon?: string;
 };
+
+type RemoteTokenMeta = {
+  symbol?: string;
+  iconSrc?: string;
+  priceUsd?: number | string;
+};
+
+type RemotePosition = {
+  id?: string | number;
+  tokenId?: string | number;
+  poolId?: string | number;
+  provider?: string;
+  dexName?: string;
+  token0Symbol?: string;
+  token1Symbol?: string;
+  token0Icon?: string;
+  token1Icon?: string;
+  token0?: RemoteTokenMeta | null;
+  token1?: RemoteTokenMeta | null;
+  lowerPrice?: number | string;
+  rangeMin?: number | string;
+  upperPrice?: number | string;
+  rangeMax?: number | string;
+  currentPrice?: number | string;
+  feeTier?: string | number;
+  feeTierBps?: number | string;
+  tvlUsd?: number | string;
+  unclaimedFeesUsd?: number | string;
+  rewardsUsd?: number | string;
+  feesUsd?: number | string;
+  dailyFeesUsd?: number | string;
+  fees24hUsd?: number | string;
+  rflrUsd?: number | string;
+  incentivesUsd?: number | string;
+  incentives24hUsd?: number | string;
+  dailyIncentivesUsd?: number | string;
+  rflrRewards24hUsd?: number | string;
+  apr24hPct?: number | string;
+  token0PriceUsd?: number | string;
+};
+
+type WalletWindow = Window &
+  typeof globalThis & {
+    ethereum?: {
+      isMetaMask?: boolean;
+      isRabby?: boolean;
+      isBraveWallet?: boolean;
+    };
+    phantom?: {
+      ethereum?: unknown;
+    };
+    okxwallet?: unknown;
+  };
+
+const isDev = process.env.NODE_ENV !== 'production';
 
 const WALLETS: WalletOption[] = [
   {
@@ -88,23 +153,150 @@ const WALLETS: WalletOption[] = [
   },
 ];
 
+const SORT_OPTIONS: SortOption[] = [
+  { key: 'tvl', label: 'TVL' },
+  { key: 'fees', label: 'Fees' },
+  { key: 'incentives', label: 'Incentives' },
+  { key: 'apr', label: 'APR' },
+];
+
+function coerceNumber(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return undefined;
+}
+
+function coerceString(value: unknown): string | undefined {
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return value.trim();
+  }
+  return undefined;
+}
+
+function feeTierToBps(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  const str = coerceString(value);
+  if (!str) return undefined;
+  if (str.endsWith('%')) {
+    const percent = Number(str.replace('%', '').trim());
+    if (Number.isFinite(percent)) {
+      return percent * 100;
+    }
+  }
+  const numeric = Number(str);
+  return Number.isFinite(numeric) ? numeric : undefined;
+}
+
+/**
+ * Robust fee formatter that accepts multiple encodings.
+ * Uniswap v3 onchain "fee" is *hundredths of a bip* (1e-6): 3000 -> 0.3%.
+ * Some APIs provide bps (30 -> 0.30%), or direct pct (0.003 -> 0.3% or 0.3 -> 0.3%).
+ */
+function toFeePercentNumber(input: unknown): number {
+  const v = Number(input ?? 0);
+  if (!isFinite(v) || v <= 0) return 0;
+
+  // Heuristics:
+  // - Common Uniswap-style (hundredths of a bip): 500, 3000, 10000 -> 0.05/0.3/1.0 %
+  if (v >= 500 && v <= 10000) return v / 1e4; // 3000 => 0.3
+
+  // - True bps: 5, 30, 100 -> 0.05/0.3/1.0 %
+  if (v <= 100) return v / 100;
+
+  // - Already percent fraction (0.003) or percent number (0.3)
+  if (v > 0 && v < 2) return v >= 1 ? v : v * 100; // 0.3 -> 0.3% | 1.2 -> 1.2%
+
+  // Fallback: assume hundredths-of-bip
+  return v / 1e4;
+}
+
+function formatFeeTierRobust(input: unknown): string {
+  const n = toFeePercentNumber(input);
+  // Show up to one decimal for typical tiers (0.3%, 1.0%), two decimals for small values (0.05%)
+  const decimals = n < 0.1 ? 2 : 1;
+  return `${n.toFixed(decimals)}%`;
+}
+
+function formatFeeTier(feeTier?: unknown, feeTierBps?: number): string {
+  const direct = coerceString(feeTier);
+  if (direct && direct !== '—') {
+    // Try to parse the direct string value robustly
+    return formatFeeTierRobust(direct);
+  }
+  if (typeof feeTierBps === 'number' && Number.isFinite(feeTierBps)) {
+    return formatFeeTierRobust(feeTierBps);
+  }
+  return '—';
+}
+
 // Browser detection for installed wallets
 function isWalletInstalled(walletId: string): boolean {
   if (typeof window === 'undefined') return false;
+  const agent = window as WalletWindow;
   
   switch (walletId) {
     case 'metamask':
-      return !!(window as any).ethereum?.isMetaMask;
+      return !!agent.ethereum?.isMetaMask;
     case 'phantom':
-      return !!(window as any).phantom?.ethereum;
+      return !!agent.phantom?.ethereum;
     case 'okx':
-      return !!(window as any).okxwallet;
+      return !!agent.okxwallet;
     case 'rabby':
-      return !!(window as any).ethereum?.isRabby;
+      return !!agent.ethereum?.isRabby;
     case 'brave':
-      return !!(window as any).ethereum?.isBraveWallet;
+      return !!agent.ethereum?.isBraveWallet;
     default:
       return false;
+  }
+}
+
+/**
+ * Normalize a pool's sort value for a given key
+ * Implements tolerant field mapping with fallbacks
+ */
+function getSortValue(position: RemotePosition, sortKey: SortKey): number {
+  switch (sortKey) {
+    case 'tvl':
+      return coerceNumber(position.tvlUsd) ?? 0;
+    
+    case 'fees':
+      return (
+        coerceNumber(position.fees24hUsd) ??
+        coerceNumber(position.unclaimedFeesUsd) ??
+        0
+      );
+    
+    case 'incentives':
+      return (
+        coerceNumber(position.incentives24hUsd) ??
+        coerceNumber(position.incentivesUsd) ??
+        coerceNumber(position.rflrUsd) ??
+        0
+      );
+    
+    case 'apr':
+      return calcApr24h({
+        tvlUsd: coerceNumber(position.tvlUsd),
+        dailyFeesUsd:
+          coerceNumber(position.dailyFeesUsd) ??
+          coerceNumber(position.fees24hUsd),
+        dailyIncentivesUsd:
+          coerceNumber(position.dailyIncentivesUsd) ??
+          coerceNumber(position.incentives24hUsd) ??
+          coerceNumber(position.rflrRewards24hUsd),
+      });
+    
+    default:
+      return 0;
   }
 }
 
@@ -112,6 +304,7 @@ export default function ConnectWalletModal({ isOpen, onClose }: ConnectWalletMod
   const { address } = useAccount();
   const { connect, connectors, isPending } = useConnect();
   const [phase, setPhase] = React.useState<'connect' | 'loading' | 'result'>('connect');
+  const [sortBy, setSortBy] = React.useState<SortKey>('tvl');
   const [topPool, setTopPool] = React.useState<PoolSummary | null>(null);
   const [activeCount, setActiveCount] = React.useState(0);
   const [inactiveCount, setInactiveCount] = React.useState(0);
@@ -119,6 +312,7 @@ export default function ConnectWalletModal({ isOpen, onClose }: ConnectWalletMod
   React.useEffect(() => {
     if (!isOpen) {
       setPhase('connect');
+      setSortBy('tvl');
       setTopPool(null);
       setActiveCount(0);
       setInactiveCount(0);
@@ -139,78 +333,108 @@ export default function ConnectWalletModal({ isOpen, onClose }: ConnectWalletMod
           return;
         }
         
-        const data = await res.json();
+        const json: unknown = await res.json();
         
-        if (!Array.isArray(data)) {
+        if (!Array.isArray(json)) {
           console.warn('[ConnectWalletModal] Invalid response format');
           setPhase('result');
           return;
         }
+        const data: RemotePosition[] = json as RemotePosition[];
         
-        // Sort by TVL and find top pool (check both tvlUsd and amount fields)
+        // Sort by selected key and find top pool
         const sorted = data
-          .filter((p: any) => {
-            const tvl = p.tvlUsd ?? 0;
+          .filter((position) => {
+            const tvl = coerceNumber(position.tvlUsd) ?? 0;
             return tvl > 0;
           })
-          .sort((a: any, b: any) => {
-            const aTvl = a.tvlUsd ?? 0;
-            const bTvl = b.tvlUsd ?? 0;
-            return bTvl - aTvl;
+          .sort((a, b) => {
+            const aValue = getSortValue(a, sortBy);
+            const bValue = getSortValue(b, sortBy);
+            return bValue - aValue;
           });
         
         const top = sorted[0];
         if (top) {
-          console.log('[ConnectWalletModal] Top pool data:', top);
-          
-          const token0Sym = top.token0Symbol ?? top.token0?.symbol ?? '?';
-          const token1Sym = top.token1Symbol ?? top.token1?.symbol ?? '?';
-          const rangeMin = top.lowerPrice ?? top.rangeMin ?? undefined;
-          const rangeMax = top.upperPrice ?? top.rangeMax ?? undefined;
-          
-          // Use currentPrice from API, or calculate from range if missing
-          let currentPrice = top.currentPrice;
-          if (!currentPrice && rangeMin !== undefined && rangeMax !== undefined) {
+          if (isDev) {
+            console.log('[ConnectWalletModal] Top pool data:', top);
+          }
+
+          const token0 = top.token0 ?? undefined;
+          const token1 = top.token1 ?? undefined;
+
+          const token0Symbol = coerceString(top.token0Symbol) ?? coerceString(token0?.symbol) ?? '?';
+          const token1Symbol = coerceString(top.token1Symbol) ?? coerceString(token1?.symbol) ?? '?';
+
+          const rangeMin = coerceNumber(top.lowerPrice) ?? coerceNumber(top.rangeMin);
+          const rangeMax = coerceNumber(top.upperPrice) ?? coerceNumber(top.rangeMax);
+
+          let currentPrice = coerceNumber(top.currentPrice);
+          if (currentPrice === undefined && rangeMin !== undefined && rangeMax !== undefined) {
             currentPrice = (rangeMin + rangeMax) / 2;
           }
-          
+
           const status = getRangeStatus(currentPrice, rangeMin, rangeMax);
-          
-          console.log('[ConnectWalletModal] Range data:', { rangeMin, rangeMax, currentPrice, status });
-          
-          // Estimate daily fees (assume unclaimed fees accumulated over ~14 days)
-          const unclaimedFees = top.rewardsUsd ?? top.feesUsd ?? 0;
-          const dailyFees = unclaimedFees / 14;
-          const tvl = top.tvlUsd ?? 0;
-          const apr = tvl > 0 ? (dailyFees / tvl) * 365 * 100 : 0;
-          
+          if (isDev) {
+            console.log('[ConnectWalletModal] Range data:', { rangeMin, rangeMax, currentPrice, status });
+          }
+
+          const feeTierBps = coerceNumber(top.feeTierBps) ?? feeTierToBps(top.feeTier);
+          const feeTier = formatFeeTier(top.feeTier, feeTierBps);
+
+          const tvl = coerceNumber(top.tvlUsd) ?? 0;
+          const feesUsd = coerceNumber(top.unclaimedFeesUsd) ?? coerceNumber(top.feesUsd) ?? coerceNumber(top.rewardsUsd) ?? 0;
+          const incentivesUsd = coerceNumber(top.rflrUsd) ?? coerceNumber(top.incentivesUsd) ?? 0;
+          const dailyFeesFromApi = coerceNumber(top.dailyFeesUsd) ?? coerceNumber(top.fees24hUsd);
+          const dailyFeesRaw = dailyFeesFromApi ?? (feesUsd > 0 ? feesUsd / 14 : 0);
+          const dailyFeesUsd = status === 'out' ? 0 : Math.max(0, dailyFeesRaw);
+          const dailyIncentivesFromApi =
+            coerceNumber(top.dailyIncentivesUsd) ??
+            coerceNumber(top.incentives24hUsd) ??
+            coerceNumber(top.rflrRewards24hUsd);
+          const dailyIncentivesRaw =
+            dailyIncentivesFromApi ?? (incentivesUsd > 0 ? incentivesUsd / 14 : 0);
+          const dailyIncentivesUsd = status === 'out' ? 0 : Math.max(0, dailyIncentivesRaw);
+          const aprRaw = calcApr24h({
+            tvlUsd: tvl,
+            dailyFeesUsd,
+            dailyIncentivesUsd,
+          });
+          const apr = Math.min(999, aprRaw);
+
           setTopPool({
             tokenId: String(top.id ?? top.tokenId ?? ''),
-            pair: `${token0Sym} / ${token1Sym}`,
-            provider: top.provider ?? top.dexName ?? 'Unknown',
+            pair: `${token0Symbol} / ${token1Symbol}`,
+            provider: coerceString(top.provider) ?? coerceString(top.dexName) ?? 'Unknown',
             poolId: String(top.poolId ?? top.id ?? ''),
-            feeTier: top.feeTier ?? `${((top.feeTierBps ?? 0) / 100).toFixed(2)}%`,
+            feeTier,
+            feeTierBps: feeTierBps ?? undefined,
             tvlUsd: tvl,
-            feesUsd: unclaimedFees,
-            dailyFeesUsd: dailyFees,
-            incentivesUsd: top.rflrUsd ?? top.incentivesUsd ?? 0,
+            feesUsd,
+            dailyFeesUsd,
+            dailyIncentivesUsd,
+            incentivesUsd,
             rangeMin: rangeMin,
             rangeMax: rangeMax,
             currentPrice: currentPrice,
-            token0PriceUsd: top.token0PriceUsd ?? top.token0?.priceUsd,
-            status: status,
-            apr: apr,
-            token0Symbol: token0Sym,
-            token1Symbol: token1Sym,
-            token0Icon: top.token0Icon ?? top.token0?.iconSrc,
-            token1Icon: top.token1Icon ?? top.token1?.iconSrc,
+            token0PriceUsd: coerceNumber(top.token0PriceUsd) ?? coerceNumber(token0?.priceUsd),
+            status,
+            apr,
+            token0Symbol,
+            token1Symbol,
+            token0Icon: coerceString(top.token0Icon) ?? coerceString(token0?.iconSrc),
+            token1Icon: coerceString(top.token1Icon) ?? coerceString(token1?.iconSrc),
           });
         }
         
         // Count active pools (TVL > 0 or has fees)
-        const active = data.filter((p: any) => {
-          const tvl = p.tvlUsd ?? 0;
-          const fees = p.rewardsUsd ?? p.feesUsd ?? 0;
+        const active = data.filter((position) => {
+          const tvl = coerceNumber(position.tvlUsd) ?? 0;
+          const fees =
+            coerceNumber(position.unclaimedFeesUsd) ??
+            coerceNumber(position.rewardsUsd) ??
+            coerceNumber(position.feesUsd) ??
+            0;
           return tvl > 0 || fees > 0;
         }).length;
         
@@ -226,7 +450,7 @@ export default function ConnectWalletModal({ isOpen, onClose }: ConnectWalletMod
     }
     
     void fetchPools();
-  }, [address]);
+  }, [address, sortBy]);
 
   async function handleConnect(connectorId: string) {
     const connector = connectors.find((c) => c.id === connectorId);
@@ -235,6 +459,31 @@ export default function ConnectWalletModal({ isOpen, onClose }: ConnectWalletMod
       await connect({ connector });
     } catch (error) {
       console.error('[ConnectWalletModal] Failed to connect', error);
+    }
+  }
+
+  function getSortLabel(key: SortKey): string {
+    switch (key) {
+      case 'tvl':
+        return 'TVL';
+      case 'fees':
+        return 'Fees';
+      case 'incentives':
+        return 'Incentives';
+      case 'apr':
+        return '24h APR';
+      default:
+        return 'TVL';
+    }
+  }
+
+  // Handle keyboard navigation for segmented control
+  function handleSegmentedKeyDown(e: React.KeyboardEvent, currentIndex: number) {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      const direction = e.key === 'ArrowLeft' ? -1 : 1;
+      const newIndex = (currentIndex + direction + SORT_OPTIONS.length) % SORT_OPTIONS.length;
+      setSortBy(SORT_OPTIONS[newIndex].key);
     }
   }
 
@@ -335,7 +584,7 @@ export default function ConnectWalletModal({ isOpen, onClose }: ConnectWalletMod
                 })}
               </div>
 
-              <p className="mt-4 text-center font-ui text-xs text-[#9AA1AB]">
+              <p className="mt-4 text-center font-ui text-xs text-[#9CA3AF]">
                 Read-only access. No approvals needed.
               </p>
             </>
@@ -349,15 +598,77 @@ export default function ConnectWalletModal({ isOpen, onClose }: ConnectWalletMod
           )}
 
           {phase === 'result' && (
-            <div className="space-y-5">
+            <div className="space-y-4">
+              {/* Compact header: title + segmented control (desktop) / select (mobile) */}
+              <div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  {/* Title */}
+                  <h3 className="font-ui text-xs font-semibold uppercase tracking-wide text-white">
+                    Choose your free pool
+                  </h3>
+
+                  {/* Desktop: Segmented control */}
+                  <div
+                    role="tablist"
+                    aria-label="Sort pools by"
+                    className="hidden items-center gap-1 rounded-lg border border-white/10 bg-white/[0.02] p-1 sm:flex"
+                    aria-live="polite"
+                  >
+                    {SORT_OPTIONS.map((option, index) => (
+                      <button
+                        key={option.key}
+                        type="button"
+                        role="tab"
+                        aria-selected={sortBy === option.key}
+                        aria-label={`Sort by ${option.label}`}
+                        onClick={() => setSortBy(option.key)}
+                        onKeyDown={(e) => handleSegmentedKeyDown(e, index)}
+                        className={`rounded px-2.5 py-1 font-ui text-[10px] font-semibold uppercase tracking-wide transition focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-1 focus:ring-offset-[rgba(10,15,26,0.95)] ${
+                          sortBy === option.key
+                            ? 'bg-[#3B82F6] text-white shadow-sm'
+                            : 'text-[#9CA3AF] hover:text-white'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Mobile: Select dropdown */}
+                  <div className="sm:hidden">
+                    <label htmlFor="sort-select" className="sr-only">
+                      Sort by
+                    </label>
+                    <select
+                      id="sort-select"
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as SortKey)}
+                      className="w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 py-1.5 font-ui text-xs font-semibold uppercase tracking-wide text-white focus:border-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
+                      aria-label="Sort pools by"
+                    >
+                      {SORT_OPTIONS.map((option) => (
+                        <option key={option.key} value={option.key} className="bg-[#0A0F1A] text-white">
+                          Sort by {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Helper text (directly under, compact spacing) */}
+                <p className="mt-2 font-ui text-xs leading-tight text-[#9CA3AF]">
+                  Choose your free pool to try LiquiLab.
+                </p>
+              </div>
+
               {topPool ? (
                 <>
                   <div className="rounded-xl border border-[#3B82F6]/20 bg-[#3B82F6]/5 p-4">
                     <p className="mb-3 font-ui text-xs uppercase tracking-wide text-[#3B82F6]">
-                      Your top pool (by TVL) — Free to follow
+                      Your top pool (by {getSortLabel(sortBy)}) — Free to follow
                     </p>
                     
-                    {/* Row 1: Icons + Pool Pair alleen */}
+                    {/* Row 1: Icons + Pool Pair + Pair Subtitle */}
                     <div className="mb-3 flex items-center gap-3">
                       <div className="flex items-center -space-x-2">
                         {topPool.token0Icon ? (
@@ -386,78 +697,50 @@ export default function ConnectWalletModal({ isOpen, onClose }: ConnectWalletMod
                       <span className="font-brand text-lg font-semibold text-white">{topPool.pair}</span>
                     </div>
                     
-                    {/* Provider + Fee Tier */}
-                    <div className="mb-4 flex items-center gap-2 text-[10px] uppercase text-[#9AA1AB]/60">
+                    {/* Provider + Pool ID + Fee Tier */}
+                    <div className="mb-4 flex items-center gap-2 text-[10px] uppercase text-[#9CA3AF]/60">
                       <span>{topPool.provider}</span>
+                      <span className="text-white/20">•</span>
+                      <span>#{topPool.poolId}</span>
                       <span className="text-white/20">•</span>
                       <span className="font-semibold">{topPool.feeTier}</span>
                     </div>
                     
-                    {/* Current price (always show if we have range data) */}
-                    {(topPool.currentPrice !== undefined || (topPool.rangeMin && topPool.rangeMax)) && (
-                      <div className="mb-3 rounded-lg border border-[#3B82F6]/20 bg-[#3B82F6]/5 px-4 py-3">
-                        <div className="flex items-baseline justify-between">
-                          <span className="font-ui text-xs uppercase tracking-wide text-[#3B82F6]">Current Price</span>
-                          <div className="flex items-baseline gap-2">
-                            <span className="tnum font-brand text-xl font-bold text-white">
-                              ${(topPool.currentPrice ?? (topPool.rangeMin! + topPool.rangeMax!) / 2).toFixed(6)}
-                            </span>
-                            <span className="font-ui text-xs text-[#9AA1AB]">{topPool.token1Symbol}/{topPool.token0Symbol}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
                     {/* Data row: TVL, Fees, Incentives, APR */}
                     <div className="mb-4 grid grid-cols-4 gap-3">
                       <div>
-                        <p className="text-[9px] uppercase tracking-wide text-[#9AA1AB]/50">TVL</p>
+                        <p className="text-[9px] uppercase tracking-wide text-[#9CA3AF]/50">TVL</p>
                         <p className="tnum mt-1 text-[15px] font-semibold text-white">{formatUsd(topPool.tvlUsd)}</p>
                       </div>
                       <div>
-                        <p className="text-[9px] uppercase tracking-wide text-[#9AA1AB]/50">Fees</p>
+                        <p className="text-[9px] uppercase tracking-wide text-[#9CA3AF]/50">Fees</p>
                         <p className="tnum mt-1 text-[15px] font-semibold text-white">{formatUsd(topPool.feesUsd)}</p>
                       </div>
                       <div>
-                        <p className="text-[9px] uppercase tracking-wide text-[#9AA1AB]/50">Incentives</p>
+                        <p className="text-[9px] uppercase tracking-wide text-[#9CA3AF]/50">Incentives</p>
                         <p className="tnum mt-1 text-[15px] font-semibold text-white">{formatUsd(topPool.incentivesUsd)}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[9px] uppercase tracking-wide text-[#9AA1AB]/50">24h APR</p>
+                        <p className="text-[9px] uppercase tracking-wide text-[#9CA3AF]/50">24h APR</p>
                         <p className="tnum mt-1 text-[15px] font-semibold text-white">{topPool.apr.toFixed(1)}%</p>
                       </div>
                     </div>
                     
-                    {/* Range slider row */}
+                    {/* RangeBand (includes current price internally) */}
                     <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
                       {topPool.rangeMin !== undefined && topPool.rangeMax !== undefined ? (
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex-1" data-ll-ui="v2025-10">
-                            <RangeBand
-                              min={topPool.rangeMin}
-                              max={topPool.rangeMax}
-                              current={topPool.currentPrice}
-                              status={topPool.status}
-                              token0Symbol={topPool.token0Symbol}
-                              token1Symbol={topPool.token1Symbol}
-                            />
-                          </div>
-                          <div className="flex flex-col items-end gap-1 text-right">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="h-2.5 w-2.5 rounded-full"
-                                style={{
-                                  background: topPool.status === 'in' ? '#00C66B' : topPool.status === 'near' ? '#FFA500' : '#E74C3C'
-                                }}
-                              />
-                              <span className="text-[12px] font-medium text-white">
-                                {topPool.status === 'in' ? 'In Range' : topPool.status === 'near' ? 'Near Band' : 'Out of Range'}
-                              </span>
-                            </div>
-                          </div>
+                        <div data-ll-ui="v2025-10">
+                          <RangeBand
+                            min={topPool.rangeMin}
+                            max={topPool.rangeMax}
+                            current={topPool.currentPrice}
+                            status={topPool.status}
+                            token0Symbol={topPool.token0Symbol}
+                            token1Symbol={topPool.token1Symbol}
+                          />
                         </div>
                       ) : (
-                        <p className="text-center font-ui text-xs text-[#9AA1AB]">Range data unavailable</p>
+                        <p className="text-center font-ui text-xs text-[#9CA3AF]">Range data unavailable</p>
                       )}
                     </div>
                   </div>
@@ -486,10 +769,10 @@ export default function ConnectWalletModal({ isOpen, onClose }: ConnectWalletMod
                       }}
                       className="w-full rounded-xl border border-white/20 bg-white/[0.04] px-5 py-3 font-brand text-sm font-semibold text-white transition hover:border-[#3B82F6] hover:bg-[#3B82F6]/10"
                     >
-                      Subscribe to follow all pools
+                      Subscribe to follow more pools
                     </button>
-                    <p className="text-center font-ui text-xs text-[#9AA1AB]">
-                      Sold in bundles of 5 · $1.99 per pool/month
+                    <p className="text-center font-ui text-xs text-[#9CA3AF]">
+                      First pool stays free · Each additional pool is $1.99/month (10× annually)
                     </p>
                   </div>
                 </>
@@ -512,4 +795,3 @@ export default function ConnectWalletModal({ isOpen, onClose }: ConnectWalletMod
     </div>
   );
 }
-

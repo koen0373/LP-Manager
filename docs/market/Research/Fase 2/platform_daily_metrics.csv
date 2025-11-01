@@ -1,0 +1,4 @@
+date,venue,tvl_usd,volume_24h_usd,pools_count,incentives_active,notes
+2025-10-30,SparkDEX V3.1,75870000.0,6820000.0,49,True,TVL & 24h vol from sparkdex.ai analytics; pairs/pools count from CoinGecko exchange page. Venue = SparkDEX V3.1 only.
+2025-10-30,Enosys V3 (Flare),4640000.0,2750000.0,23,True,TVL & 24h vol from DefiLlama protocol page; incentives_active due to rFLR program on FXRP/USDT0 etc. (see citations).
+2025-10-30,BlazeSwap (Flare),4260000.0,204778.08,17,True,TVL (Flare chain) from DefiLlama; 24h vol & pools from CoinGecko exchange page; incentives include FTSO delegation + rFLR program.

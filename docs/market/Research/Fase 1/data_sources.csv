@@ -1,0 +1,4 @@
+category,preferred,notes
+DEX analytics,"DefiLlama (per-protocol pages) + First-party dashboards (SparkDEX, Enosys) + GeckoTerminal API",Use Llama for time series; cross-check with first-party UI; fall back to DexScreener for pairs.
+On-chain,Flarescan / Flare Explorer (Blockscout API),For verifying LP NFT positions (v3) and pool contracts.
+Incentives,Flare Network News + Project Docs/Medium,Track rFLR emissions and program changes.

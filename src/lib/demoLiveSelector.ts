@@ -8,7 +8,7 @@
  * - Simple TTL cache for performance
  */
 
-import { getRangeWidthPct, getStrategy, getRangeStatus, STRATEGY_THRESHOLDS } from '@/components/pools/PoolRangeIndicator';
+import { getRangeWidthPct, getStrategy, getRangeStatus as _getRangeStatus, STRATEGY_THRESHOLDS as _STRATEGY_THRESHOLDS } from '@/components/pools/PoolRangeIndicator';
 import type { RangeStatus } from '@/components/pools/PoolRangeIndicator';
 
 export type Strategy = 'aggressive' | 'balanced' | 'conservative';
@@ -289,4 +289,5 @@ export class TtlCache<K, V> {
     this.cache.clear();
   }
 }
+
 

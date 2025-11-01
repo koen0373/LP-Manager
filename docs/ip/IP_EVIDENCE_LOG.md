@@ -49,6 +49,15 @@ Use this log to capture provenance for LiquiLab intellectual property. Each entr
 - Hash: _pending_.
 - Notes: document every distribution (list recipients, NDA status).
 
+### 2025-10-30 — Automated IP Snapshot Anchor
+- Owner(s): LiquiLab B.V.
+- Description: Repository snapshot tagged `IP-ANCHOR-2025-10-30` prior to trademark and patent filings.
+- Repository reference: tag `IP-ANCHOR-2025-10-30` / commit `_pending_` (update post-run).
+- Evidence type: git tag + asset hash (`scripts/ip_snapshot.sh`).
+- Evidence location: LiquiLab Git repository.
+- Hash: _pending — run `scripts/ip_snapshot.sh` to capture wave-hero.png checksum_.
+- Notes: Script appends executed hash output directly to this log.
+
 ---
 
 Add new sections below this line. Never overwrite prior entries; strike-through superseded items instead.

@@ -1,74 +1,24 @@
-import { publicClient } from '@/lib/viemClient';
-import { getTokenPriceByAddress } from './tokenPrices';
+import { positionsForWallet } from '@/lib/providers/blazeswapV2';
+import type { BlazeSwapV2Position } from '@/lib/providers/blazeswapV2';
 import type { PositionRow, TokenInfo } from '@/types/positions';
 import { TOKEN_REGISTRY } from './tokenRegistry';
+import { getTokenPriceByAddress } from './tokenPrices';
 
-const ERC20_ABI = [
-  {
-    name: 'balanceOf',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'account', type: 'address' }],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    name: 'totalSupply',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-];
+type Address = `0x${string}`;
 
-const PAIR_ABI = [
-  {
-    name: 'getReserves',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [
-      { name: '_reserve0', type: 'uint112' },
-      { name: '_reserve1', type: 'uint112' },
-      { name: '_blockTimestampLast', type: 'uint32' },
-    ],
-  },
-  {
-    name: 'token0',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'address' }],
-  },
-  {
-    name: 'token1',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'address' }],
-  },
-];
+const DEFAULT_FEE_TIER_BPS = 3000;
 
-const BLAZESWAP_PAIRS = [
-  {
-    address: '0x3D6EFEe2e110F13ea22231be6B01B428B38Cafc92' as const,
-    feeTierBps: 3000,
-  },
-  {
-    address: '0x5eD30e42757E3edd2f8898FbcA26cd7c6f391Ae1' as const,
-    feeTierBps: 3000,
-  },
-];
-
-function normalizeAddress(address: string): `0x${string}` {
-  return address.toLowerCase() as `0x${string}`;
+function normalize(address: string): Address {
+  return address.toLowerCase() as Address;
 }
 
-function toTokenInfo(address: `0x${string}`): TokenInfo | null {
+function toTokenInfo(address: Address): TokenInfo | null {
   const entry = TOKEN_REGISTRY[address];
   if (!entry) {
-    console.warn(`[BLAZESWAP] Token not found in registry: ${address}`);
+    console.warn('[BlazeSwap] Token missing in registry', { address });
     return null;
   }
+
   return {
     symbol: entry.symbol,
     name: entry.name,
@@ -77,120 +27,125 @@ function toTokenInfo(address: `0x${string}`): TokenInfo | null {
   };
 }
 
-export async function getBlazeSwapPositions(wallet: `0x${string}`): Promise<PositionRow[]> {
-  const positions: PositionRow[] = [];
+function bigIntFrom(value: string): bigint | null {
+  try {
+    return BigInt(value);
+  } catch {
+    return null;
+  }
+}
 
-  for (const pair of BLAZESWAP_PAIRS) {
-    try {
-      const balance = (await publicClient.readContract({
-        address: pair.address,
-        abi: ERC20_ABI,
-        functionName: 'balanceOf',
-        args: [wallet],
-      })) as bigint;
+function formatAmount(raw: string, decimals: number): number {
+  const amount = bigIntFrom(raw);
+  if (amount === null) {
+    return 0;
+  }
+  return Number(amount) / 10 ** decimals;
+}
 
-      if (balance === 0n) {
-        continue;
-      }
+async function enrichPosition(
+  wallet: Address,
+  position: BlazeSwapV2Position,
+  token0: TokenInfo,
+  token1: TokenInfo,
+  priceCache: Map<Address, number>,
+): Promise<PositionRow> {
+  const balance = bigIntFrom(position.balance) ?? 0n;
+  const totalSupply = bigIntFrom(position.totalSupply) ?? 0n;
 
-      const [totalSupply, token0Addr, token1Addr] = await Promise.all([
-        publicClient.readContract({
-          address: pair.address,
-          abi: ERC20_ABI,
-          functionName: 'totalSupply',
-          args: [],
-        }) as Promise<bigint>,
-        publicClient.readContract({
-          address: pair.address,
-          abi: PAIR_ABI,
-          functionName: 'token0',
-          args: [],
-        }) as Promise<`0x${string}`>,
-        publicClient.readContract({
-          address: pair.address,
-          abi: PAIR_ABI,
-          functionName: 'token1',
-          args: [],
-        }) as Promise<`0x${string}`>,
-      ]);
+  const amount0 = formatAmount(position.amount0, token0.decimals);
+  const amount1 = formatAmount(position.amount1, token1.decimals);
 
-      const reserves = (await publicClient.readContract({
-        address: pair.address,
-        abi: PAIR_ABI,
-        functionName: 'getReserves',
-        args: [],
-      })) as [bigint, bigint, number];
+  async function getPrice(address: Address): Promise<number> {
+    if (priceCache.has(address)) {
+      return priceCache.get(address)!;
+    }
+    const price = await getTokenPriceByAddress(address);
+    priceCache.set(address, price);
+    return price;
+  }
 
-      const token0Info = toTokenInfo(normalizeAddress(token0Addr));
-      const token1Info = toTokenInfo(normalizeAddress(token1Addr));
+  const [price0, price1] = await Promise.all([
+    getPrice(token0.address as Address),
+    getPrice(token1.address as Address),
+  ]);
 
-      if (!token0Info || !token1Info) {
-        continue;
-      }
+  const tvlUsd = amount0 * price0 + amount1 * price1;
+  const sharePct = Number.isFinite(position.sharePct) ? position.sharePct : 0;
 
-      const share = Number(balance) / Number(totalSupply);
+  return {
+    id: `BLAZE-${position.pair.slice(2, 8)}`,
+    displayId: `BLAZE-${position.pair.slice(2, 8)}`,
+    provider: 'BlazeSwap V2',
+    providerSlug: 'blazeswap-v2',
+    dexName: 'BlazeSwap',
+    onchainId: position.pair,
+    pairLabel: `${token0.symbol} / ${token1.symbol}`,
+    feeTierBps: DEFAULT_FEE_TIER_BPS,
+    tickLowerLabel: '—',
+    tickUpperLabel: '—',
+    tvlUsd,
+    unclaimedFeesUsd: 0,
+    fee0: 0,
+    fee1: 0,
+    incentivesUsd: 0,
+    rflrRewardsUsd: 0,
+    rflrAmount: 0,
+    rflrUsd: 0,
+    rflrPriceUsd: 0,
+    rewardsUsd: 0,
+    category: tvlUsd > 0 ? 'Active' : 'Inactive',
+    status: 'Active',
+    inRange: true,
+    isInRange: true,
+    token0,
+    token1,
+    amount0,
+    amount1,
+    lowerPrice: Number.NaN,
+    upperPrice: Number.NaN,
+    tickLower: 0,
+    tickUpper: 0,
+    poolAddress: position.pair,
+    price0Usd: price0,
+    price1Usd: price1,
+    walletAddress: wallet,
+    currentTick: 0,
+    createdAt: undefined,
+    lastUpdated: new Date().toISOString(),
+    liquidity: balance,
+    poolLiquidity: totalSupply,
+    poolSharePct: sharePct,
+  };
+}
 
-      const reserve0 = Number(reserves[0]) / 10 ** token0Info.decimals;
-      const reserve1 = Number(reserves[1]) / 10 ** token1Info.decimals;
+export async function getBlazeSwapPositions(wallet: Address): Promise<PositionRow[]> {
+  const { positions } = await positionsForWallet(wallet);
+  if (positions.length === 0) {
+    return [];
+  }
 
-      const amount0 = reserve0 * share;
-      const amount1 = reserve1 * share;
+  const priceCache = new Map<Address, number>();
+  const enriched: PositionRow[] = [];
 
-      const [price0, price1] = await Promise.all([
-        getTokenPriceByAddress(token0Info.address as `0x${string}`),
-        getTokenPriceByAddress(token1Info.address as `0x${string}`),
-      ]);
+  for (const position of positions) {
+    const token0 = toTokenInfo(normalize(position.token0.address));
+    const token1 = toTokenInfo(normalize(position.token1.address));
 
-      const tvlUsd = amount0 * price0 + amount1 * price1;
-
-      const pairLabel = `${token0Info.symbol} / ${token1Info.symbol}`;
-
-      positions.push({
-        id: `BLAZE-${pair.address.slice(2, 8)}`,
-        displayId: `BLAZE-${pair.address.slice(2, 8)}`,
-        provider: 'BlazeSwap v2',
-        providerSlug: 'blazeswap-v2',
-        onchainId: pair.address,
-        pairLabel,
-        feeTierBps: pair.feeTierBps,
-        tickLowerLabel: '—',
-        tickUpperLabel: '—',
-        tvlUsd,
-        rewardsUsd: 0,
-        unclaimedFeesUsd: 0,
-        rflrRewardsUsd: 0,
-        rflrAmount: 0,
-        rflrUsd: 0,
-        rflrPriceUsd: 0,
-        inRange: true,
-        status: 'Active',
-        token0: token0Info,
-        token1: token1Info,
-        amount0,
-        amount1,
-        lowerPrice: Number.NaN,
-        upperPrice: Number.NaN,
-        tickLower: 0,
-        tickUpper: 0,
-        isInRange: true,
-        poolAddress: pair.address,
-        price0Usd: price0,
-        price1Usd: price1,
-        fee0: 0,
-        fee1: 0,
-        walletAddress: wallet,
-        currentTick: 0,
-        createdAt: undefined,
-        lastUpdated: new Date().toISOString(),
-        liquidity: balance,
-        poolLiquidity: totalSupply,
-        poolSharePct: share * 100,
-      });
-    } catch (error) {
-      console.error(`[BLAZESWAP] Failed to process pair ${pair.address}:`, error);
+    if (!token0 || !token1) {
       continue;
+    }
+
+    try {
+      const converted = await enrichPosition(wallet, position, token0, token1, priceCache);
+      enriched.push(converted);
+    } catch (error) {
+      console.error('[BlazeSwap] Failed to enrich position', {
+        pair: position.pair,
+        error,
+      });
     }
   }
 
-  return positions;
+  return enriched;
 }

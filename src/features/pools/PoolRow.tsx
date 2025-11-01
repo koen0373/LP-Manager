@@ -149,7 +149,7 @@ export function PoolRow({ pool, onNavigate, onShare }: PoolRowProps) {
     token0,
     token1,
     feeTier,
-    rangeLabel,
+    rangeLabel: _rangeLabel,
     liquidityUsd,
     liquidityShareLabel,
     unclaimedFeesUsd,

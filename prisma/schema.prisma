@@ -387,6 +387,32 @@ model analytics_discovery_log {
   @@index([provider, ts])
 }
 
+model DiscoveredWallet {
+  address       String                    @id
+  addressLower  String                    @unique
+  firstSeen     DateTime                  @default(now())
+  lastSeen      DateTime                  @updatedAt
+  score         Int                       @default(0)
+  sources       DiscoveredWalletSource[]
+
+  @@map("discovered_wallet")
+}
+
+model DiscoveredWalletSource {
+  id            BigInt           @id @default(autoincrement())
+  walletAddress String
+  wallet        DiscoveredWallet @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
+  provider      String
+  source        String
+  txHash        String?
+  block         BigInt?
+  ts            DateTime         @default(now())
+
+  @@index([provider, ts])
+  @@index([walletAddress, provider])
+  @@map("discovered_wallet_source")
+}
+
 /// App-wide key/value settings (admin-toggles)
 model AppSetting {
   key       String  @id

@@ -1,107 +1,391 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { isAddress } from 'viem';
-import { getLpPositionsOnChain } from '../../src/services/pmFallback';
+
+import type { PositionRow as CanonicalPositionRow, PositionsResponse } from '@/lib/positions/types';
+import type { PositionRow as LegacyPositionRow } from '@/types/positions';
+import { getLpPositionsOnChain } from '@/services/pmFallback';
 import { getBlazeSwapPositions } from '@/services/blazeswapService';
 import { getSparkdexPositions } from '@/services/sparkdexService';
-import { getWalletPositionsViaFlareScan } from '../../src/services/flarescanService';
-import { clearCaches } from '../../src/utils/poolHelpers';
-import { clearRflrRewardCache } from '../../src/services/rflrRewards';
-import { clearCache } from '../../src/lib/util/memo';
-import type { PositionRow } from '../../src/types/positions';
+import { getWalletPositionsViaFlareScan } from '@/services/flarescanService';
+import { clearCaches } from '@/utils/poolHelpers';
+import { clearRflrRewardCache } from '@/services/rflrRewards';
+import { clearCache } from '@/lib/util/memo';
 
-function sanitizeBigInts(value: unknown): unknown {
-  if (typeof value === 'bigint') {
-    return value.toString();
+const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
+const TIMEOUT_MS = 30_000;
+const CACHE_TTL_MS = 60_000;
+
+type CachedEntry = {
+  expires: number;
+  data: NonNullable<PositionsResponse['data']>;
+};
+
+const cache = new Map<string, CachedEntry>();
+
+type ProviderErrorRecord = {
+  provider: string;
+  error: string;
+};
+
+function ensureNumber(value: unknown, fallback = 0): number {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : fallback;
   }
-
-  if (Array.isArray(value)) {
-    return value.map((entry) => sanitizeBigInts(entry));
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
   }
-
-  if (value && typeof value === 'object') {
-    const result: Record<string, unknown> = {};
-    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
-      result[key] = sanitizeBigInts(val);
-    }
-    return result;
-  }
-
-  return value;
+  return fallback;
 }
 
-// Helper to serialize PositionRow for JSON response
-function serializePositionRow(position: PositionRow): PositionRow {
-  const sanitized = sanitizeBigInts(position) as Record<string, unknown>;
+function normaliseProvider(value: unknown): string {
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return value.trim().toLowerCase();
+  }
+  return 'unknown';
+}
+
+function extractAddress(value: unknown): string {
+  if (typeof value === 'string' && value.startsWith('0x')) {
+    return value;
+  }
+  return '0x0000000000000000000000000000000000000000';
+}
+
+function optionalNumber(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return undefined;
+}
+
+function parseFeeTier(value: unknown): number {
+  const num = ensureNumber(value);
+  if (num > 0) return num;
+
+  if (typeof value === 'string') {
+    const match = value.match(/([\d.]+)/);
+    if (match) {
+      const parsed = Number(match[1]);
+      if (Number.isFinite(parsed)) {
+        return Math.round(parsed * 100);
+      }
+    }
+  }
+
+  return 0;
+}
+
+function mapStatus(raw: LegacyPositionRow, isInRange: boolean): 'in' | 'near' | 'out' {
+  if (isInRange) {
+    return 'in';
+  }
+
+  const rangeStatus = (raw as unknown as Record<string, unknown>).rangeStatus;
+  if (typeof rangeStatus === 'string') {
+    const lowered = rangeStatus.toLowerCase();
+    if (lowered.includes('near')) return 'near';
+    if (lowered.includes('in')) return 'in';
+    if (lowered.includes('out')) return 'out';
+  }
+
+  const statusField = (raw as unknown as Record<string, unknown>).status;
+  if (typeof statusField === 'string' && statusField.toLowerCase().includes('near')) {
+    return 'near';
+  }
+
+  return 'out';
+}
+
+function toCanonical(position: LegacyPositionRow): CanonicalPositionRow {
+  const provider = normaliseProvider(position.providerSlug ?? position.provider ?? position.dexName);
+  const marketId =
+    position.marketId ??
+    position.poolId ??
+    position.displayId ??
+    position.id ??
+    position.poolAddress ??
+    '';
+
+  const lowerPrice = optionalNumber((position as unknown as Record<string, unknown>).lowerPrice);
+  const upperPrice = optionalNumber((position as unknown as Record<string, unknown>).upperPrice);
+  const currentPrice = optionalNumber((position as unknown as Record<string, unknown>).currentPrice);
+  const dailyFeesUsd = optionalNumber((position as unknown as Record<string, unknown>).dailyFeesUsd);
+  const dailyIncentivesUsd = optionalNumber((position as unknown as Record<string, unknown>).dailyIncentivesUsd);
+  const incentivesTokenAmount = optionalNumber((position as unknown as Record<string, unknown>).incentivesTokenAmount);
+  const liquidityShare = optionalNumber((position as unknown as Record<string, unknown>).liquidityShare);
+
+  const tvlUsd = ensureNumber(position.tvlUsd);
+  const unclaimedFeesUsd = ensureNumber(position.unclaimedFeesUsd ?? position.dailyFeesUsd);
+  const incentivesUsd = ensureNumber(position.incentivesUsd ?? position.rflrRewardsUsd ?? position.rflrUsd);
+  const rewardsUsd = ensureNumber(position.rewardsUsd, unclaimedFeesUsd + incentivesUsd);
+
+  const isInRange = Boolean(position.inRange ?? position.isInRange);
+  const status = mapStatus(position, isInRange);
+
+  const token0 = position.token0 ?? {
+    symbol: position.token0Symbol ?? 'TOKEN0',
+    name: position.token0Symbol ?? 'TOKEN0',
+    decimals: undefined,
+    address: extractAddress((position as unknown as Record<string, unknown>).token0Address),
+  };
+
+  const token1 = position.token1 ?? {
+    symbol: position.token1Symbol ?? 'TOKEN1',
+    name: position.token1Symbol ?? 'TOKEN1',
+    decimals: undefined,
+    address: extractAddress((position as unknown as Record<string, unknown>).token1Address),
+  };
+
+  const category =
+    position.category ??
+    (tvlUsd > 0 ? 'Active' : rewardsUsd > 0 ? 'Inactive' : 'Ended');
 
   return {
-    ...(sanitized as unknown as PositionRow),
-    // Ensure all numeric fields are properly serialized
-    amount0: Number(sanitized.amount0 ?? 0),
-    amount1: Number(sanitized.amount1 ?? 0),
-    tvlUsd: Number(sanitized.tvlUsd ?? 0),
-    rewardsUsd: Number(sanitized.rewardsUsd ?? 0),
-    lowerPrice: Number(sanitized.lowerPrice ?? 0),
-    upperPrice: Number(sanitized.upperPrice ?? 0),
-    rflrAmount: Number(sanitized.rflrAmount ?? 0),
-    rflrUsd: Number(sanitized.rflrUsd ?? 0),
-    rflrPriceUsd: Number(sanitized.rflrPriceUsd ?? 0),
-    feeTierBps: Number(sanitized.feeTierBps ?? 0),
-    // Ensure boolean fields are properly serialized
-    inRange: Boolean(sanitized.inRange ?? false),
-    isInRange: Boolean(sanitized.isInRange ?? false),
+    provider,
+    marketId: String(marketId),
+    poolFeeBps: parseFeeTier(position.feeTierBps ?? (position as unknown as Record<string, unknown>).feeTier),
+    tvlUsd,
+    unclaimedFeesUsd,
+    incentivesUsd,
+    rewardsUsd,
+    isInRange,
+    status,
+    token0: {
+      symbol: token0.symbol,
+      address: extractAddress(token0.address ?? (position as unknown as Record<string, unknown>).token0Address),
+      name: token0.name ?? token0.symbol,
+      decimals: token0.decimals,
+    },
+    token1: {
+      symbol: token1.symbol,
+      address: extractAddress(token1.address ?? (position as unknown as Record<string, unknown>).token1Address),
+      name: token1.name ?? token1.symbol,
+      decimals: token1.decimals,
+    },
+    apr24h:
+      typeof (position as unknown as Record<string, unknown>).apr24h === 'number'
+        ? ((position as unknown as Record<string, unknown>).apr24h as number)
+        : undefined,
+    apy24h:
+      typeof (position as unknown as Record<string, unknown>).apy24h === 'number'
+        ? ((position as unknown as Record<string, unknown>).apy24h as number)
+        : undefined,
+    category,
+    dexName: typeof position.dexName === 'string' ? position.dexName : undefined,
+    displayId: typeof (position as unknown as Record<string, unknown>).displayId === 'string'
+      ? ((position as unknown as Record<string, unknown>).displayId as string)
+      : undefined,
+    rangeMin: lowerPrice,
+    rangeMax: upperPrice,
+    currentPrice,
+    token0Icon: typeof (position as unknown as Record<string, unknown>).token0Icon === 'string'
+      ? ((position as unknown as Record<string, unknown>).token0Icon as string)
+      : undefined,
+    token1Icon: typeof (position as unknown as Record<string, unknown>).token1Icon === 'string'
+      ? ((position as unknown as Record<string, unknown>).token1Icon as string)
+      : undefined,
+    incentivesToken: typeof (position as unknown as Record<string, unknown>).incentivesToken === 'string'
+      ? ((position as unknown as Record<string, unknown>).incentivesToken as string)
+      : undefined,
+    incentivesTokenAmount,
+    liquidityShare,
+    dailyFeesUsd,
+    dailyIncentivesUsd,
+    isDemo: Boolean((position as unknown as Record<string, unknown>).isDemo),
+    poolId: typeof position.poolId === 'string' ? position.poolId : undefined,
+    tokenId: typeof position.id === 'string' ? position.id : undefined,
   };
 }
 
-const CACHE_TTL_MS = 60_000; // Cache wallet responses for 60s
-const cache = new Map<string, { expires: number; data: PositionRow[] }>();
+function buildSummary(rows: CanonicalPositionRow[]) {
+  return rows.reduce(
+    (acc, row) => {
+      acc.tvlUsd += ensureNumber(row.tvlUsd);
+      acc.fees24hUsd += ensureNumber(row.unclaimedFeesUsd);
+      acc.incentivesUsd += ensureNumber(row.incentivesUsd);
+      acc.rewardsUsd += ensureNumber(row.rewardsUsd || row.unclaimedFeesUsd + row.incentivesUsd);
 
-function getCached(address: string): PositionRow[] | null {
-  const entry = cache.get(address);
-  if (!entry) {
-    return null;
+      switch (row.category) {
+        case 'Active':
+          acc.active += 1;
+          break;
+        case 'Inactive':
+          acc.inactive += 1;
+          break;
+        case 'Ended':
+          acc.ended += 1;
+          break;
+        default:
+          break;
+      }
+
+      return acc;
+    },
+    {
+      tvlUsd: 0,
+      fees24hUsd: 0,
+      incentivesUsd: 0,
+      rewardsUsd: 0,
+      count: rows.length,
+      active: 0,
+      inactive: 0,
+      ended: 0,
+    },
+  );
+}
+
+async function runWithTimeout<T>(
+  label: string,
+  task: (signal: AbortSignal) => Promise<T>,
+  timeoutMs = TIMEOUT_MS,
+): Promise<T> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const abortPromise = new Promise<never>((_, reject) => {
+      controller.signal.addEventListener(
+        'abort',
+        () => reject(new Error(`${label} timed out after ${timeoutMs}ms`)),
+        { once: true },
+      );
+    });
+
+    const taskPromise = task(controller.signal);
+    return await Promise.race([taskPromise, abortPromise]);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function gatherPositions(
+  address: `0x${string}`,
+  providerErrors: ProviderErrorRecord[],
+) {
+  const providers = [
+    {
+      key: 'enosys-pm',
+      loader: () => getLpPositionsOnChain(address),
+    },
+    {
+      key: 'blazeswap-v2',
+      loader: () => getBlazeSwapPositions(address),
+    },
+    {
+      key: 'sparkdex',
+      loader: () => getSparkdexPositions(address),
+    },
+  ] as const;
+
+  const settled = await Promise.allSettled(
+    providers.map((provider) => runWithTimeout(provider.key, provider.loader)),
+  );
+
+  const collected: LegacyPositionRow[] = [];
+
+  settled.forEach((result, index) => {
+    const provider = providers[index].key;
+    if (result.status === 'fulfilled') {
+      collected.push(...result.value);
+    } else {
+      const message =
+        result.reason instanceof Error ? result.reason.message : String(result.reason);
+      providerErrors.push({ provider, error: message });
+      console.error('[api/positions] Provider error', {
+        provider,
+        msg: message,
+      });
+    }
+  });
+
+  if (collected.length > 0) {
+    return collected;
   }
 
-  if (Date.now() > entry.expires) {
+  try {
+    const fallback = await runWithTimeout('flarescan', () => getWalletPositionsViaFlareScan(address));
+    if (fallback.length > 0) {
+      return fallback;
+    }
+  } catch (error) {
+    console.error('[api/positions] FlareScan fallback failed', {
+      address,
+      msg: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  return [];
+}
+
+export async function fetchCanonicalPositionData(address: `0x${string}`) {
+  const providerErrors: ProviderErrorRecord[] = [];
+  const legacyPositions = await gatherPositions(address, providerErrors);
+  const canonicalPositions = legacyPositions.map(toCanonical);
+  const summary = buildSummary(canonicalPositions);
+
+  if (providerErrors.length > 0) {
+    console.warn('[api/positions] Provider failures encountered', providerErrors);
+  }
+
+  return {
+    positions: canonicalPositions,
+    summary,
+  };
+}
+
+function getCached(address: string) {
+  const cached = cache.get(address);
+  if (!cached) return null;
+
+  if (Date.now() > cached.expires) {
     cache.delete(address);
     return null;
   }
 
-  return entry.data;
+  return cached.data;
 }
 
-function setCached(address: string, data: PositionRow[]): void {
-  cache.set(address, { data, expires: Date.now() + CACHE_TTL_MS });
+function setCached(address: string, data: NonNullable<PositionsResponse['data']>) {
+  cache.set(address, {
+    data,
+    expires: Date.now() + CACHE_TTL_MS,
+  });
 
-  if (cache.size > 100) {
-    const oldestKey = cache.keys().next().value;
-    if (oldestKey) {
-      cache.delete(oldestKey);
+  if (cache.size > 256) {
+    const [firstKey] = cache.keys();
+    if (firstKey) {
+      cache.delete(firstKey);
     }
   }
 }
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse<PositionsResponse>,
 ) {
-  const startTime = Date.now();
-  
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
-    res.status(405).json({ error: 'Method not allowed' });
+    res.status(405).json({ success: false, error: 'Method not allowed' });
     return;
   }
 
   const addressParam = typeof req.query.address === 'string' ? req.query.address : '';
-  if (!addressParam || !isAddress(addressParam)) {
-    res.status(400).json({ error: 'Invalid or missing wallet address' });
+  if (!ADDRESS_REGEX.test(addressParam)) {
+    res.status(400).json({ success: false, error: 'Invalid address' });
     return;
   }
 
   const normalizedAddress = addressParam.toLowerCase();
-  const forceRefresh = req.query.refresh === '1';
+  const startTime = Date.now();
 
-  if (forceRefresh) {
+  const refresh = req.query.refresh === '1' || req.query.refresh === 'true';
+  if (refresh) {
     cache.delete(normalizedAddress);
     clearCache(`wallet-positions-${normalizedAddress}`);
     clearCache(`viem-positions-${normalizedAddress}`);
@@ -109,64 +393,75 @@ export default async function handler(
     clearCaches();
   }
 
-  const cached = forceRefresh ? null : getCached(normalizedAddress);
+  const cached = refresh ? null : getCached(normalizedAddress);
   if (cached) {
-    const duration = Date.now() - startTime;
-    console.log(`[API] /api/positions - Cache hit for ${normalizedAddress} - ${cached.length} positions - ${duration}ms`);
-    res.setHeader('Cache-Control', 's-maxage=20, stale-while-revalidate=60');
-    res.status(200).json(cached);
+    res.status(200).json({
+      success: true,
+      data: {
+        ...cached,
+        meta: {
+          ...cached.meta,
+          address: normalizedAddress,
+        },
+      },
+    });
     return;
   }
 
   try {
-    console.log(`[API] Fetching positions for address: ${normalizedAddress}`);
-    const [viemPositions, blazePositions, sparkPositions] = await Promise.all([
-      getLpPositionsOnChain(normalizedAddress as `0x${string}`),
-      getBlazeSwapPositions(normalizedAddress as `0x${string}`),
-      getSparkdexPositions(normalizedAddress as `0x${string}`),
-    ]);
-
-    const allPositions = [...viemPositions, ...blazePositions, ...sparkPositions];
-
-    console.log(
-      `[API] Received ${viemPositions.length} positions from Viem, ${blazePositions.length} from BlazeSwap, ${sparkPositions.length} from SparkDEX`
+    const { positions: canonicalPositions, summary } = await fetchCanonicalPositionData(
+      normalizedAddress as `0x${string}`,
     );
-    if (allPositions.length > 0) {
-      const sample = allPositions[0];
-      console.log(`[API] First position sample:`, {
-        id: sample?.id,
-        tvlUsd: sample?.tvlUsd,
-        amount0: sample?.amount0,
-        amount1: sample?.amount1,
-        poolSharePct: sample?.poolSharePct,
-      });
-    }
+    const elapsedMs = Date.now() - startTime;
 
-    const serializedPositions = allPositions.map(serializePositionRow);
-    setCached(normalizedAddress, serializedPositions);
-    const duration = Date.now() - startTime;
-    console.log(`[API] /api/positions - Success via Viem for ${normalizedAddress} - ${serializedPositions.length} positions - ${duration}ms`);
-    res.setHeader('Cache-Control', 's-maxage=20, stale-while-revalidate=60');
-    res.status(200).json(serializedPositions);
-    return;
-  } catch (viemError) {
-    console.error('Viem position fetch failed in /api/positions:', viemError);
-  }
+    const data: NonNullable<PositionsResponse['data']> = {
+      positions: canonicalPositions,
+      summary,
+      meta: {
+        address: normalizedAddress,
+        elapsedMs,
+      },
+    };
 
-  try {
-    const fallbackPositions = await getWalletPositionsViaFlareScan(normalizedAddress);
-    const serializedFallback = fallbackPositions.map(serializePositionRow);
-    setCached(normalizedAddress, serializedFallback);
-    const duration = Date.now() - startTime;
-    console.log(`[API] /api/positions - Success via FlareScan fallback for ${normalizedAddress} - ${serializedFallback.length} positions - ${duration}ms`);
-    res.setHeader('Cache-Control', 'no-store');
-    res.status(200).json(serializedFallback);
-  } catch (fallbackError) {
-    const duration = Date.now() - startTime;
-    console.error(`[API] /api/positions - Failed for ${normalizedAddress} - ${duration}ms:`, fallbackError);
-    res.status(502).json({
-      error: 'Unable to fetch positions',
-      details: fallbackError instanceof Error ? fallbackError.message : 'Unknown error',
+    setCached(normalizedAddress, data);
+
+    res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    const elapsedMs = Date.now() - startTime;
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[api/positions] Failed to serve positions', {
+      address: normalizedAddress,
+      msg: message,
+      stack: error instanceof Error ? error.stack : undefined,
+      elapsedMs,
+    });
+
+    // Return empty result instead of 500 error when no positions found
+    // This allows wallet connect flow to continue gracefully
+    const data: NonNullable<PositionsResponse['data']> = {
+      positions: [],
+      summary: {
+        tvlUsd: 0,
+        fees24hUsd: 0,
+        incentivesUsd: 0,
+        rewardsUsd: 0,
+        count: 0,
+        active: 0,
+        inactive: 0,
+        ended: 0,
+      },
+      meta: {
+        address: normalizedAddress,
+        elapsedMs,
+      },
+    };
+
+    res.status(200).json({
+      success: true,
+      data,
     });
   }
 }

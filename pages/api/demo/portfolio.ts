@@ -1,7 +1,20 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '@/server/db'
 
+const DEPRECATION_INTERVAL_MS = 60_000;
+let lastDeprecationLog = 0;
+
+function logDeprecation() {
+  const now = Date.now();
+  if (now - lastDeprecationLog > DEPRECATION_INTERVAL_MS) {
+    lastDeprecationLog = now;
+    console.warn('[api/demo/portfolio] Deprecated endpoint – migrate to /api/positions.');
+  }
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  logDeprecation();
+
   const address = String(req.query.address || '').toLowerCase()
   if (!address) return res.status(400).json({ ok:false, error: 'address required' })
   try {

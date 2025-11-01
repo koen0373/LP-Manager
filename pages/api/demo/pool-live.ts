@@ -10,6 +10,17 @@ interface PoolLiveResponse {
   error?: string;
 }
 
+const DEPRECATION_INTERVAL_MS = 60_000;
+let lastDeprecationLog = 0;
+
+function logDeprecation() {
+  const now = Date.now();
+  if (now - lastDeprecationLog > DEPRECATION_INTERVAL_MS) {
+    lastDeprecationLog = now;
+    console.warn('[api/demo/pool-live] Deprecated endpoint – migrate to /api/positions.');
+  }
+}
+
 /**
  * Fetch live pool details by provider + marketId
  * 
@@ -23,6 +34,8 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<PoolLiveResponse>
 ) {
+  logDeprecation();
+
   if (req.method !== 'GET') {
     return res.status(405).json({ ok: false, error: 'Method not allowed' });
   }

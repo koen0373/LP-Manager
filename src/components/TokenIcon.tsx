@@ -36,7 +36,8 @@ const ICON_MAP: Record<string, string> = {
 };
 
 const getTokenIcon = (symbol?: string): string | null => {
-  const sym = (symbol || "").trim();
+  if (!symbol) return null;
+  const sym = symbol.trim();
   
   // Special handling for USD₮0 (Unicode T symbol)
   if (sym.includes('₮') || sym.includes('USD₮')) {

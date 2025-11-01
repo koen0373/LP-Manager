@@ -58,7 +58,7 @@ function normalizeAddress(value: string | null | undefined): string | null {
 
 export default function ConnectPage() {
   const { address, status, connector } = useAccount();
-  const { connectors, connectAsync, isPending, error: connectError } = useConnect();
+  const { connectors, connectAsync, status: connectStatus, error: connectError } = useConnect();
 
   const [manualInput, setManualInput] = React.useState('');
   const [previewAddress, setPreviewAddress] = React.useState<string | null>(null);
@@ -245,7 +245,7 @@ export default function ConnectPage() {
                 <PricePill />
 
                 <div className="flex flex-wrap items-center gap-4">
-                  <Button onClick={handleConnectClick} loading={isPending || status === 'connecting'}>
+                  <Button onClick={handleConnectClick} loading={connectStatus === 'pending' || status === 'connecting'}>
                     Connect with MetaMask or Rabby
                   </Button>
                   <span className="text-xs text-white/50">

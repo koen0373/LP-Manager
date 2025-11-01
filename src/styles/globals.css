@@ -6,6 +6,21 @@
   .hero-wave-bg {
     background-image: url('/media/hero-wave.svg');
   }
+  
+  /* Glass block and card utilities for legible cards */
+  .glass-block {
+    background: rgba(10, 15, 26, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  
+  .glass-card {
+    background: rgba(10, 15, 26, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
 }
 
 .page-bg{
@@ -676,12 +691,53 @@ tr.pool-hover {
   }
 }
 
+@keyframes rb-slide-in {
+  0% {
+    left: 0%;
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    left: 50%;
+    opacity: 1;
+  }
+}
+
+@keyframes rb-warning-flash {
+  0% {
+    box-shadow: 0 0 12px currentColor, 0 0 0 2px rgba(255,255,255,0.3);
+    transform: translateX(-50%) scale(1.08);
+  }
+  50% {
+    box-shadow: 0 0 20px currentColor, 0 0 0 3px rgba(255,255,255,0.4), 0 0 0 8px color-mix(in srgb, currentColor 20%, transparent);
+    transform: translateX(-50%) scale(1.12);
+  }
+  100% {
+    box-shadow: 0 0 6px currentColor, 0 0 0 2px rgba(255,255,255,0.2);
+    transform: translateX(-50%) scale(1);
+  }
+}
+
 .rb-heartbeat-fast {
-  animation: rb-heartbeat 1.5s ease-in-out infinite;
+  animation: rb-heartbeat 2.2s ease-in-out infinite;
 }
 
 .rb-heartbeat-slow {
-  animation: rb-heartbeat 2.5s ease-in-out infinite;
+  animation: rb-heartbeat 3.5s ease-in-out infinite;
+}
+
+/* Special animation for green "in" status when previewing */
+.rb-status-in.rb-preview-active {
+  animation: rb-slide-in 1.2s ease-out forwards, rb-heartbeat 2.2s ease-in-out 1.2s infinite;
+}
+
+/* Warning flash when transitioning to red (out of range) */
+.rb-status-out {
+  animation: rb-warning-flash 1.5s ease-out;
+  /* After flash, settle to static state */
+  animation-fill-mode: forwards;
 }
 
 /* Status color helpers (use currentColor so glow matches) */
@@ -695,6 +751,8 @@ tr.pool-hover {
 
 .rb-status-out {
   color: var(--rb-red);
+  /* Plain red marker - no glow, no animation */
+  box-shadow: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

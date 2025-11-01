@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import fs from 'fs';
-import type { DemoPool, DemoSeed, WalletSeed, PoolSeed, ProviderSlug, Status } from '@/lib/demo/types';
+import type { DemoPool, DemoSeed, PoolSeed, ProviderSlug, Status } from '@/lib/demo/types';
 import { classifyStrategy } from '@/lib/demo/strategy';
 import type { PositionRow } from '@/types/positions';
 import { getRangeStatus } from '@/components/pools/PoolRangeIndicator';
@@ -21,6 +21,16 @@ interface SelectionResponse {
 // Simple in-memory cache with 60s TTL
 let cachedSelection: { pools: DemoPool[]; timestamp: number } | null = null;
 const CACHE_TTL_MS = 60_000;
+const DEPRECATION_INTERVAL_MS = 60_000;
+let lastDeprecationLog = 0;
+
+function logDeprecation() {
+  const now = Date.now();
+  if (now - lastDeprecationLog > DEPRECATION_INTERVAL_MS) {
+    lastDeprecationLog = now;
+    console.warn('[api/demo/selection] Deprecated endpoint – please migrate to /api/positions.');
+  }
+}
 
 /**
  * Load demo seeds from JSON file
@@ -202,6 +212,8 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<SelectionResponse>
 ) {
+  logDeprecation();
+
   if (req.method !== 'GET') {
     return res.status(405).json({ ok: false, pools: [], staleSeconds: 0, error: 'Method not allowed' });
   }
@@ -310,4 +322,3 @@ export default async function handler(
     });
   }
 }
-

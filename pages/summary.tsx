@@ -33,7 +33,7 @@ export default function SummaryPage() {
   // Check if wallet is already connected on mount
   React.useEffect(() => {
     const checkWallet = async () => {
-      if (typeof window !== 'undefined' && window.ethereum) {
+      if (typeof window !== 'undefined' && window.ethereum && window.ethereum.request) {
         try {
           const accounts = await window.ethereum.request({ method: 'eth_accounts' }) as string[];
           if (accounts && accounts.length > 0) {

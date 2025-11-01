@@ -4,6 +4,7 @@ type AnalyticsEvent =
   | 'pools_detected'
   | 'follow_now_click'
   | 'checkout_viewed'
+  | 'billing_alerts_toggle'
   | 'payment_success'
   | 'payment_error';
 
@@ -20,4 +21,3 @@ export function track(name: AnalyticsEvent, payload?: Record<string, unknown>) {
     console.warn('[analytics:error]', error);
   }
 }
-

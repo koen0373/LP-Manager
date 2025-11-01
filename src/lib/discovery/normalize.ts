@@ -84,7 +84,10 @@ export function normalizePosition(enriched: EnrichedPosition): PositionRow {
     inRange,
     isInRange: inRange,
     
-    status: tvlUsd > 1 ? 'Active' : 'Inactive',
+    // Status based on TVL only (never use range)
+    // Active: TVL > 0 (regardless of range)
+    // Inactive: TVL = 0 (will be further filtered by rewards in UI)
+    status: tvlUsd > 0 ? 'Active' : 'Inactive',
     
     createdAt: enriched.createdAt?.toISOString(),
     lastUpdated: enriched.lastUpdated.toISOString(),

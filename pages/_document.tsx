@@ -21,7 +21,7 @@ class MyDocument extends Document<MyDocumentProps> {
         <Head>
           <meta
             name="description"
-            content="LiquiLab - The Liquidity Pool Intelligence Platform. Manage your liquidity pools on Flare Network."
+            content="LiquiLab - Manage your liquidity pools on Flare Network."
           />
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

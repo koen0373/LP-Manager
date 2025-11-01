@@ -1,0 +1,7 @@
+venue,pair,fee_tier,vol_24h_usd,tvl_usd,daily_fees_usd_assumed,apr24h_pct_fees_only,as_of_utc,sources
+Enosys,WFLR/APS,0.3%,142.49,18260,0.43,0.85,2025-10-30 00:00:00 UTC,src_flaremetrics_pools|src_ds_blaze_usdt_wflr
+Enosys,HLN/WFLR,0.3%,123.2,19330,0.37,0.7,2025-10-30 00:00:00 UTC,src_flaremetrics_pools|src_ds_blaze_usdt_wflr
+Enosys,WFLR/eETH,0.3%,177.13,29380,0.53,0.66,2025-10-30 00:00:00 UTC,src_flaremetrics_pools|src_ds_blaze_usdt_wflr
+Enosys,WFLR/eUSDT,0.3%,109.6,34050,0.33,0.35,2025-10-30 00:00:00 UTC,src_flaremetrics_pools|src_ds_blaze_usdt_wflr
+Enosys,eUSDT/APS,0.3%,54.41,20340,0.16,0.29,2025-10-30 00:00:00 UTC,src_flaremetrics_pools|src_ds_blaze_usdt_wflr
+BlazeSwap,USDT/WFLR,0.3%,13000.0,261000,39.0,5.45,2025-10-30 00:00:00 UTC,src_flaremetrics_pools|src_ds_blaze_usdt_wflr

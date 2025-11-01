@@ -2,9 +2,11 @@
 
 import React from 'react';
 
-import type { PositionRow } from '@/types/positions';
-import { includedCapacity, freeBonus } from '@/data/pricing';
 import { TokenIcon } from '@/components/TokenIcon';
+import { InfoNote } from '@/components/ui/InfoNote';
+import { includedCapacity, freeBonus } from '@/data/pricing';
+import { fetchPositions, computeSummary } from '@/lib/positions/client';
+import type { PositionRow } from '@/lib/positions/types';
 
 const STORAGE_KEY_TRIAL = 'liquilab/trial-pool';
 
@@ -15,11 +17,42 @@ function formatUsd(value: number | undefined | null): string {
   return `$${value.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
 }
 
-function isActivePosition(position: PositionRow): boolean {
-  if (position.status && position.status.toLowerCase() === 'active') {
-    return true;
+type WalletPosition = PositionRow & { id: string };
+
+function deriveCategory(position: PositionRow): NonNullable<PositionRow['category']> {
+  if (position.category) {
+    return position.category;
   }
-  return typeof position.tvlUsd === 'number' && position.tvlUsd > 0;
+
+  const tvl = typeof position.tvlUsd === 'number' ? position.tvlUsd : 0;
+  const rewards = typeof position.rewardsUsd === 'number'
+    ? position.rewardsUsd
+    : (typeof position.unclaimedFeesUsd === 'number' ? position.unclaimedFeesUsd : 0) +
+      (typeof position.incentivesUsd === 'number' ? position.incentivesUsd : 0);
+
+  if (tvl > 0) return 'Active';
+  if (rewards > 0) return 'Inactive';
+  return 'Ended';
+}
+
+function derivePositionId(position: PositionRow, index: number): string {
+  return (
+    position.tokenId ??
+    position.poolId ??
+    position.marketId ??
+    `${position.provider}-${position.token0?.symbol ?? 'token0'}-${position.token1?.symbol ?? 'token1'}-${index}`
+  );
+}
+
+function mapToWalletPosition(position: PositionRow, index: number): WalletPosition {
+  const id = derivePositionId(position, index);
+  const category = deriveCategory(position);
+
+  return {
+    ...position,
+    id,
+    category,
+  };
 }
 
 type PreviewResponse = {
@@ -41,24 +74,18 @@ async function fetchPreview(activePools: number): Promise<PreviewResponse | null
   }
 }
 
-async function fetchPositions(address: string): Promise<PositionRow[]> {
-  const response = await fetch(`/api/positions?address=${address}`, { cache: 'no-store' });
-  if (!response.ok) {
-    throw new Error('Failed to load pools');
-  }
-  return (await response.json()) as PositionRow[];
-}
-
 type PoolsOverviewProps = {
   address: string;
 };
 
 export default function PoolsOverview({ address }: PoolsOverviewProps) {
-  const [positions, setPositions] = React.useState<PositionRow[]>([]);
+  const [positions, setPositions] = React.useState<WalletPosition[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [trialPool, setTrialPool] = React.useState<string | null>(null);
   const [preview, setPreview] = React.useState<PreviewResponse | null>(null);
+  const [activePoolCount, setActivePoolCount] = React.useState(0);
+  const [reloadKey, setReloadKey] = React.useState(0);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -66,23 +93,39 @@ export default function PoolsOverview({ address }: PoolsOverviewProps) {
     }
   }, []);
 
+  const handleRetry = React.useCallback(() => {
+    setReloadKey((key) => key + 1);
+  }, []);
+
   React.useEffect(() => {
     if (!address) {
       setPositions([]);
+      setActivePoolCount(0);
       setPreview(null);
+      setError(null);
+      setLoading(false);
       return;
     }
 
     let isCancelled = false;
+    const controller = new AbortController();
 
     async function load() {
       setLoading(true);
       setError(null);
       try {
-        const result = await fetchPositions(address);
+        const response = await fetchPositions(address, { signal: controller.signal });
+        const rows = response.data?.positions ?? [];
+        const mapped = rows.map(mapToWalletPosition);
         if (isCancelled) return;
-        setPositions(result);
-        const activeCount = result.filter(isActivePosition).length;
+
+        setPositions(mapped);
+
+        const aggregate = response.data?.summary ?? computeSummary(rows);
+
+        const activeCount = aggregate.active ?? mapped.filter((row) => row.category === 'Active').length;
+        setActivePoolCount(activeCount);
+
         const previewResponse = await fetchPreview(activeCount);
         if (!isCancelled) {
           setPreview(previewResponse);
@@ -92,6 +135,7 @@ export default function PoolsOverview({ address }: PoolsOverviewProps) {
           console.error('[PoolsOverview] load failed', err);
           setError('Unable to load pools for your wallet.');
           setPositions([]);
+          setActivePoolCount(0);
           setPreview(null);
         }
       } finally {
@@ -101,17 +145,25 @@ export default function PoolsOverview({ address }: PoolsOverviewProps) {
       }
     }
 
-    load();
+    void load();
 
     return () => {
       isCancelled = true;
+      controller.abort();
     };
-  }, [address]);
+  }, [address, reloadKey]);
 
-  const activePositions = React.useMemo(() => positions.filter(isActivePosition), [positions]);
-  const inactivePositions = React.useMemo(() => positions.filter((position) => !isActivePosition(position)), [positions]);
-
-  const activeCount = activePositions.length;
+  const activePositions = React.useMemo(
+    () => positions.filter((position) => position.category === 'Active'),
+    [positions],
+  );
+  const inactivePositions = React.useMemo(
+    () =>
+      positions.filter(
+        (position) => position.category === 'Inactive' || position.category === 'Ended',
+      ),
+    [positions],
+  );
   const planPaidPools = preview?.pricing?.paidPools ?? 0;
   const planCapacity = preview?.pricing?.totalCapacity ?? includedCapacity(0);
   const planBonus = preview?.pricing?.freeBonus ?? freeBonus(0);
@@ -141,7 +193,7 @@ export default function PoolsOverview({ address }: PoolsOverviewProps) {
           <div>
             <h2 className="font-brand text-2xl font-semibold text-white">Your LiquiLab plan</h2>
             <p className="font-ui text-sm text-[#B0B9C7]">
-              {planLabel} · capacity {planCapacity} pools · active {activeCount}
+              {planLabel} · capacity {planCapacity} pools · active {activePoolCount}
             </p>
           </div>
           {trialPool ? (
@@ -170,9 +222,19 @@ export default function PoolsOverview({ address }: PoolsOverviewProps) {
       )}
 
       {error && (
-        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-4 font-ui text-sm text-red-200">
-          {error}
-        </div>
+        <InfoNote title="Unable to load pools" variant="muted">
+          <div className="flex flex-wrap items-center gap-3">
+            <span>{error}</span>
+            <button
+              type="button"
+              onClick={handleRetry}
+              disabled={loading}
+              className="rounded-md border border-white/20 px-3 py-1 text-xs font-semibold text-white/80 transition hover:border-white hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Retry
+            </button>
+          </div>
+        </InfoNote>
       )}
 
       {!loading && !error && positions.length === 0 && (

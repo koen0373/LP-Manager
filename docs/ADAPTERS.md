@@ -85,3 +85,37 @@ All adapters return normalized records so downstream services (ledger, billing, 
 - Staleness: `stale_seconds > TTL*3` for 15m
 - Latency: `p95 > SLO` for 15m
 
+---
+
+## Simulated Live Demo
+
+**Purpose:** Provide deterministic “live-looking” demo pools without querying user wallets.
+
+### Mode Toggle
+- `DEMO_MODE=sim` *(default)* → use simulated generator (`src/lib/demo/generator.ts`).
+- `DEMO_MODE=live` → reserved; currently falls back to simulated data with warning.
+
+### Price Anchors
+- Anchors derived from `src/lib/prices/oracles.ts`.
+- Override via env: `DEMO_PRICE_<SYMBOL>=1.23` or `DEMO_PRICE_<TOKEN0>_<TOKEN1>=0.045`.
+- Symbols auto-normalised (`USD₮0` → `USDT0`).
+
+### Generator Characteristics
+- Seeded RNG by UTC hour ⇒ stable set for 60 minutes, subtle drift on next hour.
+- Predefined provider mix (Enosys, SparkDEX, BlazeSwap) with max 3 BlazeSwap entries and ≤1 `flaro.org`.
+- Diversity guardrails enforced:
+  - ≥3 strategies (Aggressive/Balanced/Conservative).
+  - ≥3 range statuses (In Range/Near Band/Out of Range).
+  - Min TVL per pool ≥ requested `minTvl` (default `$150`).
+  - APR = `((fees + incentives) / tvl) * 365 * 100`.
+- Fees/incentives scaled by strategy + status; out-of-range pools show minimal accrual.
+
+### API Contract
+- `GET /api/demo/pools?limit=9&minTvl=150&providers=enosys,sparkdex,blazeswap`.
+- 60s in-memory cache inside the route handler.
+- Response payload includes `badgeLabel`, `legal.disclaimer`, `diversity` diagnostics, and token icons resolved via `src/services/tokenIconService.ts`.
+
+### UI Labelling
+- Badge: “Demo · generated from live prices”.
+- Legal micro-copy: “Not financial advice.”
+- Demo table lives in `src/components/demo/DemoPoolsTable.tsx` and maps API output to `PositionsTable`.

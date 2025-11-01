@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 
-// Export the response type for use in components
+import { fetchPositions, computeSummary } from '@/lib/positions/client';
+import type { PositionRow, PositionsResponse } from '@/lib/positions/types';
+
 export interface WalletSummaryResponse {
   wallet: string;
   totals: {
@@ -38,62 +40,62 @@ export interface WalletSummaryResponse {
     txHash: string;
     amountUsd: number;
   }>;
+  meta: NonNullable<PositionsResponse['data']>['meta'] | null;
 }
 
-// Fetcher function
-async function fetchWalletSummary(wallet: string): Promise<WalletSummaryResponse> {
-  console.log('[useWalletSummary] Fetching summary for wallet:', wallet);
-  const response = await fetch(`/api/wallet/summary?address=${wallet}`);
+function mapPosition(row: PositionRow) {
+  const pairLabel = `${row.token0.symbol}/${row.token1.symbol}`;
 
-  if (!response.ok) {
-    console.error('[useWalletSummary] Failed to fetch:', response.status);
-    throw new Error(`Failed to fetch wallet summary: ${response.status}`);
-  }
-
-  const data = await response.json();
-  console.log('[useWalletSummary] Received data:', data);
-  
-  // TODO: Add data validation/transformation here
-  // - Validate response structure matches WalletSummaryResponse type
-  // - Transform/normalize data if needed (e.g., date parsing, number rounding)
-  // - Add computed fields (e.g., total portfolio value, % allocation per position)
-  
-  return data;
+  return {
+    tokenId: row.marketId,
+    pool: row.marketId,
+    pairLabel,
+    token0Symbol: row.token0.symbol,
+    token1Symbol: row.token1.symbol,
+    status: (row.category === 'Inactive' ? 'inactive' : 'active') as 'active' | 'inactive',
+    tvlUsd: row.tvlUsd,
+    accruedFeesUsd: row.unclaimedFeesUsd,
+    realizedFeesUsd: 0,
+    rflrAmount: 0,
+    rflrUsd: row.incentivesUsd,
+  };
 }
 
-/**
- * React Query hook for fetching wallet summary data
- * 
- * @param wallet - The wallet address to fetch summary for
- * @returns Query result with data, loading, error states and refetch function
- * 
- * TODO: Error handling improvements
- * - Add retry logic for network failures
- * - Handle specific error cases (404, 500, rate limiting)
- * - Add error boundary support
- * - Show user-friendly error messages
- * 
- * TODO: Data transformation
- * - Parse timestamps to Date objects
- * - Sort positions by TVL or status
- * - Calculate additional metrics (30d performance, best/worst positions)
- * - Add caching strategy for historical data
- */
+async function loadWalletSummary(wallet: string, signal?: AbortSignal): Promise<WalletSummaryResponse> {
+  const response = await fetchPositions(wallet, { signal });
+  const positions = response.data?.positions ?? [];
+  const summary = response.data?.summary ?? computeSummary(positions);
+
+  return {
+    wallet,
+    totals: {
+      tvlUsd: summary.tvlUsd,
+      feesRealizedUsd: 0,
+      rewardsUsd: summary.rewardsUsd,
+      unclaimedFeesUsd: summary.fees24hUsd,
+      rflrAmount: 0,
+      rflrUsd: summary.incentivesUsd,
+      capitalInvestedUsd: 0,
+      roiPct: 0,
+    },
+    positions: positions.map(mapPosition),
+    capitalTimeline: [],
+    recentActivity: [],
+    meta: response.data?.meta ?? null,
+  };
+}
+
 export function useWalletSummary(wallet: string | undefined) {
   return useQuery({
     queryKey: ['wallet-summary', wallet],
-    queryFn: () => {
+    queryFn: ({ signal }) => {
       if (!wallet) {
         throw new Error('Wallet address is required');
       }
-      return fetchWalletSummary(wallet);
+      return loadWalletSummary(wallet, signal);
     },
-    enabled: !!wallet, // Only run query if wallet exists
-    staleTime: 30_000, // 30 seconds - data stays fresh for this duration
-    // TODO: Consider adding these options:
-    // refetchOnWindowFocus: true, // Refetch when user returns to tab
-    // refetchInterval: 60_000, // Auto-refetch every minute for live updates
-    // retry: 3, // Retry failed requests 3 times
-    // retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    enabled: !!wallet,
+    staleTime: 30_000,
   });
 }
+

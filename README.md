@@ -240,78 +240,112 @@ npx prisma migrate dev
 npm run dev
 ```
 
-## Wallet Summary API & Hook
+## Positions API (Canonical)
 
-### Overview
-The wallet summary feature provides comprehensive portfolio analytics by aggregating data from the ledger database and live position data.
+### Endpoint
 
-### API Endpoint
+**`GET /api/positions?address=0x…`**
 
-**`GET /api/wallet/summary?address={walletAddress}`**
+Returns the canonical list of liquidity positions plus aggregate totals used by the pricing page, dashboard, and onboarding flows.
 
-Returns:
-```typescript
+```bash
+curl -sS -G \
+  "https://your-app.railway.app/api/positions" \
+  --data-urlencode "address=0x0000000000000000000000000000000000000000"
+```
+
+Example response (trimmed):
+
+```json
 {
-  wallet: string;
-  totals: {
-    tvlUsd: number;
-    feesRealizedUsd: number;
-    rewardsUsd: number;
-    capitalInvestedUsd: number;
-    roiPct: number;
-  };
-  positions: Array<{
-    tokenId: string;
-    pool: string;
-    status: 'active' | 'inactive';
-    tvlUsd: number;
-    accruedFeesUsd: number;
-    realizedFeesUsd: number;
-  }>;
-  capitalTimeline: Array<{
-    timestamp: number;
-    balanceUsd: number;
-    type: 'deposit' | 'withdraw' | 'fees' | 'rewards';
-    txHash: string;
-  }>;
-  recentActivity: Array<{
-    timestamp: number;
-    label: string;
-    txHash: string;
-    amountUsd: number;
-  }>;
+  "success": true,
+  "data": {
+    "positions": [
+      {
+        "provider": "enosys",
+        "marketId": "22003",
+        "poolFeeBps": 30,
+        "tvlUsd": 5123.42,
+        "unclaimedFeesUsd": 14.6,
+        "incentivesUsd": 8.1,
+        "rewardsUsd": 22.7,
+        "isInRange": true,
+        "status": "in",
+        "token0": { "symbol": "WFLR", "address": "0x..." },
+        "token1": { "symbol": "USD₮0", "address": "0x..." },
+        "category": "Active"
+      }
+    ],
+    "summary": {
+      "tvlUsd": 5123.42,
+      "fees24hUsd": 14.6,
+      "incentivesUsd": 8.1,
+      "rewardsUsd": 22.7,
+      "count": 1,
+      "active": 1,
+      "inactive": 0,
+      "ended": 0
+    },
+    "meta": {
+      "address": "0x…",
+      "elapsedMs": 142
+    }
+  }
 }
 ```
 
-### React Hook
+### Summary Fields
 
-**`useWalletSummary(wallet)`**
+| Field | Description |
+| ----- | ----------- |
+| `tvlUsd` | Sum of current TVL across all positions |
+| `fees24hUsd` | Outstanding/unrealised trading fees (USD) |
+| `incentivesUsd` | Protocol incentives (rFLR/APS/etc.) in USD |
+| `rewardsUsd` | `fees24hUsd + incentivesUsd` |
+| `count` | Total number of positions | 
+| `active`, `inactive`, `ended` | Counts per category (Active = TVL > 0) |
 
-React Query hook for fetching wallet summary data with automatic caching and refetching.
+### Legacy endpoints
 
-```typescript
-import { useWalletSummary } from '@/hooks/useWalletSummary';
+| Endpoint | Status | Notes |
+| -------- | ------ | ----- |
+| `/api/positions-v2` | 🔁 **307 redirect** | Includes `Deprecation: true` header. Sunset **2025-11-14**. |
+| `/api/wallet/summary` | 🚫 **410 Gone** | Emits `Deprecation: true` + `Link: </api/positions>; rel="successor-version"`. Sunset **2025-11-14**. |
+| `/api/demo/selection`, `/api/demo/pool-live`, `/api/demo/portfolio` | ⚠️ **Deprecated** | Emits periodic console warnings; slated for removal after positions consolidation. |
 
-function MyComponent() {
-  const { data, isLoading, isError, refetch } = useWalletSummary(wallet);
-  
-  if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Error loading summary</div>;
-  
-  return (
-    <div>
-      <h2>Total TVL: ${data.totals.tvlUsd}</h2>
-      <p>Positions: {data.positions.length}</p>
-    </div>
-  );
-}
+Use the canonical `/api/positions` endpoint for all new work.
+
+## Wallet Summary Endpoint (Retired)
+
+`/api/wallet/summary` now proxies to the canonical `/api/positions` logic, but it is marked **410 Gone** with deprecation headers and will be removed after **2025-11-14**. Use `fetchPositions()` from `src/lib/positions/client.ts` for all new integrations.
+
+```bash
+curl -i -sS -G http://localhost:3000/api/wallet/summary \
+  --data-urlencode "address=0x0000000000000000000000000000000000000000"
 ```
 
-**Configuration:**
-- Query Key: `['wallet-summary', wallet]`
-- Stale Time: 30 seconds
-- Enabled: Only when wallet address exists
-- Auto-fetch: On component mount
+Example response:
+
+```
+HTTP/1.1 410 Gone
+Deprecation: true
+Sunset: 2025-11-14
+Link: </api/positions>; rel="successor-version"
+
+{"success":false,"error":"This endpoint has been retired. Please use /api/positions instead.","placeholder":true}
+```
+
+## Diagnostic helper
+
+Use the macOS/zsh-safe helper script to inspect the canonical endpoint quickly. Pass `--help` for usage details:
+
+```bash
+./scripts/dev/diagnose-positions.sh --address 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
+```
+
+Environment variables:
+
+- `BASE_URL` *(optional)* — defaults to `http://localhost:3000`.
 
 ### Data Sources
 

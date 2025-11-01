@@ -9,9 +9,11 @@ import { LiquiLabLogo } from '@/components/LiquiLabLogo';
 import { Button } from '@/components/ui/Button';
 import { ProgressSteps } from '@/components/ui/ProgressSteps';
 import {
+  ALERTS_PRICE_PER_BUNDLE_USD,
+  ANNUAL_MULTIPLIER,
+  BUNDLE_SIZE,
   FREE_POOLS,
   PRICE_PER_POOL_USD,
-  ANNUAL_MULTIPLIER,
 } from '@/data/subscriptionPlans';
 import { track } from '@/lib/analytics';
 
@@ -24,6 +26,14 @@ type BillingPreviewResponse = {
     freePools: number;
     paidPools: number;
     totalCapacity: number;
+    bundles?: number;
+    amountUsd: number;
+    monthlyEquivalentUsd: number;
+  };
+  alerts?: {
+    enabled: boolean;
+    pricePerBundleUsd: number;
+    bundles: number;
     amountUsd: number;
     monthlyEquivalentUsd: number;
   };
@@ -46,6 +56,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const [billingCycle, setBillingCycle] = React.useState<BillingCycle>('month');
   const [suggestedPools, setSuggestedPools] = React.useState<number>(FREE_POOLS);
+  const [alertsEnabled, setAlertsEnabled] = React.useState<boolean>(false);
   const [quote, setQuote] = React.useState<BillingPreviewResponse | null>(null);
   const [isFetchingQuote, setIsFetchingQuote] = React.useState(false);
   const [quoteError, setQuoteError] = React.useState<string | null>(null);
@@ -79,7 +90,16 @@ export default function CheckoutPage() {
     if (billingParam === 'year' || billingParam === 'month') {
       setBillingCycle(billingParam);
     }
-  }, [router.isReady, router.query.activePools, router.query.billingCycle, router.query.desiredCapacity, router.query.suggested]);
+
+    const rawAlerts = router.query.alerts;
+    const alertsParam =
+      typeof rawAlerts === 'string' ? rawAlerts : rawAlerts?.[0];
+    if (alertsParam === '1' || alertsParam === 'true') {
+      setAlertsEnabled(true);
+    } else if (alertsParam === '0' || alertsParam === 'false') {
+      setAlertsEnabled(false);
+    }
+  }, [router.isReady, router.query.activePools, router.query.alerts, router.query.billingCycle, router.query.desiredCapacity, router.query.suggested]);
 
   React.useEffect(() => {
     if (!suggestedPools) return;
@@ -94,6 +114,7 @@ export default function CheckoutPage() {
         const params = new URLSearchParams({
           activePools: String(suggestedPools),
           billingCycle,
+          alerts: alertsEnabled ? '1' : '0',
         });
         const response = await fetch(`/api/billing/preview?${params.toString()}`, {
           method: 'GET',
@@ -124,7 +145,7 @@ export default function CheckoutPage() {
       cancelled = true;
       controller.abort();
     };
-  }, [billingCycle, suggestedPools]);
+  }, [alertsEnabled, billingCycle, suggestedPools]);
 
   React.useEffect(() => {
     track('checkout_viewed', { billingCycle });
@@ -134,10 +155,31 @@ export default function CheckoutPage() {
   const freePools = quote?.pricing.freePools ?? FREE_POOLS;
   const paidPools = quote?.pricing.paidPools ?? Math.max(0, capacity - freePools);
   const pricePerPool = quote?.pricing.pricePerPoolUsd ?? PRICE_PER_POOL_USD;
-  const amount = quote?.pricing.amountUsd ?? Number((paidPools * pricePerPool * (billingCycle === 'year' ? ANNUAL_MULTIPLIER : 1)).toFixed(2));
+  const baseMonthly = Number((paidPools * pricePerPool).toFixed(2));
+  const baseAmount =
+    billingCycle === 'year'
+      ? Number((baseMonthly * ANNUAL_MULTIPLIER).toFixed(2))
+      : baseMonthly;
+  const alertsInfo = quote?.alerts;
+  const alertsBundles =
+    alertsInfo?.bundles ??
+    (alertsEnabled && paidPools > 0
+      ? Math.ceil(paidPools / BUNDLE_SIZE)
+      : 0);
+  const alertsMonthly =
+    alertsInfo?.monthlyEquivalentUsd ??
+    Number((alertsBundles * ALERTS_PRICE_PER_BUNDLE_USD).toFixed(2));
+  const alertsAmount =
+    alertsInfo?.amountUsd ??
+    (billingCycle === 'year'
+      ? Number((alertsMonthly * ANNUAL_MULTIPLIER).toFixed(2))
+      : alertsMonthly);
+  const amount =
+    quote?.pricing.amountUsd ??
+    Number((baseAmount + (alertsEnabled ? alertsAmount : 0)).toFixed(2));
   const monthlyEquivalent =
     quote?.pricing.monthlyEquivalentUsd ??
-    Number((paidPools * pricePerPool).toFixed(2));
+    Number((baseMonthly + (alertsEnabled ? alertsMonthly : 0)).toFixed(2));
 
   const emailValid = React.useMemo(() => /\S+@\S+\.\S+/.test(email.trim()), [email]);
 
@@ -158,19 +200,22 @@ export default function CheckoutPage() {
           billingCycle,
           amountUsd: amount,
           suggested: suggestedPools,
+          alertsEnabled,
+          alertsBundles,
         });
         setFeedback('Payment captured. You now follow your selected pools.');
       } catch (error) {
         track('payment_error', {
           billingCycle,
           error: error instanceof Error ? error.message : 'unknown',
+          alertsEnabled,
         });
         setFeedback('Payment failed. Try again or contact support.');
       } finally {
         setIsSubmitting(false);
       }
     },
-    [amount, billingCycle, emailValid, suggestedPools],
+    [alertsBundles, alertsEnabled, amount, billingCycle, emailValid, suggestedPools],
   );
 
   return (
@@ -219,6 +264,47 @@ export default function CheckoutPage() {
               </header>
 
               <div className="mt-8 flex flex-col gap-8">
+                <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-5 text-sm text-white/80">
+                  <label className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={alertsEnabled}
+                      onChange={(event) => {
+                        const next = event.target.checked;
+                        const bundlesForToggle =
+                          next && paidPools > 0
+                            ? Math.ceil(paidPools / BUNDLE_SIZE)
+                            : 0;
+                        track('billing_alerts_toggle', {
+                          enabled: next,
+                          paidPools,
+                          bundles: bundlesForToggle,
+                        });
+                        setAlertsEnabled(next);
+                      }}
+                      className="mt-1 h-5 w-5 rounded border border-white/30 bg-black/30 accent-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50"
+                    />
+                    <div className="flex flex-col gap-1">
+                      <span className="font-brand text-base font-semibold text-white">
+                        Add Pro Alerts
+                      </span>
+                      <span className="text-white/70">
+                        Email when a pool nears band or goes out of range (RangeBand™ powered).
+                      </span>
+                      <span className="text-xs text-white/50">
+                        + {formatCurrency(ALERTS_PRICE_PER_BUNDLE_USD)} per {BUNDLE_SIZE} pools / month (annual = {ANNUAL_MULTIPLIER}×).{' '}
+                        {alertsEnabled
+                          ? alertsBundles > 0
+                            ? `${alertsBundles} bundle${alertsBundles === 1 ? '' : 's'} · ${formatCurrency(alertsMonthly)} ${
+                                billingCycle === 'month' ? '/month' : '/month equivalent'
+                              }`
+                            : 'No charge until you add paid pools.'
+                          : 'Toggle to include RangeBand™ notifications.'}
+                      </span>
+                    </div>
+                  </label>
+                </div>
+
                 <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 p-6 text-sm backdrop-blur">
                   <div className="flex flex-col gap-2">
                     <span className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">
@@ -242,6 +328,23 @@ export default function CheckoutPage() {
                     <span>
                       Billing: {billingCycle === 'month' ? 'Monthly' : 'Annual (10× monthly)'}
                     </span>
+                    <span>
+                      Pools:{' '}
+                      <span className="tnum text-white">
+                        {formatCurrency(baseAmount)}
+                      </span>{' '}
+                      {billingCycle === 'month' ? 'per month' : 'per year'}
+                    </span>
+                    {alertsEnabled ? (
+                      <span>
+                        Pro Alerts:{' '}
+                        <span className="tnum text-white">
+                          {formatCurrency(alertsAmount)}
+                        </span>{' '}
+                        {billingCycle === 'month' ? 'per month' : 'per year'} ·{' '}
+                        {alertsBundles} bundle{alertsBundles === 1 ? '' : 's'}
+                      </span>
+                    ) : null}
                     <span>
                       Due today:{' '}
                       <strong className="tnum text-white">

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   // Pages Router configuratie
@@ -48,6 +49,12 @@ const nextConfig: NextConfig = {
     if (dev) {
       config.devtool = 'source-map'; // no eval-sourcemaps
     }
+    config.resolve = config.resolve || {};
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      // Stub React-Native async storage the MetaMask SDK references in its browser bundle.
+      '@react-native-async-storage/async-storage': path.resolve(__dirname, 'src/stubs/async-storage.ts'),
+    };
     return config;
   },
 

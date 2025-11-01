@@ -2,8 +2,15 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import WalletConnect from './WalletConnect';
 import { LiquiLabLogo } from './LiquiLabLogo';
+
+const BLAZESWAP_ENABLED =
+  (process.env.NEXT_PUBLIC_ENABLE_BLAZESWAP ??
+    process.env.ENABLE_BLAZESWAP ??
+    ''
+  ).toLowerCase() === 'true';
 
 interface HeaderProps {
   onRefresh?: () => void;
@@ -15,7 +22,16 @@ interface HeaderProps {
   onWalletDisconnected?: () => void;
   showTabs?: boolean;
   showWalletActions?: boolean;
-  currentPage?: 'home' | 'faq' | 'summary' | 'pools' | 'pricing' | 'dashboard';
+  currentPage?:
+    | 'home'
+    | 'faq'
+    | 'summary'
+    | 'pools'
+    | 'pricing'
+    | 'dashboard'
+    | 'rangeband'
+    | 'sales'
+    | 'blazeswap';
 }
 
 export default function Header({
@@ -33,7 +49,7 @@ export default function Header({
   const handleRefresh = onRefresh ?? (() => {});
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-liqui-bg/95 backdrop-blur-sm border-b border-liqui-border">
+    <header className="sticky top-0 z-40 w-full bg-liqui-bg/95 backdrop-blur-sm">
       <div className="mx-auto w-full max-w-[1400px] px-4 sm:px-6 lg:px-8">
         <div className="flex h-[84px] items-center justify-between">
           {/* Brand */}
@@ -41,19 +57,41 @@ export default function Header({
             <Link href="/" className="flex items-center">
               <LiquiLabLogo variant="full" size="sm" theme="dark" />
             </Link>
-            {/* Vertical divider - centered with tagline */}
-            <div className="hidden sm:flex items-center gap-4">
-              <div className="h-12 w-[2px] bg-mist/40"></div>
-              {/* Tagline */}
-              <div className="flex flex-col leading-tight">
-                <span className="font-brand text-mist text-[14px] font-medium tracking-wide">The Liquidity Pool</span>
-                <span className="font-brand text-mist text-[14px] font-medium tracking-wide">Intelligence Platform</span>
-              </div>
-            </div>
           </div>
 
           {/* Navigation & Actions */}
           <div className="flex items-center gap-3 sm:gap-6">
+            {BLAZESWAP_ENABLED && (
+              <Link
+                href="/dashboard/blazeswap"
+                className={`font-brand text-sm transition-colors ${
+                  currentPage === 'blazeswap'
+                    ? 'font-bold text-white'
+                    : 'font-normal text-mist hover:text-white'
+                }`}
+              >
+                BlazeSwap
+              </Link>
+            )}
+            <Link
+              href="/rangeband"
+              className={`flex items-center gap-2 font-brand text-sm transition-colors ${
+                currentPage === 'rangeband'
+                  ? 'font-bold text-white'
+                  : 'font-normal text-mist hover:text-white'
+              }`}
+              title="Learn about RangeBand™"
+            >
+              <Image
+                src="/icons/RangeBand-icon.svg"
+                alt=""
+                width={20}
+                height={20}
+                className="opacity-80"
+                aria-hidden="true"
+              />
+              <span>RangeBand™</span>
+            </Link>
             <Link
               href="/pricing"
               className={`font-brand text-sm transition-colors ${
@@ -74,16 +112,6 @@ export default function Header({
             >
               FAQ
             </Link>
-            <Link
-              href="/dashboard"
-              className={`hidden font-brand text-sm transition-colors sm:inline ${
-                currentPage === 'dashboard'
-                  ? 'font-bold text-white'
-                  : 'font-normal text-mist hover:text-white'
-              }`}
-            >
-              Dashboard
-            </Link>
 
             {showWalletActions && (
               <>
@@ -92,6 +120,7 @@ export default function Header({
                   className="flex items-center gap-2 px-3 py-2 text-mist hover:text-white rounded-lg transition-all duration-200"
                   title="Refresh data"
                   type="button"
+                  aria-label="Refresh data"
                 >
                   <svg
                     width="16"
@@ -107,7 +136,6 @@ export default function Header({
                       fill="currentColor"
                     />
                   </svg>
-                  <span className="text-sm font-normal transition-all duration-200">Refresh</span>
                 </button>
                 <WalletConnect
                   onWalletConnected={onWalletConnected}
@@ -118,9 +146,6 @@ export default function Header({
           </div>
         </div>
       </div>
-
-      {/* Divider */}
-      <div className="mx-auto h-[2px] w-full max-w-[1400px] divider" />
 
       {/* Tabs row */}
       {showTabs && onTabChange && (

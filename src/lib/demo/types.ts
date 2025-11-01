@@ -43,3 +43,4 @@ export interface PoolSeed {
 
 export type DemoSeed = WalletSeed | PoolSeed;
 
+

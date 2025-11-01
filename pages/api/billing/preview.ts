@@ -1,7 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import {
+  ALERTS_PRICE_PER_BUNDLE_USD,
   ANNUAL_MULTIPLIER,
+  BUNDLE_SIZE,
   FREE_POOLS,
   PRICE_PER_POOL_USD,
 } from '@/data/subscriptionPlans';
@@ -16,18 +18,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ? req.query.desiredCapacity[0]
       : req.query.desiredCapacity;
 
-    const parsedRequested = Number(
-      rawActivePools ?? rawDesiredCapacity ?? 1,
-    );
+    const rawAlerts = Array.isArray(req.query.alerts)
+      ? req.query.alerts[0]
+      : req.query.alerts;
+    const alertsEnabled = rawAlerts === '1' || rawAlerts === 'true';
+
+    const parsedRequested = Number(rawActivePools ?? rawDesiredCapacity ?? 1);
     const totalCapacity =
       Number.isFinite(parsedRequested) && parsedRequested > 0
         ? Math.floor(parsedRequested)
         : 1;
 
     const paidPools = Math.max(0, totalCapacity - FREE_POOLS);
-    const amountMonth = Number((paidPools * PRICE_PER_POOL_USD).toFixed(2));
-    const amountYear = Number(
-      (paidPools * PRICE_PER_POOL_USD * ANNUAL_MULTIPLIER).toFixed(2),
+    const bundles =
+      paidPools > 0 ? Math.ceil(paidPools / BUNDLE_SIZE) : 0;
+
+    const baseMonthlyAmount = Number(
+      (paidPools * PRICE_PER_POOL_USD).toFixed(2),
+    );
+    const baseAnnualAmount = Number(
+      (baseMonthlyAmount * ANNUAL_MULTIPLIER).toFixed(2),
+    );
+
+    const alertsBundles = alertsEnabled ? bundles : 0;
+    const alertsMonthlyAmount = Number(
+      (alertsBundles * ALERTS_PRICE_PER_BUNDLE_USD).toFixed(2),
+    );
+    const alertsAnnualAmount = Number(
+      (alertsMonthlyAmount * ANNUAL_MULTIPLIER).toFixed(2),
+    );
+
+    const totalMonthlyAmount = Number(
+      (baseMonthlyAmount + alertsMonthlyAmount).toFixed(2),
+    );
+    const totalAnnualAmount = Number(
+      (baseAnnualAmount + alertsAnnualAmount).toFixed(2),
     );
 
     const responseBody = {
@@ -38,13 +63,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         freePools: FREE_POOLS,
         paidPools,
         totalCapacity,
-        amountUsd: billing === 'year' ? amountYear : amountMonth,
-        monthlyEquivalentUsd: amountMonth,
+        bundles,
+        amountUsd: billing === 'year' ? totalAnnualAmount : totalMonthlyAmount,
+        monthlyEquivalentUsd: totalMonthlyAmount,
       },
       suggestion: {
         activePools: totalCapacity,
         recommendedPaidPools: paidPools,
         recommendedCapacity: totalCapacity,
+      },
+      alerts: {
+        enabled: alertsEnabled,
+        pricePerBundleUsd: ALERTS_PRICE_PER_BUNDLE_USD,
+        bundles: alertsBundles,
+        amountUsd: billing === 'year' ? alertsAnnualAmount : alertsMonthlyAmount,
+        monthlyEquivalentUsd: alertsMonthlyAmount,
       },
     };
 

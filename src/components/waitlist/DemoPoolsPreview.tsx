@@ -196,28 +196,46 @@ function toPositionData(row: DemoPoolRow): PositionData {
     dailyFeesUsd: dailyFeesValue,
     dailyIncentivesUsd: dailyIncentivesValue,
   });
+  const feeTierPct = Number(row.feeTier.replace(/[^0-9.-]/g, ''));
+  const poolFeeBps = Number.isFinite(feeTierPct) ? Math.round(feeTierPct * 100) : 0;
+  const cleanedTokenId = row.tokenId.replace('#', '');
+  const providerSlug = row.provider.toLowerCase();
+  const rewardsUsd = Number((feesValue + incentivesValue).toFixed(2));
 
   return {
-    tokenId: row.tokenId.replace('#', ''),
+    provider: providerSlug,
     dexName: providerLabelMap[row.provider] ?? row.provider.toUpperCase(),
+    marketId: cleanedTokenId,
+    tokenId: cleanedTokenId,
     poolId: row.tokenId,
-    token0Symbol,
-    token1Symbol,
+    poolFeeBps,
+    tvlUsd: liquidityValue,
+    unclaimedFeesUsd: feesValue,
+    incentivesUsd: incentivesValue,
+    rewardsUsd,
+    isInRange: row.status === 'in',
+    status: row.status,
+    token0: {
+      symbol: token0Symbol,
+      address: '',
+    },
+    token1: {
+      symbol: token1Symbol,
+      address: '',
+    },
     token0Icon: row.token0Icon,
     token1Icon: row.token1Icon,
-    feeTier: row.feeTier,
     rangeMin: rangeParts[0],
     rangeMax: rangeParts[1],
-    liquidityUsd: liquidityValue,
     liquidityShare: share > 0 ? share : undefined,
-    feesUsd: feesValue,
-    incentivesUsd: incentivesValue,
     incentivesToken: row.incentivesToken,
     currentPrice: Number(row.currentPrice),
-    status: row.status,
     apr24h,
     dailyFeesUsd: dailyFeesValue,
     dailyIncentivesUsd: dailyIncentivesValue,
+    category: liquidityValue > 0 ? 'Active' : 'Inactive',
+    isDemo: true,
+    displayId: row.tokenId,
   };
 }
 

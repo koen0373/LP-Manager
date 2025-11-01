@@ -1,4 +1,4 @@
-import { injected } from '@wagmi/connectors';
+import { injected } from 'wagmi/connectors';
 import { cookieStorage, createConfig, createStorage, http } from 'wagmi';
 import { flare } from 'wagmi/chains';
 

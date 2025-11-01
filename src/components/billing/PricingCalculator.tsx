@@ -10,7 +10,13 @@ import {
   monthlyAmountUsdForPaidCapacity,
   yearlyAmountUsdForPaidCapacity,
 } from '@/data/pricing';
-import type { PositionRow } from '@/types/positions';
+import {
+  ALERTS_PRICE_PER_BUNDLE_USD,
+  ANNUAL_MULTIPLIER,
+} from '@/data/subscriptionPlans';
+import { track } from '@/lib/analytics';
+import { fetchPositions, computeSummary } from '@/lib/positions/client';
+import type { PositionRow } from '@/lib/positions/types';
 
 const TIERS = [5, 10, 20, 30];
 const STORAGE_KEY_HISTORY = 'liquilab/pricing/address-history';
@@ -18,6 +24,16 @@ const STORAGE_KEY_HISTORY = 'liquilab/pricing/address-history';
 function shortAddress(value: string) {
   if (!value) return '';
   return `${value.slice(0, 6)}…${value.slice(-4)}`;
+}
+
+function formatCurrency(amount: number): string {
+  if (!Number.isFinite(amount)) return '$0.00';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
 }
 
 type AdminSettings = {
@@ -35,8 +51,14 @@ type PreviewResponse = {
   pricing: {
     billingCycle: 'month' | 'year';
     paidPools: number;
-    freeBonus: number;
     totalCapacity: number;
+    amountUsd: number;
+    monthlyEquivalentUsd: number;
+  };
+  alerts?: {
+    enabled: boolean;
+    pricePerBundleUsd: number;
+    bundles: number;
     amountUsd: number;
     monthlyEquivalentUsd: number;
   };
@@ -76,12 +98,13 @@ function parseSettings(input: Record<string, string | undefined>): AdminSettings
 }
 
 function countActivePools(positions: PositionRow[]): number {
-  return positions.filter((position) => {
-    if (position.status && position.status.toLowerCase() === 'active') {
-      return true;
+  return positions.reduce((count, position) => {
+    if (position.category === 'Active') {
+      return count + 1;
     }
-    return typeof position.tvlUsd === 'number' && position.tvlUsd > 0;
-  }).length;
+    const tvl = typeof position.tvlUsd === 'number' ? position.tvlUsd : 0;
+    return tvl > 0 ? count + 1 : count;
+  }, 0);
 }
 
 function createTierCards(recommendedPaidPools: number): TierCard[] {
@@ -134,6 +157,7 @@ export default function PricingCalculator({ address: initialAddress }: PricingCa
   const [addressInput, setAddressInput] = React.useState(initialAddress ?? '');
   const [activePools, setActivePools] = React.useState(0);
   const [billingCycle, setBillingCycle] = React.useState<'month' | 'year'>('month');
+  const [alertsEnabled, setAlertsEnabled] = React.useState(false);
   const [loadingPools, setLoadingPools] = React.useState(false);
   const [poolError, setPoolError] = React.useState<string | null>(null);
   const [settings, setSettings] = React.useState<AdminSettings>(initialSettings);
@@ -146,6 +170,26 @@ export default function PricingCalculator({ address: initialAddress }: PricingCa
   const recommendedPaidPools = activePreview?.pricing?.paidPools ?? 0;
   const tierCards = createTierCards(recommendedPaidPools);
   const seatsAvailable = seatStats.remaining > 0;
+  const alertsPreview = activePreview?.alerts;
+  const alertsBundleCount =
+    alertsPreview?.bundles ??
+    (alertsEnabled && recommendedPaidPools > 0
+      ? Math.ceil(recommendedPaidPools / BUNDLE_SIZE)
+      : 0);
+  const alertsMonthlyDisplay =
+    alertsPreview?.monthlyEquivalentUsd ??
+    Number((alertsBundleCount * ALERTS_PRICE_PER_BUNDLE_USD).toFixed(2));
+  const alertsAmountDisplay =
+    alertsPreview?.amountUsd ??
+    (billingCycle === 'month'
+      ? alertsMonthlyDisplay
+      : Number(
+          (alertsMonthlyDisplay * ANNUAL_MULTIPLIER).toFixed(2),
+        ));
+  const paidPoolsForAlerts =
+    previewMonth?.pricing?.paidPools ??
+    previewYear?.pricing?.paidPools ??
+    recommendedPaidPools;
 
   const waitlistEnabled = settings.WAITLIST_ENABLED;
   const fastForwardEnabled = settings.FASTFORWARD_ENABLED;
@@ -192,7 +236,7 @@ export default function PricingCalculator({ address: initialAddress }: PricingCa
     void fetchPreview('month');
     void fetchPreview('year');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activePools]);
+  }, [activePools, alertsEnabled]);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -202,7 +246,12 @@ export default function PricingCalculator({ address: initialAddress }: PricingCa
 
   async function fetchPreview(cycle: 'month' | 'year') {
     try {
-      const response = await fetch(`/api/billing/preview?activePools=${activePools}&billingCycle=${cycle}`, { cache: 'no-store' });
+      const response = await fetch(
+        `/api/billing/preview?activePools=${activePools}&billingCycle=${cycle}&alerts=${
+          alertsEnabled ? '1' : '0'
+        }`,
+        { cache: 'no-store' },
+      );
       if (!response.ok) throw new Error('Failed to fetch billing preview');
       const data = (await response.json()) as PreviewResponse;
       if (cycle === 'month') {
@@ -225,12 +274,11 @@ export default function PricingCalculator({ address: initialAddress }: PricingCa
     setLoadingPools(true);
     setPoolError(null);
     try {
-      const response = await fetch(`/api/positions?address=${address}`, { cache: 'no-store' });
-      if (!response.ok) {
-        throw new Error('Failed to load pools');
-      }
-      const data = (await response.json()) as PositionRow[];
-      const active = countActivePools(data);
+      const result = await fetchPositions(address);
+      const rows = result.data?.positions ?? [];
+      const summary = result.data?.summary ?? computeSummary(rows);
+
+      const active = summary.active ?? countActivePools(rows);
       setActivePools(active);
       if (typeof window !== 'undefined') {
         persistHistory(address);
@@ -249,6 +297,20 @@ export default function PricingCalculator({ address: initialAddress }: PricingCa
     event.preventDefault();
     void lookupPools(addressInput.trim());
   }
+
+  const handleAlertsToggle = React.useCallback(() => {
+    const next = !alertsEnabled;
+    const bundlesForToggle =
+      next && paidPoolsForAlerts > 0
+        ? Math.ceil(paidPoolsForAlerts / BUNDLE_SIZE)
+        : 0;
+    track('billing_alerts_toggle', {
+      enabled: next,
+      paidPools: paidPoolsForAlerts,
+      bundles: bundlesForToggle,
+    });
+    setAlertsEnabled(next);
+  }, [alertsEnabled, paidPoolsForAlerts]);
 
   const previewForCycle = billingCycle === 'month' ? previewMonth : previewYear;
   const monthlyPerPool = PRICE_PER_POOL_USD.toFixed(2);
@@ -327,6 +389,14 @@ export default function PricingCalculator({ address: initialAddress }: PricingCa
           <p className="mt-1 font-ui text-sm text-[#B0B9C7]">
             Recommended capacity: <strong className="text-white">{suggestedCapacity}</strong> pools ({recommended > 0 ? `${recommended} paid + bonus` : 'starter free plan'})
           </p>
+          {alertsEnabled ? (
+            <p className="mt-1 font-ui text-sm text-[#B0B9C7]">
+              Pro Alerts on — {alertsBundleCount} bundle{alertsBundleCount === 1 ? '' : 's'} ·{' '}
+              {alertsMonthlyDisplay > 0
+                ? `${formatCurrency(alertsMonthlyDisplay)}/month`
+                : 'no charge until you add paid pools'}
+            </p>
+          ) : null}
           <p className="mt-1 font-ui text-sm text-[#B0B9C7]">
             {note}
           </p>
@@ -358,6 +428,46 @@ export default function PricingCalculator({ address: initialAddress }: PricingCa
           <p className="mt-3 font-ui text-sm text-[#B0B9C7]">
             Annual billing charges ten months up-front and locks pricing for 12 months. Switch any time.
           </p>
+        </div>
+
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="font-brand text-xl font-semibold text-white">Pro Alerts add-on</h3>
+              <p className="mt-2 font-ui text-sm text-[#B0B9C7]">
+                Email alerts when a pool nears its band or exits the range — powered by RangeBand™.
+              </p>
+              <p className="mt-3 font-ui text-xs text-[#8E99AD]">
+                + {formatCurrency(ALERTS_PRICE_PER_BUNDLE_USD)} per {BUNDLE_SIZE} pools / month (annual = {ANNUAL_MULTIPLIER}× monthly).
+              </p>
+              {alertsEnabled && (
+                <p className="mt-2 font-ui text-xs text-[#6EA8FF]">
+                  {alertsBundleCount} bundle{alertsBundleCount === 1 ? '' : 's'} ·{' '}
+                  {alertsAmountDisplay > 0
+                    ? `${formatCurrency(alertsAmountDisplay)} ${
+                        billingCycle === 'month' ? '/month' : '/year'
+                      }`
+                    : 'no charge until you add paid pools'}
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={alertsEnabled}
+              onClick={handleAlertsToggle}
+              className={`mt-1 inline-flex h-7 w-12 items-center rounded-full transition ${
+                alertsEnabled ? 'bg-[#6EA8FF]' : 'bg-white/20'
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white transition ${
+                  alertsEnabled ? 'translate-x-5' : 'translate-x-1'
+                }`}
+              />
+              <span className="sr-only">Toggle Pro Alerts</span>
+            </button>
+          </div>
         </div>
       </div>
 

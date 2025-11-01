@@ -7,7 +7,7 @@
  * - Coverage across all 3 providers (Enosys, SparkDEX, BlazeSwap)
  */
 
-import { getRangeWidthPct, getStrategy, getRangeStatus } from '@/components/pools/PoolRangeIndicator';
+import { getRangeWidthPct, getStrategy, getRangeStatus as _getRangeStatus } from '@/components/pools/PoolRangeIndicator';
 import type { RangeStatus } from '@/components/pools/PoolRangeIndicator';
 
 export type Strategy = 'aggressive' | 'balanced' | 'conservative';
@@ -190,4 +190,5 @@ export function validateDiversity(pools: DemoPool[]): {
     warnings,
   };
 }
+
 

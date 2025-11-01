@@ -1,0 +1,7 @@
+assumption,affected_entities,rationale,source_link,accessed_date,confidence
+SparkDEX V3.1 pools_count=49 from CoinGecko exchange page; used as proxy for 'active pools',SparkDEX V3.1,CoinGecko lists 49 pairs; no official pool count endpoint found,https://www.coingecko.com/en/exchanges/sparkdex-v3-1,2025-10-30,medium
+BlazeSwap fee tier assumed 30 bps (Uniswap V2 default) where not explicitly shown,BlazeSwap (Flare) pair-level APR,BlazeSwap is a Uniswap V2-style DEX; default fee is 0.3%,https://github.com/blazeswap/contracts,2025-10-30,medium
+"Where pair fee tier is shown on GeckoTerminal, used that exact tier; otherwise left as NA or assumed per DEX style",Various pairs,GeckoTerminal pool pages sometimes include explicit '0.01%/0.05%/0.30%/1%' labels,https://api.geckoterminal.com/docs/index.html,2025-10-30,high
+Platform-level TVL/24h volume for SparkDEX taken from sparkdex.ai analytics (official) instead of DefiLlama to avoid adapter lag,SparkDEX V3.1 TVL & 24h Vol,Prefer first-party analytics when available,https://sparkdex.ai/stats/agg,2025-10-30,high
+Enosys and BlazeSwap TVL by chain from DefiLlama used as snapshot; daily time series unavailable in this environment,"Enosys V3, BlazeSwap TVL",DefiLlama shows current TVL; CSV export not accessible here,https://defillama.com/protocol/enosys-amm-v3,2025-10-30,medium
+APR calculation excludes incentives unless explicitly provided in USD for that pool,APR by pair,No per-pool USD incentives endpoints identified in this phase,,2025-10-30,high

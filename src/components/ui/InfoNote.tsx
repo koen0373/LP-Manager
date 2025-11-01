@@ -37,3 +37,4 @@ export function InfoNote({ title, children, variant = 'default' }: InfoNoteProps
   );
 }
 
+

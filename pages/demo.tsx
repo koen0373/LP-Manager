@@ -1,6 +1,15 @@
 import { useState } from 'react'
+import Link from 'next/link'
+import {
+  type CuratedWallet,
+  WALLETS_GTE_20,
+  WALLETS_GTE_50,
+  WALLETS_GTE_100,
+} from '@/data/top_wallets.curated'
+import { fetchPositions } from '@/lib/positions/client'
+import type { PositionRow as CanonicalPositionRow } from '@/lib/positions/types'
 
-type PositionRow = {
+type DemoPosition = {
   wallet: string
   providerSlug: string
   marketId?: string
@@ -34,7 +43,67 @@ function fmtUsd(n?: number) {
   try { return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(n) } catch { return `$${n.toFixed(2)}` }
 }
 
-async function fetchAnalytics(address: string): Promise<PositionRow[]> {
+function WalletList({ title, items }: { title: string; items: CuratedWallet[] }) {
+  const copyAddress = (address: string) => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard) return
+    void navigator.clipboard.writeText(address).catch(() => {})
+  }
+
+  return (
+    <div className="rounded-2xl border border-white/8 bg-[#101727d9] p-4 md:p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="font-brand text-lg font-semibold text-white">{title}</h3>
+      </div>
+      {items.length === 0 ? (
+        <p className="text-sm text-[#9CA3AF]">Coming soon</p>
+      ) : (
+        <ul className="space-y-2">
+          {items.slice(0, 5).map(item => (
+            <li
+              key={item.address}
+              className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.06] px-3 py-2"
+            >
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <code className="font-mono text-[13px] text-white/90">{shortAddr(item.address)}</code>
+                  <button
+                    type="button"
+                    className="text-xs text-[#3B82F6] hover:text-[#60A5FA]"
+                    onClick={() => copyAddress(item.address)}
+                    title="Copy address"
+                  >
+                    Copy
+                  </button>
+                </div>
+                {item.providers && item.providers.length > 0 && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {item.providers.map(provider => (
+                      <span
+                        key={provider}
+                        className="rounded-full border border-white/10 bg-white/[0.08] px-2 py-[2px] text-[10px] tracking-wide text-[#9CA3AF]"
+                      >
+                        {provider}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {item.note && <p className="mt-1 truncate text-[11px] text-[#9CA3AF]">{item.note}</p>}
+              </div>
+              <Link
+                href={`/api/demo/portfolio?address=${item.address}`}
+                className="rounded-md bg-[#3B82F6] px-3 py-1.5 text-xs font-medium text-[#0A0F1C] hover:bg-[#60A5FA]"
+              >
+                View demo
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+async function fetchAnalytics(address: string): Promise<DemoPosition[]> {
   const res = await fetch(`/api/demo/portfolio?address=${encodeURIComponent(address)}`)
   const json = await res.json()
   if (!json?.ok) return []
@@ -53,36 +122,45 @@ async function fetchAnalytics(address: string): Promise<PositionRow[]> {
   }))
 }
 
-/** Live fallback via existing /api/positions?address=…&refresh=1 */
-async function fetchLive(address: string): Promise<PositionRow[]> {
-  const url = `/api/positions?address=${encodeURIComponent(address)}&refresh=1`
-  const res = await fetch(url)
-  const arr = await res.json()
-  if (!Array.isArray(arr)) return []
-  return arr.map((p: Record<string, unknown>) => {
-    const token0 = p.token0 as Record<string, unknown> | undefined;
-    const token1 = p.token1 as Record<string, unknown> | undefined;
-    return {
-      wallet: String(p.walletAddress ?? address).toLowerCase(),
-      providerSlug: String(p.providerSlug ?? (p.provider ?? '')).toLowerCase().replace(/\s+/g,'-'),
-      marketId: String(p.poolAddress ?? p.onchainId ?? p.id ?? ''),
-      token0Symbol: String(token0?.symbol ?? ''),
-      token1Symbol: String(token1?.symbol ?? ''),
-      feeTierBps: p.feeTierBps as number | undefined,
-      tvlUsd: Number(p.tvlUsd ?? 0),
-      feesUsd: Number(p.unclaimedFeesUsd ?? p.feesUsd ?? 0),
-      incentivesUsd: Number(p.rewardsUsd ?? p.rflrRewardsUsd ?? 0),
-      inRange: Boolean(p.inRange ?? p.isInRange),
-      ts: new Date().toISOString()
-    };
-  })
+/** Live fallback via canonical /api/positions helper */
+async function fetchLive(address: string): Promise<DemoPosition[]> {
+  const result = await fetchPositions(address)
+  const rows = result.data?.positions ?? []
+  const timestamp = new Date().toISOString()
+
+  return rows.map((row) => mapCanonicalPosition(row, address, timestamp))
+}
+
+function mapCanonicalPosition(
+  row: CanonicalPositionRow,
+  wallet: string,
+  timestamp: string,
+): DemoPosition {
+  const providerSource = row.provider ?? ''
+  const providerSlug = providerSource.toLowerCase().replace(/\s+/g, '-')
+  const marketId = row.marketId ?? row.poolId ?? row.tokenId ?? ''
+  const feeTier = Number.isFinite(row.poolFeeBps) ? row.poolFeeBps : undefined
+
+  return {
+    wallet: wallet.toLowerCase(),
+    providerSlug,
+    marketId,
+    token0Symbol: row.token0?.symbol ?? '',
+    token1Symbol: row.token1?.symbol ?? '',
+    feeTierBps: feeTier,
+    tvlUsd: typeof row.tvlUsd === 'number' ? row.tvlUsd : 0,
+    feesUsd: typeof row.unclaimedFeesUsd === 'number' ? row.unclaimedFeesUsd : 0,
+    incentivesUsd: typeof row.incentivesUsd === 'number' ? row.incentivesUsd : 0,
+    inRange: Boolean(row.isInRange),
+    ts: timestamp,
+  }
 }
 
 export default function DemoPortfolioPage() {
   const [addressesInput, setAddressesInput] = useState<string>('')
   const [useLiveFallback, setUseLiveFallback] = useState<boolean>(true)
   const [loading, setLoading] = useState<boolean>(false)
-  const [rows, setRows] = useState<PositionRow[]>([])
+  const [rows, setRows] = useState<DemoPosition[]>([])
   const [error, setError] = useState<string>('')
 
   async function onLoad() {
@@ -223,6 +301,21 @@ export default function DemoPortfolioPage() {
             </table>
           </div>
         </div>
+
+        <section className="mt-12">
+          <h2 className="font-brand text-xl font-semibold text-white md:text-2xl">Top LP wallets (curated)</h2>
+          <p className="mt-2 text-sm text-[#9CA3AF]">
+            High-signal wallets you can showcase during demos. Replace these placeholders with verified addresses when ready.
+          </p>
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <WalletList title="20+ pools" items={WALLETS_GTE_20} />
+            <WalletList title="50+ pools" items={WALLETS_GTE_50} />
+            <WalletList title="100+ pools" items={WALLETS_GTE_100} />
+          </div>
+          <p className="mt-3 text-[12px] text-[#9CA3AF]">
+            First pool is free; every additional pool is $1.99 per month. These wallets are for demo inspiration only.
+          </p>
+        </section>
 
         <p className="mt-6 text-xs text-[#8891A0]">
           Note: Live fallback queries your configured adapters via <code>/api/positions</code> and may be slower. Analytics is preferred for investor demos.

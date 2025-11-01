@@ -7,14 +7,15 @@
 
 import {
   PRODUCT_NAME,
-  getStrategy, 
-  getRangeStatus, 
+  getStrategy,
+  getRangeStatus,
   getRangeWidthPct,
   calculateMarkerPosition,
   computeTrackWidthFactor,
   RANGE_STRATEGY_THRESHOLDS,
-  STRATEGY_THRESHOLDS 
+  STRATEGY_THRESHOLDS,
 } from '../PoolRangeIndicator';
+import { calcApr24h } from '../../../lib/metrics';
 
 describe('RangeBand™ Product Name', () => {
   it('should export the correct product name constant', () => {
@@ -174,7 +175,7 @@ describe('RangeBand™ Track Width Computation', () => {
       // Example: 600px container
       const containerWidth = 600;
       const aggressiveWidth = containerWidth * aggressiveFactor; // 312px
-      const balancedWidth = containerWidth * balancedFactor; // 420px
+      const _balancedWidth = containerWidth * balancedFactor; // 420px
       const conservativeWidth = containerWidth * conservativeFactor; // 528px
 
       expect(conservativeWidth - aggressiveWidth).toBeGreaterThan(200); // Significant visual difference
@@ -226,6 +227,45 @@ describe('RangeBand™ Status Detection', () => {
       expect(getRangeStatus(0.5, 0.8, 0.2)).toBe('out');
       expect(getRangeStatus(0.5, 0.5, 0.5)).toBe('out');
     });
+  });
+});
+
+describe('APR calculation (fees + incentives)', () => {
+  it('includes daily incentives in the 24h APR computation', () => {
+    const tvlUsd = 1000;
+    const feesOnlyApr = calcApr24h({
+      tvlUsd,
+      dailyFeesUsd: 5,
+      dailyIncentivesUsd: 0,
+    });
+
+    const feesPlusIncentives = calcApr24h({
+      tvlUsd,
+      dailyFeesUsd: 5,
+      dailyIncentivesUsd: 5,
+    });
+
+    expect(feesOnlyApr).toBeCloseTo(((5 / tvlUsd) * 365 * 100), 5);
+    expect(feesPlusIncentives).toBeGreaterThan(feesOnlyApr);
+    expect(feesPlusIncentives).toBeCloseTo(((10 / tvlUsd) * 365 * 100), 5);
+  });
+
+  it('returns 0 APR when TVL is non-positive', () => {
+    expect(
+      calcApr24h({
+        tvlUsd: 0,
+        dailyFeesUsd: 5,
+        dailyIncentivesUsd: 2,
+      }),
+    ).toBe(0);
+
+    expect(
+      calcApr24h({
+        tvlUsd: -100,
+        dailyFeesUsd: 5,
+        dailyIncentivesUsd: 2,
+      }),
+    ).toBe(0);
   });
 });
 

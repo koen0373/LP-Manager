@@ -74,3 +74,4 @@ storybook-static/
 
 # Respect gitkeep scaffolding
 !.gitkeep
+/Documentatie/API Key.txt

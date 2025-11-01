@@ -1618,17 +1618,41 @@ Changelog (RangeBand)
 
 - **Pricing page token symbol access fix**: Removed all references to non-existent `token0Symbol` and `token1Symbol` properties on PositionRow type. Removed these assignments from `hydratePositionForUi()` function (lines 91-92). Updated 2 instances in Inactive and Ended pool sections where `pool.token0Symbol || pool.token0` was used, replacing with `pool.token0` directly (lines 694, 783, and corresponding `token1` references). The `getTokenSymbol()` helper function already handles both string and object token formats, so no additional fallback logic needed. File: `pages/pricing.tsx` (UPDATED).
 
-### Changelog — 2025-11-01
+### 2025-11-01 — BlazeSwap V2 integration status
 
-- `src/chains/flare.ts`: Refactored Flare chain helper to expose env-aware RPC resolution and a cached viem public client.
-- `src/lib/blazeswap/abi/factoryV2.ts`: Added minimal BlazeSwap/Uniswap V2 factory ABI for pair enumeration.
-- `src/lib/blazeswap/abi/pairV2.ts`: Added BlazeSwap pair ABI covering balance, reserves, and token metadata getters.
-- `src/lib/providers/blazeswapV2.ts`: Implemented cached pair discovery, balance scanning, and position enrichment for BlazeSwap V2.
-- `src/services/blazeswapService.ts`: Rewired service to use the new provider and token registry for USD valuations.
-- `pages/api/blazeswap/positions.ts`: Introduced debug endpoint to inspect BlazeSwap V2 positions per wallet.
-- `pages/api/health.ts`: Extended health check to surface BlazeSwap readiness and pair counts.
-- `pages/api/positions.ts`: Hardened provider aggregation to log BlazeSwap failures without breaking responses.
-- `types/ambient.d.ts`: Declared `BLAZESWAP_FACTORY` and `FLARE_RPC_URL` environment variables for TypeScript.
+- Factory (FLR): `0x440602f459D7Dd500a74528003e6A20A46d6e2A6` (Flarescan verified). Router (FLR): `0xe3A1b355ca63abCBC9589334B5e609F83C7BAa06`; its `factory()` call resolves to the same factory.
+- Adapter footprint (Nov 1): `src/chains/flare.ts`, `src/lib/blazeswap/abi/{factoryV2.ts,pairV2.ts}`, `src/lib/providers/blazeswapV2.ts`, `src/services/blazeswapService.ts`, `pages/api/blazeswap/positions.ts`, `pages/api/health.ts`, `pages/api/positions.ts`. Enumeration walks `allPairs` in 200-item batches, filters with `balanceOf(wallet)`, enriches reserves/supply, and memoises results with a 5-minute in-memory cache to avoid repeated scans.
+- Live validation — founder wallet `0x57d294D815968f0eFA722f1E8094dA65402cD951`:
+  - **JOULE/USDT₀** — pair `0xBaAdd38E06B55C4dD538d47082F0093818E138e2`; token0 `0xE6505f92583103AF7ed9974DEC451A7Af4e3A3bE` (JOULE, 18), token1 `0xE7cD86e13AC4309349F30B3435a9D337750fC82D` (USD₮0, 6). Reserves `[(17832401410498205244222), (26591871), 1761982521]`, totalSupply `667,296,731,618,402` (LP-wei), wallet balance `6,204,042,790,049` (LP-wei) ⇒ share ≈ **0.929728 %**, wallet slice ≈ **165.792782 JOULE** & **0.247232 USD₮0**.
+  - **FXRP/USDT₀** — pair `0x3D6EFe2e110F13ea22231be6B01B428B38CafC92`; token0 `0xAd552A648C74D49E10027AB8a618A3ad4901c5bE` (FXRP, 6), token1 `0xE7cD86e13AC4309349F30B3435a9D337750fC82D` (USD₮0, 6). Reserves `[145,475,388,967, 364,165,049,640, 1761987299]`, totalSupply `227,831,814,483` (LP-wei), wallet balance `6,264,650` (LP-wei) ⇒ share ≈ **0.00274968 %**, wallet slice ≈ **4.000110 FXRP** & **10.013380 USD₮0**.
+- Provider matrix (Nov 1): Ēnosys **v3** (NFPM positions + pool slot0) — operational; SparkDEX **v2 + v3.1** — operational; BlazeSwap **v2** — adapter & endpoints operational with verified wallet data.
+
+### 2025-11-01 — Router normalization (Pages Router baseline)
+
+- All `app/**` and `src/app/**` artifacts were archived under `_archive/app_router_backup/**` after Next 15 surfaced “Conflicting app and page files” (`pages/api/login.ts` vs `app/api/...`).
+- `next.config.ts` disables `appDir`; Pages Router is authoritative for MVP delivery.
+- Active routing footprint lives under `pages/**` for both page-level views (`/sales/offer`, `/pricing`, `/basket`, `/dashboard/**`) and all API handlers (`/api/positions`, `/api/blazeswap/*`, etc.).
+
+### 2025-11-01 — APIs & runbooks
+
+- `GET /api/blazeswap/positions?address=0x…` → `{ ok: true, provider: 'blazeswap-v2', positions: [...], meta: { scanned, totalPairs } }`; honor `maxPairs` for debugging long runs.
+- `GET /api/positions?address=0x…` → canonical aggregator (Ēnosys v3 + SparkDEX v2/v3.1 + BlazeSwap v2). Endpoint always responds `200`/`success: true`; provider failures are logged and stored as soft errors so the UI never sees a 500.
+- `GET /api/health` → now exposes `providers.blazeswap = { configured, ready, totalPairs }`, using `allPairsLength` as readiness probe.
+- Runbook refresher (FLARE mainnet): resolve V2 pools via factory `getPair(tokenA, tokenB)`, then on the pair call `factory()`, `token0()`, `token1()`, `getReserves()`, `totalSupply()`, `balanceOf(wallet)`; rely on Flarescan “copy address” controls to avoid truncated UI addresses and double-check FLR vs SGB network prior to signing.
+
+### 2025-11-01 — Environment & configuration
+
+- Required (dev & prod): `FLARE_RPC_URL` (default `https://flare-api.flare.network/ext/C/rpc`); `BLAZESWAP_FACTORY=0x440602f459D7Dd500a74528003e6A20A46d6e2A6`.
+- Planned/adjacent (mail gate & billing runway): `MAIL_FROM`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_DRY_RUN`; Stripe bundle (`STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_*`, `BILLING_TRIAL_DAYS`, `NEXT_PUBLIC_BILLING_SUCCESS_URL`, `NEXT_PUBLIC_BILLING_CANCEL_URL`).
+
+### Open actions (next)
+- **A. BLZ-V2 UI exposure (2–3 files):** render BLZ-V2 positions (share %, amounts) in `/sales/offer` and `/dashboard` with “Open on BlazeSwap (Add Liquidity)” links:  
+  - JOULE/USDT₀: `https://blazeswap.xyz/#/add/0xE6505f...A3bE/0xE7cD...C82D`  
+  - FXRP/USDT₀: `https://blazeswap.xyz/#/add/0xAd552...c5bE/0xE7cD...C82D`
+- **B. Mail-gate (3 files):** SMTP (`src/lib/mail.ts`), `/api/auth/magic/{send,verify}` + `ll_auth` cookie, `/api/mail/test`, add `MAIL_*` env docs.
+- **C. Basket finalize (1–2 files):** complete `/pages/basket.tsx` gating & state; CTA returns 501 until Stripe.
+- **D. SparkDEX/Ēnosys deep-links** (v3 pools), network guardrails (FLR vs SGB).
+- **E. Final lint pass** (images, unused vars), minor import path hygiene.
 ### Changelog — 2025-10-31 (Latest)
 
 - **TypeScript error cleanup**: Fixed multiple type errors to unblock the build:
@@ -1666,3 +1690,15 @@ Files: `src/providers/wagmi.tsx`, `src/components/onboarding/ConnectWalletModal.
 ### Changelog — 2025-10-31 (Latest - Empty Wallet Graceful Handling)
 
 - **Empty wallet error fix**: Fixed 500 error when connecting a wallet with no liquidity positions. The `/api/positions` endpoint now returns a successful response with empty positions array and zero summary values instead of throwing a 500 error. This allows the wallet connect flow to continue gracefully and show the "No pools found" state on `/sales/offer` page. Changed error handling in catch block (lines 402-436) to return `success: true` with empty data structure instead of `success: false` with 500 status. Console still logs the error for debugging but user sees clean empty state. File: `pages/api/positions.ts` (UPDATED).
+
+### Changelog — 2025-11-01
+- **Router normalization**: removed all `app/**` & `src/app/**` (archived under `_archive/app_router_backup/**`); set `appDir: false`; Pages Router is authoritative.  
+- **BlazeSwap V2 adapter**: implemented factory-driven enumeration and LP balance filter; compute share% & amounts; 5-minute in-memory caching.  
+  - Added: `src/chains/flare.ts` (FLARE chain helper)  
+  - Added: `src/lib/blazeswap/abi/{factoryV2.ts, pairV2.ts}`  
+  - Added: `src/lib/providers/blazeswapV2.ts`  
+  - Added: `pages/api/blazeswap/positions.ts` (debug endpoint)  
+  - Updated: `pages/api/health.ts` with `providers.blazeswap {configured, ready, totalPairs}`  
+  - Hardened: `pages/api/positions.ts` to never 500; includes `blazeswap-v2` positions.  
+- **Data validated**: Founder’s wallet `0x57D294D8…` shows BLZ-V2 positions for **JOULE/USDT₀** (`0xBaAdd…E138e2`) and **FXRP/USDT₀** (`0x3D6EFe…fC92`), with computed shares/amounts recorded in this document.  
+- **Health & QA**: `/api/health` green on FLARE with `BLAZESWAP_FACTORY=0x440602f459D7Dd500a74528003e6A20A46d6e2A6`; added runbook snippets for Flarescan verification.

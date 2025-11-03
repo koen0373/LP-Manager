@@ -461,7 +461,7 @@ export default function PricingPage() {
                   ) : calculatedSummary && calculatedSummary.total > 0 ? (
                     <div className="space-y-6">
                       {/* Summary + Your Plan combined */}
-                      <div className="rounded-xl bg-[#1BE8D2]/5 p-6">
+                      <div className="rounded-xl bg-[#3B82F6]/5 p-6">
                         {/* Pool selector header */}
                         <div className="mb-6 flex items-center justify-between">
                           <div>
@@ -490,8 +490,11 @@ export default function PricingPage() {
                         <div className="grid grid-cols-2 gap-4">
                           {/* Active pools - left column */}
                           <div>
-                            <p className="mb-3 font-ui text-xs font-semibold text-[#3B82F6]">
+                            <p className="mb-1 font-ui text-xs font-semibold text-[#3B82F6]">
                               Active ({calculatedSummary?.active || 0})
+                            </p>
+                            <p className="mb-3 font-ui text-[10px] text-white/50">
+                              TVL, Rewards
                             </p>
                             <div className="max-h-[300px] space-y-1 overflow-y-auto">
                               {(() => {
@@ -521,8 +524,15 @@ export default function PricingPage() {
                                   grouped.get(pairKey)!.push({ ...pool, _idx: idx });
                                 });
                                 
+                                // Sort groups by total TVL (high to low)
+                                const sortedGroups = Array.from(grouped.entries()).sort((a, b) => {
+                                  const tvlA = a[1].reduce((sum, p) => sum + (p.tvlUsd || 0), 0);
+                                  const tvlB = b[1].reduce((sum, p) => sum + (p.tvlUsd || 0), 0);
+                                  return tvlB - tvlA;
+                                });
+                                
                                 // Render groups
-                                return Array.from(grouped.entries()).map(([pairKey, pools]) => {
+                                return sortedGroups.map(([pairKey, pools]) => {
                                   const isSinglePool = pools.length === 1;
                                   const totalTvl = pools.reduce((sum, p) => sum + (p.tvlUsd || 0), 0);
                                   const poolIds = pools.map(p => `${p.poolId || p.marketId || p._idx}`);
@@ -732,9 +742,21 @@ export default function PricingPage() {
                                           </p>
                                         </div>
                                       </div>
-                                      <p className="tnum font-ui text-[10px] text-amber-400/80">
-                                        ${rewards >= 1000 ? `${(rewards / 1000).toFixed(1)}k` : rewards.toFixed(0)}
-                                      </p>
+                                      <div className="text-right">
+                                        <p className="tabular-nums font-ui text-[10px] text-white/60">
+                                          ${rewards >= 1000 ? `${(rewards / 1000).toFixed(1)}k` : rewards.toFixed(0)}
+                                        </p>
+                                        <p className="tabular-nums font-ui text-[9px] text-white/40">
+                                          {(() => {
+                                            const tokenAmount = pool.incentivesTokenAmount || (rewards / 0.016);
+                                            const tokenSymbol = pool.incentivesToken || 'rFLR';
+                                            const formatted = tokenAmount >= 1000 
+                                              ? `${(tokenAmount / 1000).toFixed(1)}K` 
+                                              : Math.round(tokenAmount);
+                                            return `${formatted} ${tokenSymbol}`;
+                                          })()}
+                                        </p>
+                                      </div>
                                     </label>
                                   );
                                 })}
@@ -745,23 +767,30 @@ export default function PricingPage() {
                       {/* Ended pools - collapsed by default */}
                       {calculatedSummary && calculatedSummary.archived > 0 && (
                         <div className="pt-4">
-                          <button
-                            type="button"
-                            onClick={() => setShowArchived(!showArchived)}
-                            className="mb-3 flex w-full items-center justify-between rounded px-2 py-1.5 font-ui text-xs text-white/40 transition hover:bg-white/5 hover:text-white/60"
-                          >
-                            <span>
-                              Ended ({calculatedSummary.archived}) — No TVL, No Rewards
-                            </span>
-                            <svg
-                              className={`h-4 w-4 transition-transform ${showArchived ? 'rotate-180' : ''}`}
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
+                          <div className="mb-3">
+                            <button
+                              type="button"
+                              onClick={() => setShowArchived(!showArchived)}
+                              className="flex w-full items-center justify-between rounded px-2 py-1.5 font-ui transition hover:bg-white/5"
                             >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </button>
+                              <div>
+                                <p className="text-xs font-semibold text-white/40">
+                                  Ended ({calculatedSummary.archived})
+                                </p>
+                                <p className="text-[10px] text-white/30">
+                                  No TVL, No Rewards
+                                </p>
+                              </div>
+                              <svg
+                                className={`h-4 w-4 text-white/40 transition-transform ${showArchived ? 'rotate-180' : ''}`}
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                          </div>
                           
                           {showArchived && (
                             <div className="max-h-[200px] space-y-1 overflow-y-auto opacity-60">

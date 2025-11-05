@@ -413,8 +413,12 @@ LiquiLab delivers a V3-only liquidity-pool manager for the Flare network:
 2025-11-05 — Hardened user-positions snapshot: DefiLlama endpoint gefixt, USD-prijs fallback, include-filter op registry-sleutels, amounts null-safe, status via tick. Geen crashes meer bij prijsfouten; demo-posities zichtbaar ook zonder USD-prijs.
 2025-11-05 — Hardened NFPM user-positions snapshot: DefiLlama ?coins= endpoint, null-safe amount logic, status via tick (no sqrt math), include-filter op registry-sleutels en aliases, geen drop bij ontbrekende prijs. Demo-posities renderen zonder crashes.
 2025-11-05 — Hardened NFPM user-positions snapshot (DefiLlama ?coins=…, null-safe amounts, status via tick, include by registry key). Upserted sFLR & USDC.e in token registry.
+2025-11-05 — Exact amounts (TickMath) wired in user-positions snapshot; uncollected fees exact (feeGrowthInside). 24h fees via baseline-diff (exact na volgende run).
+2025-11-05 — Amounts v2: exact Uniswap v3 amounts (TickMath) in user-positions snapshot; BigInt-safe. Status/fees logic unchanged; 24h fees via baseline.
 ### Changelog — 2025-11-05 (live demo selector revamp)
 - `src/lib/demoLiveSelector.ts` vernieuwd: strategie-drempels vastgezet op <12% (Aggressive) / 12–35% (Balanced) / >35% (Conservative) en BlazeSwap `flaro.org` beperkt tot 1 item.
 - `src/services/demoPoolsLive.ts` + `pages/api/demo/pools.ts` schakelen nu live candidates in met fallbacks; test `src/components/demo/__tests__/diversity.test.ts` waarborgt providers/status/strategie diversiteit ≥3.
 
 2025-11-05 — GitHub Actions workflow 'brand-snapshot.yml' toegevoegd: ververst dagelijks om 08:00 UTC (en handmatig) de bestanden public/brand.pools.json en public/brand.userPositions.json. Lokale helper: 'pnpm run snapshot:brand'.
+2025-11-05 — sync-v3-pools indexer herschreven naar async main (geen top-level await) zodat pnpm dlx tsx werkt onder Node 24.
+2025-11-05 — Brand workflow draait nu eerst de pool-indexer (data/pools*) vóór resolve/snapshot en commit deze artefacten mee.

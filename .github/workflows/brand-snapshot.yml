@@ -38,6 +38,9 @@ jobs:
           SPARKDEX_NFPM=${{ secrets.SPARKDEX_NFPM }}
           EOF
 
+      - name: Run pool indexer
+        run: pnpm dlx tsx --env-file=.env.local scripts/indexers/sync-v3-pools.ts
+
       - name: Run brand snapshots (pools + user positions)
         run: |
           pnpm dlx tsx --env-file=.env.local scripts/data/resolve-brand-pools.ts
@@ -47,4 +50,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(brand): refresh snapshots [skip ci]"
-          file_pattern: public/brand*.json
+          file_pattern: public/brand*.json data/pools*.json data/pools.ndjson

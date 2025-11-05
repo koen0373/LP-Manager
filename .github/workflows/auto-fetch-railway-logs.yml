@@ -104,8 +104,8 @@ jobs:
             echo ""
             echo "📊 SUMMARY:"
             echo "Total log lines: $(wc -l < railway-logs/final-deployment-logs.txt)"
-            echo "Error count: $(grep -ic "error" railway-logs/final-deployment-logs.txt || echo 0)"
-            echo "Warning count: $(grep -ic "warning" railway-logs/final-deployment-logs.txt || echo 0)"
+            echo "Error count: $(grep -ic 'error' railway-logs/final-deployment-logs.txt || echo 0)"
+            echo "Warning count: $(grep -ic 'warning' railway-logs/final-deployment-logs.txt || echo 0)"
           else
             echo "⚠️  No final logs file found"
           fi
@@ -167,4 +167,3 @@ ${lastLines}
               commit_sha: context.sha,
               body: body
             });
-

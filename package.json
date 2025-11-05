@@ -24,9 +24,14 @@
     "migrate:deploy": "prisma migrate deploy",
     "devup": "bash scripts/dev_up.sh",
     "devdown": "bash scripts/dev_down.sh",
-    "smoke": "bash liquilab_smoke.sh"
+    "smoke": "bash liquilab_smoke.sh",
+    "cache:top-pools": "tsx scripts/cache-top-pools.ts",
+    "cache:top-pools:now": "tsx scripts/cache-top-pools.ts",
+    "snapshot:brand": "pnpm run -s snapshot:brand:run",
+    "snapshot:brand:run": "pnpm dlx tsx --env-file=.env.local scripts/data/resolve-brand-pools.ts && pnpm dlx tsx --env-file=.env.local scripts/data/snapshot-brand-user-positions.ts"
   },
   "dependencies": {
+    "@perplexity-ai/perplexity_ai": "^0.16.0",
     "@prisma/client": "^6.17.1",
     "@radix-ui/react-tabs": "^1.1.13",
     "@tanstack/react-query": "5.90.5",
@@ -41,6 +46,7 @@
     "ethers": "^5.7.2",
     "lucide-react": "^0.546.0",
     "next": "15.5.6",
+    "nodemailer": "^7.0.10",
     "p-limit": "^6.2.0",
     "prisma": "^6.17.1",
     "qrcode-generator": "^2.0.4",

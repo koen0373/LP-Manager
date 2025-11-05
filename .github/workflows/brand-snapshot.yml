@@ -1,0 +1,50 @@
+name: Brand snapshots
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 8 * * *'  # daily 08:00 UTC
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node & pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+      - name: Enable pnpm
+        run: corepack enable && corepack prepare pnpm@latest --activate
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Write .env.local from secrets
+        run: |
+          cat > .env.local << 'EOF'
+          FLARE_RPC_URL=${{ secrets.FLARE_RPC_URL }}
+          ENOSYS_V3_FACTORY=${{ secrets.ENOSYS_V3_FACTORY }}
+          SPARKDEX_V3_FACTORY=${{ secrets.SPARKDEX_V3_FACTORY }}
+          ENOSYS_NFPM=${{ secrets.ENOSYS_NFPM }}
+          SPARKDEX_NFPM=${{ secrets.SPARKDEX_NFPM }}
+          EOF
+
+      - name: Run brand snapshots (pools + user positions)
+        run: |
+          pnpm dlx tsx --env-file=.env.local scripts/data/resolve-brand-pools.ts
+          pnpm dlx tsx --env-file=.env.local scripts/data/snapshot-brand-user-positions.ts
+
+      - name: Commit & push snapshot artifacts
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(brand): refresh snapshots [skip ci]"
+          file_pattern: public/brand*.json

@@ -142,23 +142,24 @@ jobs:
             const errorCount = (logContent.match(/error/gi) || []).length;
             const warningCount = (logContent.match(/warning/gi) || []).length;
             
-            const body = `## 🚂 Railway Deployment Logs
-            
-**Commit:** ${context.sha.substring(0, 7)}
-**Status:** ${errorCount > 0 ? '❌ Errors detected' : '✅ No errors'}
-
-### 📊 Summary
-- Total lines: ${lines.length}
-- Errors: ${errorCount}
-- Warnings: ${warningCount}
-
-### 📋 Last 50 log lines:
-\`\`\`
-${lastLines}
-\`\`\`
-
-[View full logs artifact](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
-            `;
+            const body = [
+              '## 🚂 Railway Deployment Logs',
+              '',
+              `**Commit:** ${context.sha.substring(0, 7)}`,
+              `**Status:** ${errorCount > 0 ? '❌ Errors detected' : '✅ No errors'}`,
+              '',
+              '### 📊 Summary',
+              `- Total lines: ${lines.length}`,
+              `- Errors: ${errorCount}`,
+              `- Warnings: ${warningCount}`,
+              '',
+              '### 📋 Last 50 log lines:',
+              '```',
+              lastLines,
+              '```',
+              '',
+              `[View full logs artifact](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
+            ].join('\n');
             
             // Create comment on commit
             github.rest.repos.createCommitComment({

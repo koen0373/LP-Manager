@@ -179,7 +179,15 @@ LiquiLab delivers a V3-only liquidity-pool manager for the Flare network:
 - **2025-11-03** – `/koen` dashboard RangeBand logic aligned with shared helper.
 - **2025-11-03** – `/koen` dashboard redesign to mirror homepage demo table layout.
 
-### Changelog — 2025-11-05 (Pool intel synonym rescue + empty state)
+### 
+## Maintenance Rules
+
+- **SILENT policy**: agents (Claude/Codex) returneren alleen de volledige, geüpdatete `PROJECT_STATE.md` en het blok **[PASTE BLOCK — RESULTS FOR GPT]**. Geen andere file-dumps.
+- **Rotation policy**: `PROJECT_STATE.md` bevat alleen status-secties en de **laatste 7 dagen** aan “Changelog — YYYY-MM-DD”. Oudere entries worden automatisch gearchiveerd naar `/docs/changelog/YYYY/CHANGELOG-YYYY-Www.md`.
+- **Groottebudget**: max ~200 KB. Pre-commit hook dwingt rotatie/limiet af.
+- **Hosting & shell**: Railway, Node luistert op `$PORT`; macOS/zsh (BSD `sed -i ''`); public assets met leidende slashes.
+
+Changelog — 2025-11-05 (Pool intel synonym rescue + empty state)
 - `src/lib/intel/canonicalize.ts` — Preserved on-page symbols (e.g. USDT0) while emitting richer synonym groups for intel queries.
 - `src/lib/perplexity/client.ts` — Built OR-grouped query strings, treated upstream 404s as empty sets, and kept chat→search fallback.
 - `pages/api/intel/news.ts` — Stopped renaming tokens, surfaced `empty:true` on no results, and honoured `allow=any` for whitelist bypass.
@@ -422,3 +430,6 @@ LiquiLab delivers a V3-only liquidity-pool manager for the Flare network:
 2025-11-05 — GitHub Actions workflow 'brand-snapshot.yml' toegevoegd: ververst dagelijks om 08:00 UTC (en handmatig) de bestanden public/brand.pools.json en public/brand.userPositions.json. Lokale helper: 'pnpm run snapshot:brand'.
 2025-11-05 — sync-v3-pools indexer herschreven naar async main (geen top-level await) zodat pnpm dlx tsx werkt onder Node 24.
 2025-11-05 — Brand workflow draait nu eerst de pool-indexer (data/pools*) vóór resolve/snapshot en commit deze artefacten mee.
+
+<!-- CHANGELOG_ARCHIVE_INDEX -->
+Older entries are archived in /docs/changelog/.

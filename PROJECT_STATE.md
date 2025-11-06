@@ -24,6 +24,12 @@
 
 ---
 
+## Decisions (D#)
+- **D-2025-11-06** — Documented Database configuration (source of truth) in PROJECT_STATE.md and aligned local/.env keys for `DATABASE_URL`, `RAW_DB`, `FLARE_API_BASE`, and `FLARE_RPC_URL`.
+- **D-2025-11-06** — Added V3 addresses & Indexer scripts to PROJECT_STATE.md; confirmed DB config as source of truth and aligned .env keys (DATABASE_URL, RAW_DB, FLARE_API_BASE, FLARE_RPC_URL).
+
+---
+
 ## 2. Key Components
 - **CLI entrypoints:**  
   - `scripts/indexer-backfill.ts` — orchestrates batch runs, stream selection (factories, nfpm, pools), structured start logs. When `--streams=pools` is passed, now invokes `IndexerCore.indexPoolEvents`.  
@@ -181,7 +187,7 @@ pnpm exec tsx -r dotenv/config scripts/dev/run-pools.ts --from=49618000 --dry
 
 ## 9. Next Work
 - ✅ Pool-contract events indexed (Swap/Mint/Burn/Collect).  
-- ✅ CLI backfill supports `--streams=pools` (invokes `indexPoolEvents`).  
+- ✅ CLI backfill supports `--streams=pools` (invokes `IndexerCore.indexPoolEvents`).  
 - ✅ Dev runner + smoke SQL + unit tests for pool decode flow.  
 - ▶ Enrich analytics: inRange %, fee yield trend, IL% breakdown, pool cohort BI exports.  
 - ▶ UI surfaces: PoolDetail deep dive (owner metrics, whale watch, alert toggles).  
@@ -191,26 +197,185 @@ pnpm exec tsx -r dotenv/config scripts/dev/run-pools.ts --from=49618000 --dry
 - ▶ Testing: upstream RPC alternates (Flare official) + CI smoke for indexer scripts.
 
 ---
+# Data & Indexer Config
+- **Database (local dev)**
+  ```env
+  DATABASE_URL="postgresql://koen@localhost:5432/liquilab?schema=public"
+  RAW_DB="postgresql://koen@localhost:5432/liquilab"
+  ```
+- **RPC (Flare via ANKR)**
+  - HTTPS: `https://rpc.ankr.com/flare/cee6b4f8866b7f8afa826f378953ae26eaa74fd174d1d282460e0fbad2b35b01`
+  - WSS: `wss://rpc.ankr.com/flare/ws/cee6b4f8866b7f8afa826f378953ae26eaa74fd174d1d282460e0fbad2b35b01`
+- **Uniswap v3 / NFPM addresses (Flare)**
+  ```env
+  ENOSYS_NFPM="0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657"
+  SPARKDEX_NFPM="0xEE5FF5Bc5F852764b5584d92A4d592A53DC527da"
+  ENOSYS_V3_FACTORY="0x17AA157AC8C54034381b840Cb8f6bf7Fc355f0de"
+  SPARKDEX_V3_FACTORY="0x8A2578d23d4C532cC9A98FaD91C0523f5efDE652"
+  ```
 
-## 10. Changelog — 2025-11-06
+### NFPM (ERC-721) — Position NFTs (Flare)
+- **Ēnosys NFPM (Flare)** — `0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657` — [Flarescan](https://flarescan.com/token/0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657?erc721&chainid=14) — canonical ERC-721 Position Manager for Ēnosys v3 pools (mints, transfers, burns LP NFTs).
+- **Sparkdex NFPM (Flare)** — `0xEE5FF5Bc5F852764b5584d92A4d592A53DC527da` — [Flarescan](https://flarescan.com/token/0xEE5FF5Bc5F852764b5584d92A4d592A53DC527da?erc721&chainid=14) — Sparkdex Position Manager contract; mirrors Uniswap v3 semantics for Sparkdex pools.
 
-**Changed Files:**
-- `scripts/indexer-backfill.ts` — added `runPools` branch calling `indexer.indexPoolEvents({ checkpointKey: 'all', fromBlock, dryRun })` when `--streams=pools`.
-- `src/indexer/poolScanner.ts` — removed private `mapPoolEvent` + helper funcs; now imports from `mappers/mapPoolEvent`.
-- `src/indexer/mappers/mapPoolEvent.ts` — (NEW) extracted pure mapping logic for Swap/Mint/Burn/Collect → `PoolEventRow`.
-- `scripts/dev/run-pools.ts` — (NEW) dev runner: defaults fromBlock=49618000, calls `indexPoolEvents`, logs compact JSON summary.
-- `scripts/dev/smoke-db-pool-events.sql` — (NEW) SQL smoke test: counts per eventName, last 20 rows, checkpoint table.
-- `src/indexer/__tests__/poolDecode.spec.ts` — (NEW) vitest unit tests: roundtrip encode/decode + `mapPoolEvent` validation for Swap/Mint/Burn/Collect.
-- `PROJECT_STATE.md` — updated CLI usage (pools stream example), added dev runner & smoke test docs, listed unit test command.
+#### .env — Indexer essentials
+```env
+# Flare RPC (Ankr)
+FLARE_RPC_URL="https://rpc.ankr.com/flare/cee6b4f8866b7f8afa826f378953ae26eaa74fd174d1d282460e0fbad2b35b01"
+FLARE_WS_URL="wss://rpc.ankr.com/flare/ws/cee6b4f8866b7f8afa826f378953ae26eaa74fd174d1d282460e0fbad2b35b01"
 
-**Reason:**  
-Integrated pool-contract event indexing into backfill CLI, extracted `mapPoolEvent` for testability, added dev tooling (runner + SQL smoke test + unit tests) to validate decode/mapping flow end-to-end.
+# NFPM (ERC-721 Position Manager)
+ENOSYS_NFPM="0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657"
+SPARKDEX_NFPM="0xEE5FF5Bc5F852764b5584d92A4d592A53DC527da"
+```
 
-**ENV keys touched:** None.
+#### Verification
+```zsh
+PROJECT_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Liquilab"; cd "$PROJECT_DIR" || exit 1
+node scripts/dev/verify-nfpm.mjs --nfpm=0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657 --id=12345
+```
+Expect JSON `{ nfpm, positionId, name, symbol, owner }`. Non-existent IDs or wrong NFPM emit a JSON error payload and exit code `1`.
 
-**Errors:** None.
+## Data & Infra — ANKR Advanced API
+- **Benefits:**  
+  ✅ Faster RPC calls (no public rate limits)  
+  ✅ Real-time token prices (<100 ms)  
+  ✅ Multi-chain support (Flare, Ethereum, BSC, Polygon, …)  
+  ✅ Historical price data with custom intervals  
+  ✅ Whale watching (token transfer history)  
+  ✅ WebSocket-ready for real-time feeds  
+  ✅ Reliable uptime/performance (managed infra)
+- **Endpoints & auth:** `https://rpc.ankr.com/multichain`, header `X-API-Key: $ANKR_ADV_API_KEY`, default chain `flare` (chainId 14).  
+- **Environment:** `ANKR_ADV_API_URL`, `ANKR_ADV_API_KEY`, `FLARE_CHAIN_ID`.  
+- **Repo usage:** client helper `src/lib/ankr/advancedClient.ts`, smoke script `scripts/dev/ankr-smoke.mts`, concurrency ≤ 6 with backoff on 429/5xx.  
+- **Rate-limit policy:** respect ANKR Advanced quotas; throttle to ≤ 6 concurrent requests, exponential backoff on error.  
+- **Docs:** see `docs/infra/ankr.md` for query examples and roadmap (enrich unknown pools/owners, nightly validation).
 
-**Next suggested step:** Run `pnpm exec tsx -r dotenv/config scripts/dev/run-pools.ts --from=49618000 --to=49620000` to verify pool indexing flow, then check DB with `psql $DATABASE_URL -f scripts/dev/smoke-db-pool-events.sql` to confirm `PoolEvent` rows and `POOLS:all` checkpoint exist.
+## Analytics: Position index (token_id)
+- **Table:** `analytics_position` (token_id TEXT PK, owner_address, pool_address, nfpm_address, first_block, last_block, first_seen_at, last_seen_at).  
+- **Purpose:** Canonical lookup of every Flare concentrated-liquidity position NFT (Ēnosys + Sparkdex) with latest ownership and pool association for downstream analytics & alerts.
+- **Heuristic classifier:** `nfpm_address` derives from `first_block` — blocks `< 30617263` → Ēnosys NFPM (`0xD977…6657`), otherwise Sparkdex NFPM (`0xEE5F…27da`).  
+  - **Follow-up:** replace with contract-address join once NFPM emitter is persisted in raw events.
+- **Pool attribution:** primary source is `PositionEvent.pool` mode; fallback matches Mint events via `txHash + tickLower + tickUpper` against `PoolEvent` (`eventName='Mint'`).
+
+### Runbook — analytics_position refresh
+```zsh
+# Apply latest prisma migration (idempotent)
+PROJECT_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Liquilab"; cd "$PROJECT_DIR" || exit 1
+pnpm prisma migrate deploy
+
+# Backfill / refresh analytics_position (idempotent UPSERT)
+psql "$RAW_DB" -f scripts/dev/backfill-analytics-position.sql
+
+# Verification (counts, top owners/pools, anomaly CSVs under /tmp)
+psql "$RAW_DB" -f scripts/dev/verify-analytics-position.sql
+```
+- **Success criteria:**  
+  - `analytics_position` row count matches distinct tokenIds in `PositionEvent ∪ PositionTransfer`.  
+  - `owner_address` populated for tokens with transfers; `nfpm_address` only contains Ēnosys/Sparkdex values.  
+  - `/tmp/token_ids_without_owner.csv` empty after first full backfill (except never-transferred positions).  
+  - `/tmp/tokens_bad_nfpm.csv` empty once NFPM emitter is stored.
+
+## Runbooks
+- **Backfill Ēnosys**
+  ```zsh
+  PROJECT_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Liquilab"; cd "$PROJECT_DIR" || exit 1
+  pnpm exec tsx -r dotenv/config scripts/indexer-backfill.ts \
+    --factory=enosys --from=29837200 \
+    --streams=factories,logs,nfpm,pool_state,position_reads \
+    --rps=8 --confirmations=32 --tokenIds="" --reset
+  ```
+- **Backfill Sparkdex**
+  ```zsh
+  PROJECT_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Liquilab"; cd "$PROJECT_DIR" || exit 1
+  pnpm exec tsx -r dotenv/config scripts/indexer-backfill.ts \
+    --factory=sparkdex --from=30617263 \
+    --streams=factories,logs,nfpm,pool_state,position_reads \
+    --rps=8 --confirmations=32 --tokenIds="" --reset
+  ```
+- **Sanity — pools mini-window**
+  ```zsh
+  PROJECT_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Liquilab"; cd "$PROJECT_DIR" || exit 1
+  pnpm exec tsx -r dotenv/config scripts/dev/run-pools.ts --from=49618000 --to=49620000 || true
+  ```
+- **Sanity — DB queries (role koen)**
+  ```zsh
+  PROJECT_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Liquilab"; cd "$PROJECT_DIR" || exit 1
+  export PSQL_URL="postgresql://koen@localhost:5432/liquilab"
+
+  psql "$PSQL_URL" -F $'\t' -A -P pager=off <<'SQL'
+  SELECT "eventName", COUNT(*) AS rows FROM "PoolEvent" GROUP BY 1 ORDER BY 2 DESC;
+  SELECT "blockNumber","pool","eventName","txHash","logIndex",
+         COALESCE("owner",'') owner, COALESCE("recipient",'') recipient,
+         COALESCE("amount0",'0') amount0, COALESCE("amount1",'0') amount1,
+         "tickLower","tickUpper","tick", COALESCE("sqrtPriceX96",'0') sqrtpx
+  FROM "PoolEvent"
+  WHERE "eventName" IN ('Swap','Mint','Burn','Collect')
+  ORDER BY "blockNumber" DESC, "logIndex" DESC
+  LIMIT 20;
+  SELECT id,"lastBlock", to_char("updatedAt",'YYYY-MM-DD HH24:MI:SS') AS updated
+  FROM "SyncCheckpoint"
+  WHERE id LIKE 'POOLS:%' OR id LIKE 'FACTORY:%' OR id='NPM:global'
+  ORDER BY "updatedAt" DESC
+  LIMIT 10;
+  SQL
+
+  psql "$PSQL_URL" -F $'\t' -A -P pager=off <<'SQL'
+  SELECT COUNT(*) AS bad_amount0 FROM "PoolEvent" WHERE "amount0" ~ '^-?[0-9]+-[0-9]+$';
+  SELECT COUNT(*) AS bad_amount1 FROM "PoolEvent" WHERE "amount1" ~ '^-?[0-9]+-[0-9]+$';
+  SQL
+  ```
+- **Daylog tail**
+  ```zsh
+  PROJECT_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Liquilab"; cd "$PROJECT_DIR" || exit 1
+  LOG="logs/indexer-$(date +%Y%m%d).log"
+  [ -f "$LOG" ] && tail -n 200 "$LOG" | grep -E '^\[RPC\] Scanning ' | tail -n 1 || echo "No daylog; see console output."
+  ```
+
+### Indexer Runbook (Flare, Enosys/Sparkdex)
+- RPC (HTTPS): `https://rpc.ankr.com/flare/cee6b4f8866b7f8afa826f378953ae26eaa74fd174d1d282460e0fbad2b35b01`
+- NFPM: Ēnosys `0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657`, Sparkdex `0xEE5FF5Bc5F852764b5584d92A4d592A53DC527da`
+- Factories: Ēnosys `0x17AA157AC8C54034381b840Cb8f6bf7Fc355f0de`, Sparkdex `0x8A2578d23d4C532cC9A98FaD91C0523f5efDE652`
+- Commands (examples):
+  ```zsh
+  pnpm exec tsx -r dotenv/config scripts/indexer-backfill.ts --factory=enosys  --from=29837200 --streams=factories,pools,nfpm,positions --rps=8 --confirmations=32 --reset
+  pnpm exec tsx -r dotenv/config scripts/indexer-backfill.ts --factory=sparkdex --from=30617263 --streams=factories,pools,nfpm,positions --rps=8 --confirmations=32 --reset
+  ```
+
+### Analytics View (one row per NFT position)
+- Create/refresh: `psql "$PSQL_URL" -f scripts/dev/backfill-analytics-position-flat.sql && psql "$PSQL_URL" -c 'REFRESH MATERIALIZED VIEW CONCURRENTLY analytics_position_flat;'`
+- Verify: `psql "$PSQL_URL" -f scripts/dev/verify-analytics-position-flat.sql`
+
+## Known Issues / Gotchas
+- P1013 invalid port / DSN errors: check for stray spaces or broken query string; prefer `DATABASE_URL="postgresql://koen@localhost:5432/liquilab?schema=public"`.
+- `role "postgres" does not exist`: use `koen` role locally (or create `postgres`).
+- Regex in psql must be single-quoted: `WHERE "amount0" ~ '^-?[0-9]+-[0-9]+$'`.
+- Pools runner is idempotent; no writes if already processed.
+- Concurrency is adaptive (max 12); `--rps=8` is safe on ANKR.
+
+## Open Actions
+- [ ] Persist NFPM emitter address into PositionEvent/PositionTransfer and re-classify without heuristic.
+- [ ] Improve pool matching for positions with pool_address IS NULL (txHash+ticks join & NFPM read).
+- [ ] Add materialized view analytics_pool_24h once position table is stable.
+- [ ] Run ANKR nightly validation job (sampled PositionTransfer owners vs ANKR responses).
+- [ ] Design enrichment job to fill unknown pools/owners via ANKR Advanced API.
+- [ ] Document pricing/cache retention strategy for ANKR-sourced token data.
+
+## Brand & Pricing (reference)
+- Visual guardrails: water-wave 100% visible, cards background `#0B1530`, Electric Blue primary, Aqua only as accent, `tabular-nums`, spacing tokens consistent.
+- Pricing defaults (Nov 6, 2025): Base $14.95/mo for 5 pools, 14-day trial. Extra pools: $9.95/mo per 5. RangeBand™ Alerts: $2.49 per pool.
+
+## Changelog — 2025-11-06
+- PROJECT_STATE.md — Documented NFPM contracts, Ankr .env essentials, verification flow, and open actions.
+- scripts/dev/verify-nfpm.mjs — Added CLI helper to resolve NFPM `ownerOf(positionId)` via viem.
+- prisma/migrations/20251106_analytics_position_init/migration.sql — Ensured analytics_position schema and indexes exist idempotently.
+- scripts/dev/backfill-analytics-position.sql — Idempotent UPSERT pipeline syncing analytics_position from PositionEvent + PositionTransfer.
+- scripts/dev/verify-analytics-position.sql — Verification queries & anomaly exports for analytics_position coverage.
+- scripts/dev/backfill-analytics-position-flat.sql — Created materialized view analytics_position_flat with indexes.
+- scripts/dev/verify-analytics-position-flat.sql — Added verification queries for analytics_position_flat coverage.
+- docs/infra/ankr.md — Added ANKR integration playbook (benefits, endpoints, env, roadmap).
+- README.md — Linked ANKR integration doc under Infrastructure.
+- PROJECT_STATE.md — Captured ANKR Advanced API details, env keys, runbook, and follow-ups.
 
 ---
 
@@ -219,59 +384,5 @@ Integrated pool-contract event indexing into backfill CLI, extracted `mapPoolEve
 
 ---
 
-### Database Configuration — 2025-11-06
-
-**Engine:** PostgreSQL 16 (local via Homebrew)  
-**Connection URL:** `postgresql://postgres:postgres@localhost:5432/liquilab?schema=public`  
-**Prisma RAW_DB:** `postgresql://postgres:postgres@localhost:5432/liquilab`  
-**Schema:** `public`  
-**Port:** 5432  
-**User:** `postgres`  
-**Password:** `postgres`  
-**Usage:**  
-- Used by all local indexer and analytics scripts.  
-- Mirrors the production Railway Docker Postgres setup.  
-- Persistent volume: `$HOME/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Liquilab`  
-
-✅ Verified via `psql` and `prisma db push` on 2025-11-06 — all migrations in sync.
-
 <!-- CHANGELOG_ARCHIVE_INDEX -->
 See archives in /docs/changelog/.
-
----
-
-### Database Verification — 2025-11-06 (Final)
-
-**PostgreSQL:** v16 (Homebrew)  
-**Schema:** `public`  
-**Owner:** `koen`  
-**Verified via:** `psql \dt`  
-**Status:** ✅ Fully in sync with Prisma schema  
-
-**Active tables:**
-- AppSetting  
-- BackfillCursor  
-- CapitalFlow  
-- Payment  
-- PlaceholderSignup  
-- PoolEvent  
-- PositionEvent  
-- PositionTransfer  
-- SyncCheckpoint  
-- User  
-- UserPool  
-- WaitlistEntry  
-- Wallet  
-- _prisma_migrations  
-- analytics_discovery_log  
-- analytics_market  
-- analytics_market_metrics_daily  
-- analytics_market_snapshot  
-- analytics_position  
-- analytics_position_snapshot  
-
-📘 *Notes:*  
-- Local DB mirrors Railway production (Docker-based Postgres).  
-- All migrations applied and verified via `prisma db push`.  
-- Used by indexer, analytics pipeline, and dashboard queries.  
-

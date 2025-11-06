@@ -6,6 +6,9 @@
 
 ## ⚙️ Deployment & Workers
 
+### Infrastructure
+- [ANKR Integration (Advanced API)](docs/infra/ankr.md)
+
 ### Railway Deployment
 
 This application uses a **dual-service architecture** on Railway:

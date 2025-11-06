@@ -235,3 +235,43 @@ Integrated pool-contract event indexing into backfill CLI, extracted `mapPoolEve
 
 ✅ Verified via `psql` and `prisma db push` on 2025-11-06 — all migrations in sync.
 
+<!-- CHANGELOG_ARCHIVE_INDEX -->
+See archives in /docs/changelog/.
+
+---
+
+### Database Verification — 2025-11-06 (Final)
+
+**PostgreSQL:** v16 (Homebrew)  
+**Schema:** `public`  
+**Owner:** `koen`  
+**Verified via:** `psql \dt`  
+**Status:** ✅ Fully in sync with Prisma schema  
+
+**Active tables:**
+- AppSetting  
+- BackfillCursor  
+- CapitalFlow  
+- Payment  
+- PlaceholderSignup  
+- PoolEvent  
+- PositionEvent  
+- PositionTransfer  
+- SyncCheckpoint  
+- User  
+- UserPool  
+- WaitlistEntry  
+- Wallet  
+- _prisma_migrations  
+- analytics_discovery_log  
+- analytics_market  
+- analytics_market_metrics_daily  
+- analytics_market_snapshot  
+- analytics_position  
+- analytics_position_snapshot  
+
+📘 *Notes:*  
+- Local DB mirrors Railway production (Docker-based Postgres).  
+- All migrations applied and verified via `prisma db push`.  
+- Used by indexer, analytics pipeline, and dashboard queries.  
+

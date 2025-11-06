@@ -28,7 +28,8 @@
     "cache:top-pools": "tsx scripts/cache-top-pools.ts",
     "cache:top-pools:now": "tsx scripts/cache-top-pools.ts",
     "snapshot:brand": "pnpm run -s snapshot:brand:run",
-    "snapshot:brand:run": "pnpm dlx tsx --env-file=.env.local scripts/data/resolve-brand-pools.ts && pnpm dlx tsx --env-file=.env.local scripts/data/snapshot-brand-user-positions.ts"
+    "snapshot:brand:run": "pnpm dlx tsx --env-file=.env.local scripts/data/resolve-brand-pools.ts && pnpm dlx tsx --env-file=.env.local scripts/data/snapshot-brand-user-positions.ts",
+    "state:rotate": "node scripts/dev/rotate-project-state.mjs"
   },
   "dependencies": {
     "@perplexity-ai/perplexity_ai": "^0.16.0",

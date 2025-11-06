@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>io.liquilab.state.rotate.weekly</string>
+  <key>ProgramArguments</key>
+  <array><string>/bin/zsh</string><string>-lc</string>
+    <string>cd "$HOME/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Liquilab" && pnpm run state:rotate && git add PROJECT_STATE.md docs/changelog && git commit -m "chore: weekly PROJECT_STATE rotation" || true</string>
+  </array>
+  <key>StartCalendarInterval</key><dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>9</integer><key>Minute</key><integer>5</integer></dict>
+  <key>StandardOutPath</key><string>$HOME/Library/Logs/liquilab-state-rotate.log</string>
+  <key>StandardErrorPath</key><string>$HOME/Library/Logs/liquilab-state-rotate.err</string>
+  <key>RunAtLoad</key><true/>
+</dict></plist>

@@ -162,7 +162,7 @@ LiquiLab delivers a V3-only liquidity-pool manager for the Flare network:
 - Upgrade email templates to React Email/MJML and introduce invoice PDF attachment/link flow.
 - Finalise basket flow (email gate + Stripe hand-off) before public trial invite.
 
-## Changelog (last 10 entries)
+## Changelog (last 7 entries)
 - **2025-11-05** – Pool Intel adds Flare domain whitelist and Day/Week toggle with fallback logging.
 - **2025-11-05** – Pool Intel canonicalization wired to actual pool tokens with upstream error mapping and improved UI messaging.
 - **2025-11-05** – Pool detail pages now surface “Pool Intel — Web Signals” with Perplexity-backed insights and caching.

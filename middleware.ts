@@ -1,13 +1,14 @@
-import { NextResponse, NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 
 export function middleware(req: NextRequest) {
-  // Alleen homepage afvangen
-  if (req.nextUrl.pathname === '/') {
-    const hasPreview = req.cookies.get('ll_preview')?.value === '1';
-    if (!hasPreview) {
-      return NextResponse.rewrite(new URL('/placeholder', req.url));
-    }
+  const { pathname } = req.nextUrl
+  if (pathname === '/docs') {
+    const url = req.nextUrl.clone()
+    url.pathname = '/docs/index.html'
+    return NextResponse.redirect(url)
   }
-  return NextResponse.next();
+  return NextResponse.next()
 }
-export const config = { matcher: ['/', '/index'] };
+
+export const config = { matcher: ['/docs'] }

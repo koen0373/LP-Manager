@@ -1,1 +1,4 @@
-- [📘 Product Roadmap](/product/feature-roadmap.md)
+- **Overview**
+  - [Home](/docs/README.md)
+- **Product**
+  - [📘 Product Roadmap](/docs/product/feature-roadmap.md)

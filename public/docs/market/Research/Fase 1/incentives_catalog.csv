@@ -1,0 +1,6 @@
+venue,instrument,token,schedule_or_rate,source_id,as_of_utc,notes
+Enosys V3,Selected USD₮0 & FXRP pools,rFLR,"333,333 rFLR/day across ecosystem (per Flare) — pool-level split not public",src_flare_news_defi_milestones,2025-10-30 00:00:00 UTC,Also APS incentives on Enosys pools per community posts.
+SparkDEX,V3 & V3.1 fee-tiered LPs,rFLR + SPRK/xSPRK,rFLR program; revenue-share to xSPRK per docs,src_sparkdex_docs_v3,2025-10-30 00:00:00 UTC,Exact emissions per fee tier vary over time; confirm in UI.
+BlazeSwap,V2 LPs,FTSO delegation rewards,Delegation yield depends on provider performance,src_blazeswap_flare_news,2025-10-30 00:00:00 UTC,LP positions delegate automatically to FTSO providers.
+Kinetic,Lending markets,Variable APY,Market-driven supply APY; borrow APR,src_kinetic_docs_overview,2025-10-30 00:00:00 UTC,APY depends on utilization and oracle rates.
+Firelight,stXRP,stXRP (receipt),Not launched; timeline ongoing,src_firelight_site,2025-10-30 00:00:00 UTC,Design indicates 1:1 FXRP backing; yield from staking/fees TBD.

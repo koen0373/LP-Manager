@@ -1,0 +1,4 @@
+assumption_id,assumption,why_needed,how_to_retire
+asm_001,Used DefiLlama TVL/volume as primary for SparkDEX & Enosys; BlazeSwap volumes from GeckoTerminal.,Consistent cross-venue view; first-party APIs undocumented.,Switch to programmatic pulls (GeckoTerminal/DexScreener) and/or official subgraphs when available.
+asm_002,Fees-only APR computed as fee_rate*24h_volume / TVL annualized; incentives set to 0.,Pool-level incentive USD/day not published.,Add incentive USD/day from official emission schedules per pool when published.
+asm_003,"Pairs tables provided as samples (top 5 Enosys, 1 Blaze) due to manual entry limits.",API access disabled in this environment.,Automate via GeckoTerminal API (30 req/min) to fetch top 25 per DEX.

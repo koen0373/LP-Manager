@@ -29,9 +29,17 @@
     "cache:top-pools:now": "tsx scripts/cache-top-pools.ts",
     "snapshot:brand": "pnpm run -s snapshot:brand:run",
     "snapshot:brand:run": "pnpm dlx tsx --env-file=.env.local scripts/data/resolve-brand-pools.ts && pnpm dlx tsx --env-file=.env.local scripts/data/snapshot-brand-user-positions.ts",
-    "state:rotate": "node scripts/dev/rotate-project-state.mjs"
+    "state:rotate": "node scripts/dev/rotate-project-state.mjs",
+    "scan:nfpm": "DOTENV_CONFIG_PATH=.env.local tsx -r dotenv/config -r dotenv-expand/config scripts/dev/ankr-nfpm-scan.mts",
+    "sql:backfill:tokenid-pool": "psql \\\"$RAW_DB\\\" -v ON_ERROR_STOP=1 -f scripts/dev/backfill-tokenid-pool.sql",
+    "sql:refresh:analytics-flat": "psql \\\"$RAW_DB\\\" -v ON_ERROR_STOP=1 -f scripts/dev/refresh-analytics-flat.sql",
+    "sql:verify:tokenid-pool": "psql \\\"$RAW_DB\\\" -v ON_ERROR_STOP=1 -f scripts/dev/verify-tokenid-pool.sql",
+    "test": "vitest",
+    "docs": "pnpm dlx docsify-cli@latest serve docs -p 3030",
+    "docs:ui": "open http://localhost:3000/docs"
   },
   "dependencies": {
+    "@ankr.com/ankr.js": "^0.6.1",
     "@perplexity-ai/perplexity_ai": "^0.16.0",
     "@prisma/client": "^6.17.1",
     "@radix-ui/react-tabs": "^1.1.13",
@@ -49,6 +57,7 @@
     "next": "15.5.6",
     "nodemailer": "^7.0.10",
     "p-limit": "^6.2.0",
+    "pg": "^8.16.3",
     "prisma": "^6.17.1",
     "qrcode-generator": "^2.0.4",
     "react": "^18.3.1",
@@ -64,16 +73,20 @@
     "@eslint/eslintrc": "^3",
     "@types/cookie": "^0.6.0",
     "@types/node": "^20",
+    "@types/pg": "^8.15.6",
     "@types/qrcode-generator": "^0.0.16",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@vitest/coverage-v8": "^4.0.7",
     "autoprefixer": "^10.4.16",
+    "dotenv-expand": "^12.0.3",
     "eslint": "^9",
     "eslint-config-next": "15.5.6",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
     "tsc-alias": "^1.8.16",
     "tsx": "^4.19.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.0.7"
   }
 }

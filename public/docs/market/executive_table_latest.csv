@@ -1,0 +1,4 @@
+venue,tvl_usd,volume_24h_usd,pools_count,active_incentives,#top_pairs(FXRP/WFLR/SFLR/FLR present?),data_date
+SparkDEX V3.1,75870000.0,6820000.0,49,True,"Yes (FXRP, WFLR, FLR via pools)",2025-10-30
+Enosys V3 (Flare),4640000.0,2750000.0,23,True,"Yes (FXRP, WFLR, SFLR)",2025-10-30
+BlazeSwap (Flare),4260000.0,204778.08,17,True,"Yes (FXRP, WFLR, SFLR)",2025-10-30

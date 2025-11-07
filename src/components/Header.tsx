@@ -7,10 +7,7 @@ import WalletConnect from './WalletConnect';
 import { LiquiLabLogo } from './LiquiLabLogo';
 
 const BLAZESWAP_ENABLED =
-  (process.env.NEXT_PUBLIC_ENABLE_BLAZESWAP ??
-    process.env.ENABLE_BLAZESWAP ??
-    ''
-  ).toLowerCase() === 'true';
+  (process.env.NEXT_PUBLIC_ENABLE_BLAZESWAP ?? process.env.ENABLE_BLAZESWAP ?? '').toLowerCase() === 'true';
 
 interface HeaderProps {
   onRefresh?: () => void;
@@ -117,7 +114,7 @@ export default function Header({
               <>
                 <button
                   onClick={handleRefresh}
-                  className="flex items-center gap-2 px-3 py-2 text-mist hover:text-white rounded-lg transition-all duration-200"
+                  className="flex items-center gap-2 rounded-2xl border border-white/15 bg-[#0B1530] px-4 py-2 text-sm font-ui text-white transition hover:bg-[#13274f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60A5FA] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1530]"
                   title="Refresh data"
                   type="button"
                   aria-label="Refresh data"
@@ -131,13 +128,11 @@ export default function Header({
                     className="transition-colors duration-200"
                     aria-hidden
                   >
-                    <path
-                      d="M4 12a8 8 0 0 1 8-8V2l4 4-4 4V6a6 6 0 1 0 6 6h2a8 8 0 0 1-16 0z"
-                      fill="currentColor"
-                    />
+                    <path d="M4 12a8 8 0 0 1 8-8V2l4 4-4 4V6a6 6 0 1 0 6 6h2a8 8 0 0 1-16 0z" fill="currentColor" />
                   </svg>
                 </button>
                 <WalletConnect
+                  className="btn-primary"
                   onWalletConnected={onWalletConnected}
                   onWalletDisconnected={onWalletDisconnected}
                 />
@@ -159,7 +154,7 @@ export default function Header({
                   : 'text-mist hover:text-white font-normal'
               }`}
             >
-              Active ({activeCount})
+              Active (<span className="font-num">{activeCount}</span>)
             </button>
             <button
               onClick={() => onTabChange('inactive')}
@@ -169,7 +164,7 @@ export default function Header({
                   : 'text-mist hover:text-white font-normal'
               }`}
             >
-              Inactive ({inactiveCount})
+              Inactive (<span className="font-num">{inactiveCount}</span>)
             </button>
             <button
               onClick={() => onTabChange('all')}
@@ -179,7 +174,7 @@ export default function Header({
                   : 'text-mist hover:text-white font-normal'
               }`}
             >
-              Show All ({activeCount + inactiveCount})
+              Show All (<span className="font-num">{activeCount + inactiveCount}</span>)
             </button>
           </div>
         </div>

@@ -515,3 +515,5 @@ pages/pool/
 
 ## Docs
 - [📘 Product Roadmap](docs/product/feature-roadmap.md)
+- [⚙️ Indexer — Architecture & Runbook](docs/indexer/architecture.md)
+- [📘 Product Roadmap](/docs/product/feature-roadmap.md)

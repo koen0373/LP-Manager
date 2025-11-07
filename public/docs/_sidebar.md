@@ -2,3 +2,7 @@
   - [Home](/docs/README.md)
 - **Product**
   - [📘 Product Roadmap](/docs/product/feature-roadmap.md)
+- **Indexer**
+  - [⚙️ Architecture & Runbook](/docs/indexer/architecture.md)
+- **Product**
+  - [Feature roadmap](/docs/product/feature-roadmap.md)

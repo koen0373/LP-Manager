@@ -512,3 +512,6 @@ pages/pool/
 - Integrate with actual premium status API
 - Add transaction activity tracking
 - Implement fee claiming functionality
+
+## Docs
+- [📘 Product Roadmap](docs/product/feature-roadmap.md)

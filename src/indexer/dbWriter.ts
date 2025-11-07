@@ -15,6 +15,27 @@ export interface WriteStats {
   errors: number;
 }
 
+export interface PoolEventRow {
+  id: string;
+  pool: string;
+  blockNumber: number;
+  txHash: string;
+  logIndex: number;
+  timestamp: number;
+  eventName: string;
+  sender?: string | null;
+  owner?: string | null;
+  recipient?: string | null;
+  tickLower?: number | null;
+  tickUpper?: number | null;
+  amount?: string | null;
+  amount0?: string | null;
+  amount1?: string | null;
+  sqrtPriceX96?: string | null;
+  liquidity?: string | null;
+  tick?: number | null;
+}
+
 export class DbWriter {
   constructor(private prisma: PrismaClient) {}
 
@@ -63,6 +84,52 @@ export class DbWriter {
     }
 
     return stats;
+  }
+
+  async writePoolEvents(
+    events: PoolEventRow[]
+  ): Promise<{ written: number; duplicates: number; errors: number }> {
+    if (events.length === 0) {
+      return { written: 0, duplicates: 0, errors: 0 };
+    }
+
+    const batchSize = indexerConfig.db.batchSize;
+    let written = 0;
+
+    for (let i = 0; i < events.length; i += batchSize) {
+      const batch = events.slice(i, i + batchSize).map((event) => ({
+        id: event.id,
+        pool: event.pool,
+        blockNumber: event.blockNumber,
+        txHash: event.txHash,
+        logIndex: event.logIndex,
+        timestamp: event.timestamp,
+        eventName: event.eventName,
+        sender: event.sender ?? null,
+        owner: event.owner ?? null,
+        recipient: event.recipient ?? null,
+        tickLower: event.tickLower ?? null,
+        tickUpper: event.tickUpper ?? null,
+        amount: event.amount ?? null,
+        amount0: event.amount0 ?? null,
+        amount1: event.amount1 ?? null,
+        sqrtPriceX96: event.sqrtPriceX96 ?? null,
+        liquidity: event.liquidity ?? null,
+        tick: event.tick ?? null,
+      }));
+      try {
+        const result = await this.prisma.poolEvent.createMany({
+          data: batch,
+          skipDuplicates: true,
+        });
+        written += result.count;
+      } catch (error: unknown) {
+        console.error('[DB] Error writing pool event batch:', error);
+        return { written, duplicates: 0, errors: batch.length };
+      }
+    }
+
+    return { written, duplicates: 0, errors: 0 };
   }
 
   /**
@@ -211,4 +278,3 @@ export class DbWriter {
     return { min: minBlock, max: maxBlock };
   }
 }
-

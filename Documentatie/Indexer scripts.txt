@@ -1,0 +1,54 @@
+Indexer script Enosys
+
+# macOS/zsh — STAP 1: batchSize=1000 + concurrency=12 forceren, dan backfill starten
+
+PROJECT_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Liquilab"
+cd "$PROJECT_DIR" || { echo "Map niet gevonden: $PROJECT_DIR"; exit 1; }
+
+# 1) Vind je indexer-config (ts/js/json) en maak backup
+CFG=""
+for f in indexer.config.ts indexer.config.mjs indexer.config.cjs indexer.config.js indexer.config.json; do
+  [ -f "$f" ] && { CFG="$f"; break; }
+done
+[ -z "$CFG" ] && { echo "Geen indexer.config.* gevonden"; exit 1; }
+cp -f "$CFG" "$CFG.bak.$(date +%s)"
+
+# 2) Patch batchSize=1000 en maxConcurrency=12 (met Node regex; non-destructief)
+node - <<'NODE'
+const fs=require('fs');const path=require('path');
+const files=['indexer.config.ts','indexer.config.mjs','indexer.config.cjs','indexer.config.js','indexer.config.json'];
+const f=files.find(x=>fs.existsSync(x));
+if(!f){ console.error('no config file'); process.exit(1); }
+let s=fs.readFileSync(f,'utf8');
+const before=s;
+s=s.replace(/(\bbatchSize\s*:\s*)\d+/g, (_,p)=>p+ '1000');
+s=s.replace(/(\bmaxConcurrency\s*:\s*)\d+/g, (_,p)=>p+ '12');
+s=s.replace(/(\bminConcurrency\s*:\s*)\d+/g, (_,p)=>p+ '4');
+if(s!==before){ fs.writeFileSync(f,s); console.log(`patched: ${f}`);} else { console.log(`no changes needed: ${f}`); }
+NODE
+
+# 3) Toon relevante configregels (controle)
+grep -n 'batchSize\|maxConcurrency\|minConcurrency' "$CFG" || true
+
+# 4) Wis impliciete tokenId-filters en oude progress
+sed -i '' -e '/^\(TOKEN_IDS\|INDEXER_TOKEN_IDS\|LIQUILAB_TOKEN_IDS\)=/d' .env .env.local 2>/dev/null || true
+rm -f data/indexer.progress.json 2>/dev/null || true
+
+# 5) Start Ēnosys backfill vanaf 29,837,200, zonder tokenIds, met reset
+#   Let op: runner gebruikt batchSize uit config; concurrency is adaptief met max=12
+pnpm exec tsx -r dotenv/config scripts/indexer-backfill.ts \
+  --factory=enosys --from=29837200 \
+  --streams=factories,logs,nfpm,pool_state,position_reads \
+  --rps=8 --confirmations=32 --tokenIds="" --reset
+
+# 6) Laatste “Scanning …” regel tonen (controle: chunks ≈ (to-from)/1000 en concurrency<=12)
+LOG="logs/indexer-$(date +%Y%m%d).log"
+[ -f "$LOG" ] && tail -n 200 "$LOG" | grep -E '^\[RPC\] Scanning ' | tail -n 1 || echo "Geen daglog gevonden; bekijk console output hierboven."
+
+
+Indexer script Sparkdex
+PROJECT_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Liquilab"; cd "$PROJECT_DIR" || exit 1
+pnpm exec tsx -r dotenv/config scripts/indexer-backfill.ts \
+  --factory=sparkdex --from=30617263 \
+  --streams=factories,logs,nfpm,pool_state,position_reads \
+  --rps=8 --confirmations=32 --tokenIds="" --reset

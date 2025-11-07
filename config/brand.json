@@ -1,0 +1,15 @@
+{
+  "minTvlUsd": 1000,
+  "requestDelayMs": 500,
+  "maxRows": 12,
+  "sourceLabel": "on-chain snapshot",
+  "price": {
+    "source": "defillama",
+    "endpoint": "https://coins.llama.fi/prices/current",
+    "timeoutMs": 4000
+  },
+  "stableMap": {
+    "USDTe": 1.0,
+    "USDC.e": 1.0
+  }
+}

@@ -16,6 +16,7 @@ export interface ScanOptions {
   contractAddress: string;
   tokenIds?: string[]; // Optional: filter by specific tokenIds
   dryRun?: boolean;
+  topics?: string[];
 }
 
 export interface ScanResult {
@@ -49,7 +50,7 @@ export class RpcScanner {
    */
   async scan(options: ScanOptions): Promise<ScanResult> {
     const startTime = Date.now();
-    const { fromBlock, toBlock, contractAddress, tokenIds, dryRun } = options;
+    const { fromBlock, toBlock, contractAddress, tokenIds, dryRun, topics } = options;
 
     if (fromBlock > toBlock) {
       throw new Error(`Invalid range: fromBlock (${fromBlock}) > toBlock (${toBlock})`);
@@ -62,7 +63,9 @@ export class RpcScanner {
     // Fetch logs in parallel with concurrency limit
     const results = await Promise.all(
       ranges.map((range) =>
-        this.limit(() => this.fetchLogsWithRetry(range, contractAddress, tokenIds, dryRun))
+        this.limit(() =>
+          this.fetchLogsWithRetry(range, contractAddress, tokenIds, dryRun, topics)
+        )
       )
     );
 
@@ -92,7 +95,8 @@ export class RpcScanner {
     range: { from: number; to: number },
     contractAddress: string,
     tokenIds?: string[],
-    dryRun?: boolean
+    dryRun?: boolean,
+    topics?: string[]
   ): Promise<{ logs: Log[]; retriesUsed: number }> {
     const { from, to } = range;
     let attempt = 0;
@@ -101,20 +105,44 @@ export class RpcScanner {
     while (attempt < indexerConfig.retry.maxAttempts) {
       try {
         // Get event topics for filtering
-        const eventTopics = getEventTopics(indexerConfig.events);
+        const eventTopics = topics ?? getEventTopics(indexerConfig.events);
 
-        // Fetch all logs for this contract in the block range
-        // We filter by event topics client-side since viem's getLogs doesn't support OR filtering on topics[0]
-        const logs = await this.client.getLogs({
-          address: contractAddress as `0x${string}`,
-          fromBlock: BigInt(from),
-          toBlock: BigInt(to),
-        });
-        
-        // Filter by event topics (topics[0] contains the event signature)
-        let filteredLogs = logs.filter(log => 
-          log.topics[0] && eventTopics.includes(log.topics[0] as string)
-        );
+        let logs: Log[] = [];
+        let fetchedWithTopics = false;
+
+        if (eventTopics.length > 0) {
+          try {
+            logs = await this.client.getLogs({
+              address: contractAddress as `0x${string}`,
+              fromBlock: BigInt(from),
+              toBlock: BigInt(to),
+              topics: [eventTopics.map((topic) => topic as `0x${string}`)],
+            });
+            fetchedWithTopics = true;
+          } catch (error) {
+            if (process.env.POOL_DEBUG === '1') {
+              console.warn(
+                `[RpcScanner] topics fetch failed ${from}→${to} (${eventTopics.length} topics): ${(error as Error).message}`
+              );
+            }
+          }
+        }
+
+        if (!fetchedWithTopics) {
+          logs = await this.client.getLogs({
+            address: contractAddress as `0x${string}`,
+            fromBlock: BigInt(from),
+            toBlock: BigInt(to),
+          });
+        }
+
+        let filteredLogs = logs;
+        if (eventTopics.length > 0) {
+          const topicSet = new Set(eventTopics.map((t) => t.toLowerCase()));
+          filteredLogs = filteredLogs.filter(
+            (log) => log.topics[0] && topicSet.has((log.topics[0] as string).toLowerCase())
+          );
+        }
 
         // Filter by tokenId if specified (post-filter for events that index tokenId in topics[1])
         if (tokenIds && tokenIds.length > 0) {
@@ -227,4 +255,3 @@ export class RpcScanner {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
-

@@ -1,0 +1,272 @@
+[
+  {
+    "dex": "enosys",
+    "pair": {
+      "symbol0": "FXRP",
+      "symbol1": "USDT0",
+      "fee_bps": 30
+    },
+    "token0": {
+      "symbol": "FXRP",
+      "address": "0xad552a648c74d49e10027ab8a618a3ad4901c5be",
+      "decimals": 6
+    },
+    "token1": {
+      "symbol": "USDT0",
+      "address": "0xe7cd86e13AC4309349F30B3435a9d337750fC82D",
+      "decimals": 6
+    },
+    "poolAddress": "0x686f53F0950Ef193C887527eC027E6A574A4DbE1",
+    "flarescan_url": "https://flarescan.com/address/0x686f53F0950Ef193C887527eC027E6A574A4DbE1?chainid=14",
+    "tvlUsd": 800073.2707356673,
+    "fees24hUsd": null,
+    "incentivesUsd": null,
+    "status": "in",
+    "priority": "0x686f53F0950Ef193C887527eC027E6A574A4DbE1",
+    "updatedAt": "2025-11-05T20:45:17.286Z",
+    "sourceLabel": "on-chain snapshot"
+  },
+  {
+    "dex": "enosys",
+    "pair": {
+      "symbol0": "WFLR",
+      "symbol1": "USDT0",
+      "fee_bps": 30
+    },
+    "token0": {
+      "symbol": "WFLR",
+      "address": "0x1d80c49bbbc1c091134665cbb8a3ad4901c5f783",
+      "decimals": 18
+    },
+    "token1": {
+      "symbol": "USDT0",
+      "address": "0xe7cd86e13AC4309349F30B3435a9d337750fC82D",
+      "decimals": 6
+    },
+    "poolAddress": "0x3C2a7B76795E58829FAAa034486D417dd0155162",
+    "flarescan_url": "https://flarescan.com/address/0x3C2a7B76795E58829FAAa034486D417dd0155162?chainid=14",
+    "tvlUsd": 805861.4162081287,
+    "fees24hUsd": null,
+    "incentivesUsd": null,
+    "status": "in",
+    "priority": "0x3C2a7B76795E58829FAAa034486D417dd0155162",
+    "updatedAt": "2025-11-05T20:45:17.961Z",
+    "sourceLabel": "on-chain snapshot"
+  },
+  {
+    "dex": "enosys",
+    "pair": {
+      "symbol0": "WFLR",
+      "symbol1": "FXRP",
+      "fee_bps": 30
+    },
+    "token0": {
+      "symbol": "WFLR",
+      "address": "0x1d80c49bbbc1c091134665cbb8a3ad4901c5f783",
+      "decimals": 18
+    },
+    "token1": {
+      "symbol": "FXRP",
+      "address": "0xad552a648c74d49e10027ab8a618a3ad4901c5be",
+      "decimals": 6
+    },
+    "poolAddress": "0xb4CB11a84CFbd8F6336Dc9417aC45c1F8E5B59E7",
+    "flarescan_url": "https://flarescan.com/address/0xb4CB11a84CFbd8F6336Dc9417aC45c1F8E5B59E7?chainid=14",
+    "tvlUsd": 685582.0304372443,
+    "fees24hUsd": null,
+    "incentivesUsd": null,
+    "status": "in",
+    "priority": "0xb4CB11a84CFbd8F6336Dc9417aC45c1F8E5B59E7 enosys",
+    "updatedAt": "2025-11-05T20:45:18.535Z",
+    "sourceLabel": "on-chain snapshot"
+  },
+  {
+    "dex": "enosys",
+    "pair": {
+      "symbol0": "sFLR",
+      "symbol1": "WFLR",
+      "fee_bps": 5
+    },
+    "token0": {
+      "symbol": "sFLR",
+      "address": "0x12e605bc104e93b45e1ad99f9e555f659051c2bb",
+      "decimals": 18
+    },
+    "token1": {
+      "symbol": "WFLR",
+      "address": "0x1d80c49bbbc1c091134665cbb8a3ad4901c5f783",
+      "decimals": 18
+    },
+    "poolAddress": "0x25B4f3930934F0A3CbB885C624EcEe75a2917144",
+    "flarescan_url": "https://flarescan.com/address/0x25B4f3930934F0A3CbB885C624EcEe75a2917144?chainid=14",
+    "tvlUsd": 673085.0315555242,
+    "fees24hUsd": null,
+    "incentivesUsd": null,
+    "status": "in",
+    "priority": "0x25B4f3930934F0A3CbB885C624EcEe75a2917144",
+    "updatedAt": "2025-11-05T20:45:19.197Z",
+    "sourceLabel": "on-chain snapshot"
+  },
+  {
+    "dex": "sparkdex",
+    "pair": {
+      "symbol0": "FXRP",
+      "symbol1": "USDT0",
+      "fee_bps": 5
+    },
+    "token0": {
+      "symbol": "FXRP",
+      "address": "0xad552a648c74d49e10027ab8a618a3ad4901c5be",
+      "decimals": 6
+    },
+    "token1": {
+      "symbol": "USDT0",
+      "address": "0xe7cd86e13AC4309349F30B3435a9d337750fC82D",
+      "decimals": 6
+    },
+    "poolAddress": "0x88D46717b16619B37fa2DfD2F038DEFB4459F1F7",
+    "flarescan_url": "https://flarescan.com/address/0x88D46717b16619B37fa2DfD2F038DEFB4459F1F7?chainid=14",
+    "tvlUsd": 2235914.7805763027,
+    "fees24hUsd": null,
+    "incentivesUsd": null,
+    "status": "in",
+    "priority": "address/0x88D46717b16619B37fa2DfD2F038DEFB4459F1F7",
+    "updatedAt": "2025-11-05T20:45:19.747Z",
+    "sourceLabel": "on-chain snapshot"
+  },
+  {
+    "dex": "sparkdex",
+    "pair": {
+      "symbol0": "WFLR",
+      "symbol1": "USDT0",
+      "fee_bps": 30
+    },
+    "token0": {
+      "symbol": "WFLR",
+      "address": "0x1d80c49bbbc1c091134665cbb8a3ad4901c5f783",
+      "decimals": 18
+    },
+    "token1": {
+      "symbol": "USDT0",
+      "address": "0xe7cd86e13AC4309349F30B3435a9d337750fC82D",
+      "decimals": 6
+    },
+    "poolAddress": "0x2860DB7a2B33B79e59Ea450Ff43B2dC673A22D3d",
+    "flarescan_url": "https://flarescan.com/address/0x2860DB7a2B33B79e59Ea450Ff43B2dC673A22D3d?chainid=14",
+    "tvlUsd": 22088.85566105216,
+    "fees24hUsd": null,
+    "incentivesUsd": null,
+    "status": "in",
+    "priority": "0x2860db7a2b33b79e59ea450ff43b2dc673a22d3d",
+    "updatedAt": "2025-11-05T20:45:20.324Z",
+    "sourceLabel": "on-chain snapshot"
+  },
+  {
+    "dex": "sparkdex",
+    "pair": {
+      "symbol0": "USDT0",
+      "symbol1": "USDC.e",
+      "fee_bps": 1
+    },
+    "token0": {
+      "symbol": "USDT0",
+      "address": "0xe7cd86e13AC4309349F30B3435a9d337750fC82D",
+      "decimals": 6
+    },
+    "token1": {
+      "symbol": "USDC.e",
+      "address": "0xfbda5f676cb37624f28265a144a48b0d6e87d3b6",
+      "decimals": 6
+    },
+    "poolAddress": "0x0B40111B4Cf6dD1001F36f9c631956FefA56BC3b",
+    "flarescan_url": "https://flarescan.com/address/0x0B40111B4Cf6dD1001F36f9c631956FefA56BC3b?chainid=14",
+    "tvlUsd": 24969273.842488,
+    "fees24hUsd": null,
+    "incentivesUsd": null,
+    "status": "in",
+    "priority": "0x0B40111B4Cf6dD1001F36f9c631956FefA56BC3b",
+    "updatedAt": "2025-11-05T20:45:21.145Z",
+    "sourceLabel": "on-chain snapshot"
+  },
+  {
+    "dex": "sparkdex",
+    "pair": {
+      "symbol0": "USDT0",
+      "symbol1": "cUSDX",
+      "fee_bps": 1
+    },
+    "token0": {
+      "symbol": "USDT0",
+      "address": "0xe7cd86e13AC4309349F30B3435a9d337750fC82D",
+      "decimals": 6
+    },
+    "token1": {
+      "symbol": "cUSDX",
+      "address": "0xfe2907dfa8db6e320cdbf45f0aa888f6135ec4f8",
+      "decimals": 6
+    },
+    "poolAddress": "0x99ED6dfd982d4b3ddD726625A585A3B019523bBb",
+    "flarescan_url": "https://flarescan.com/address/0x99ED6dfd982d4b3ddD726625A585A3B019523bBb?chainid=14",
+    "tvlUsd": 4836054.748271261,
+    "fees24hUsd": null,
+    "incentivesUsd": null,
+    "status": "in",
+    "priority": "0x99ED6dfd982d4b3ddD726625A585A3B019523bBb",
+    "updatedAt": "2025-11-05T20:45:21.806Z",
+    "sourceLabel": "on-chain snapshot"
+  },
+  {
+    "dex": "sparkdex",
+    "pair": {
+      "symbol0": "sFLR",
+      "symbol1": "WFLR",
+      "fee_bps": 1
+    },
+    "token0": {
+      "symbol": "sFLR",
+      "address": "0x12e605bc104e93b45e1ad99f9e555f659051c2bb",
+      "decimals": 18
+    },
+    "token1": {
+      "symbol": "WFLR",
+      "address": "0x1d80c49bbbc1c091134665cbb8a3ad4901c5f783",
+      "decimals": 18
+    },
+    "poolAddress": "0xc9baBa3F36ccaa54675dEECC327Ec7Eaa48CB97d",
+    "flarescan_url": "https://flarescan.com/address/0xc9baBa3F36ccaa54675dEECC327Ec7Eaa48CB97d?chainid=14",
+    "tvlUsd": 1776804.7603147244,
+    "fees24hUsd": null,
+    "incentivesUsd": null,
+    "status": "in",
+    "priority": "0xc9baBa3F36ccaa54675dEECC327Ec7Eaa48CB97d",
+    "updatedAt": "2025-11-05T20:45:22.381Z",
+    "sourceLabel": "on-chain snapshot"
+  },
+  {
+    "dex": "sparkdex",
+    "pair": {
+      "symbol0": "WFLR",
+      "symbol1": "FXRP",
+      "fee_bps": 5
+    },
+    "token0": {
+      "symbol": "WFLR",
+      "address": "0x1d80c49bbbc1c091134665cbb8a3ad4901c5f783",
+      "decimals": 18
+    },
+    "token1": {
+      "symbol": "FXRP",
+      "address": "0xad552a648c74d49e10027ab8a618a3ad4901c5be",
+      "decimals": 6
+    },
+    "poolAddress": "0x589689984a06E4640593eDec64e415c415940C7F",
+    "flarescan_url": "https://flarescan.com/address/0x589689984a06E4640593eDec64e415c415940C7F?chainid=14",
+    "tvlUsd": 1036614.3510910126,
+    "fees24hUsd": null,
+    "incentivesUsd": null,
+    "status": "in",
+    "priority": "0x589689984a06E4640593eDec64e415c415940C7F",
+    "updatedAt": "2025-11-05T20:45:22.950Z",
+    "sourceLabel": "on-chain snapshot"
+  }
+]

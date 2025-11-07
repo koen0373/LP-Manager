@@ -1,11 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { probeBlazeSwapPairs } from '@/lib/providers/blazeswapV2';
+import { getPositionCountsWithFallback } from '@/services/positionCountService';
 
 type ProviderHealth = {
   configured: boolean;
   ready: boolean;
-  totalPairs: number | null;
+  totalPairs?: number | null;
+  totalPositions?: number;
 };
 
 type HealthResponse = {
@@ -13,6 +15,8 @@ type HealthResponse = {
   service: 'liquilab';
   ts: string;
   providers: {
+    enosys?: ProviderHealth;
+    sparkdex?: ProviderHealth;
     blazeswap: ProviderHealth;
   };
 };
@@ -27,13 +31,27 @@ export default async function handler(
   res: NextApiResponse<HealthResponse | ErrorResponse>,
 ) {
   try {
-    const blazeswap = await probeBlazeSwapPairs();
+    // Fetch position counts and BlazeSwap pairs in parallel
+    const [positionCounts, blazeswap] = await Promise.all([
+      getPositionCountsWithFallback(),
+      probeBlazeSwapPairs(),
+    ]);
 
     return res.status(200).json({
       ok: true,
       service: 'liquilab',
       ts: new Date().toISOString(),
       providers: {
+        enosys: {
+          configured: true,
+          ready: positionCounts.enosys > 0,
+          totalPositions: positionCounts.enosys,
+        },
+        sparkdex: {
+          configured: true,
+          ready: positionCounts.sparkdex > 0,
+          totalPositions: positionCounts.sparkdex,
+        },
         blazeswap,
       },
     });

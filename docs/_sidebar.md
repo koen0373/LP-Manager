@@ -1,1 +1,2 @@
-* [📘 Product Roadmap](/docs/product/feature-roadmap.md)
+- [📘 Product Roadmap](/product/feature-roadmap.md)
+- [Portfolio & Core Actions](/product/feature-roadmap.md)

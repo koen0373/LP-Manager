@@ -70,6 +70,8 @@ interface ExtendedItem extends DemoPoolItem {
   statusTone: RangeStatus;
   qualityScore: number;
   isFlaro: boolean;
+  fee0?: number;
+  fee1?: number;
 }
 
 interface Availability {
@@ -387,6 +389,9 @@ function mapToPositionData(items: ExtendedItem[]): { positions: PositionData[]; 
       category: (tvl > 0 ? 'Active' : 'Inactive') as 'Active' | 'Inactive' | 'Ended',
       isDemo: item.isDemo ?? true,
       displayId: item.displayId,
+      // Note: fee0/fee1 from LIVE mode positions come from Position Manager
+      fee0: item.fee0,
+      fee1: item.fee1,
     };
   });
 

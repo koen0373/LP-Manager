@@ -1,0 +1,26 @@
+{
+  "wallets": [
+    "0x57d294d815968f0efa722f1e8094da65402cd951"
+  ],
+  "include": [
+    {
+      "dex": "enosys",
+      "symbol0": "FXRP",
+      "symbol1": "USDTe",
+      "fee_bps": 30
+    },
+    {
+      "dex": "sparkdex",
+      "symbol0": "FXRP",
+      "symbol1": "USDTe",
+      "fee_bps": 5
+    },
+    {
+      "dex": "sparkdex",
+      "symbol0": "WFLR",
+      "symbol1": "USDTe",
+      "fee_bps": 30
+    }
+  ],
+  "minUsdPosition": 0
+}

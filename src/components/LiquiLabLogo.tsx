@@ -56,8 +56,8 @@ export function LiquiLabLogo({
       aria-hidden={ariaHidden}
       className="flex-shrink-0"
     >
-      <path d="M20 0C20 0 0 18 0 30C0 40.4934 8.95431 48 20 48C31.0457 48 40 40.4934 40 30C40 18 20 0 20 0Z" fill="#6EA8FF" />
-      <ellipse cx="15" cy="20" rx="6" ry="8" fill="#78B5FF" opacity="0.4" />
+      <path d="M20 0C20 0 0 18 0 30C0 40.4934 8.95431 48 20 48C31.0457 48 40 40.4934 40 30C40 18 20 0 20 0Z" fill="#3B82F6" />
+      <ellipse cx="15" cy="20" rx="6" ry="8" fill="#3B82F6" opacity="0.4" />
     </svg>
   );
 

@@ -1,0 +1,36 @@
+[
+  {
+    "dex": "enosys",
+    "wallet": "0x57d294d815968f0efa722f1e8094da65402cd951",
+    "positionId": "23210",
+    "poolAddress": "0x686f53F0950Ef193C887527eC027E6A574A4DbE1",
+    "pair": {
+      "symbol0": "FXRP",
+      "symbol1": "USD₮0",
+      "fee_bps": 30
+    },
+    "amount0": null,
+    "amount1": null,
+    "amountUsd": null,
+    "unclaimedUsd": 0,
+    "status": "unknown",
+    "updatedAt": "2025-11-05T20:35:10.352Z"
+  },
+  {
+    "dex": "sparkdex",
+    "wallet": "0x57d294d815968f0efa722f1e8094da65402cd951",
+    "positionId": "46570",
+    "poolAddress": "0x88D46717b16619B37fa2DfD2F038DEFB4459F1F7",
+    "pair": {
+      "symbol0": "FXRP",
+      "symbol1": "USD₮0",
+      "fee_bps": 5
+    },
+    "amount0": null,
+    "amount1": null,
+    "amountUsd": null,
+    "unclaimedUsd": 0,
+    "status": "unknown",
+    "updatedAt": "2025-11-05T20:35:11.418Z"
+  }
+]

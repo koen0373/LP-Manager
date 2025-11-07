@@ -1,0 +1,64 @@
+V3 adressen
+
+
+FLARE_RPC_URL="https://flare-api.flare.network/ext/C/rpc"
+
+ENOSYS_NFPM="0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657"
+SPARKDEX_NFPM="0xEE5FF5Bc5F852764b5584d92A4d592A53DC527da"
+
+SPARKDEX_V3_FACTORY="0x8A2578d23d4C532cC9A98FaD91C0523f5efDE652"
+ENOSYS_V3_FACTORY="0x17AA157AC8C54034381b840Cb8f6bf7Fc355f0de"
+
+
+ANKR
+FLR ENDPOINT
+HTTPS
+https://rpc.ankr.com/flare/cee6b4f8866b7f8afa826f378953ae26eaa74fd174d1d282460e0fbad2b35b01
+WSS
+wss://rpc.ankr.com/flare/ws/cee6b4f8866b7f8afa826f378953ae26eaa74fd174d1d282460e0fbad2b35b01
+
+
+
+ERC-721 Token ID Enosys
+
+https://flarescan.com/token/0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657?erc721&chainid=14
+
+ERC-721 Token ID Sparkdex
+
+https://flarescan.com/token/0xEE5FF5Bc5F852764b5584d92A4d592A53DC527da?erc721&chainid=14
+
+
+
+
+
+INDEXER SCRIPTS
+
+if(s!==before){ fs.writeFileSync(f,s); console.log(`patched: ${f}`);} else { console.log(`no changes needed: ${f}`); }
+NODE
+
+# 3) Toon relevante configregels (controle)
+grep -n 'batchSize\|maxConcurrency\|minConcurrency' "$CFG" || true
+
+# 4) Wis impliciete tokenId-filters en oude progress
+sed -i '' -e '/^\(TOKEN_IDS\|INDEXER_TOKEN_IDS\|LIQUILAB_TOKEN_IDS\)=/d' .env .env.local 2>/dev/null || true
+rm -f data/indexer.progress.json 2>/dev/null || true
+
+# 5) Start Ēnosys backfill vanaf 29,837,200, zonder tokenIds, met reset
+#   Let op: runner gebruikt batchSize uit config; concurrency is adaptief met max=12
+pnpm exec tsx -r dotenv/config scripts/indexer-backfill.ts \
+  --factory=enosys --from=29837200 \
+  --streams=factories,logs,nfpm,pool_state,position_reads \
+  --rps=8 --confirmations=32 --tokenIds="" --reset
+
+# 6) Laatste “Scanning …” regel tonen (controle: chunks ≈ (to-from)/1000 en concurrency<=12)
+LOG="logs/indexer-$(date +%Y%m%d).log"
+[ -f "$LOG" ] && tail -n 200 "$LOG" | grep -E '^\[RPC\] Scanning ' | tail -n 1 || echo "Geen daglog gevonden; bekijk console output hierboven."
+
+
+Indexer script Sparkdex
+PROJECT_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Liquilab"; cd "$PROJECT_DIR" || exit 1
+pnpm exec tsx -r dotenv/config scripts/indexer-backfill.ts \
+  --factory=sparkdex --from=30617263 \
+  --streams=factories,logs,nfpm,pool_state,position_reads \
+  --rps=8 --confirmations=32 --tokenIds="" --reset
+                 

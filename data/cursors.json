@@ -1,0 +1,8 @@
+{
+  "factories": {
+    "enosys": {
+      "block": 31515000,
+      "hash": "0xd25734e6e7964d3087cab5759f076cfee919614e28f6e3a38521d49adae49575"
+    }
+  }
+}

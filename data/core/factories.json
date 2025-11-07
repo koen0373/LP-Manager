@@ -1,0 +1,4 @@
+[
+  { "address": "0x17AA157AC8C54034381b840Cb8f6bf7Fc355f0de", "weth": null, "chainId": 14, "dexName": "Enosys" },
+  { "address": "0x8A2578d23d4C532cC9A98FaD91C0523f5efDE652", "weth": null, "chainId": 14, "dexName": "SparkDEX" }
+]

@@ -1,0 +1,89 @@
+import { keccak256, toHex } from 'viem';
+
+/**
+ * Uniswap V3-compatible Pool event ABIs with correct `indexed` flags:
+ * - Swap:   sender (indexed), recipient (indexed)
+ * - Mint:   owner (indexed), tickLower (indexed), tickUpper (indexed)   [sender non-indexed]
+ * - Burn:   owner (indexed), tickLower (indexed), tickUpper (indexed)
+ * - Collect: owner (indexed), tickLower (indexed), tickUpper (indexed); recipient non-indexed
+ */
+
+export const POOL_SWAP_EVENT_ABI = {
+  anonymous: false,
+  inputs: [
+    { indexed: true,  name: 'sender',       type: 'address' },
+    { indexed: true,  name: 'recipient',    type: 'address' },
+    { indexed: false, name: 'amount0',      type: 'int256'  },
+    { indexed: false, name: 'amount1',      type: 'int256'  },
+    { indexed: false, name: 'sqrtPriceX96', type: 'uint160' },
+    { indexed: false, name: 'liquidity',    type: 'uint128' },
+    { indexed: false, name: 'tick',         type: 'int24'   },
+  ],
+  name: 'Swap',
+  type: 'event',
+} as const;
+
+export const POOL_MINT_EVENT_ABI = {
+  anonymous: false,
+  inputs: [
+    { indexed: false, name: 'sender',    type: 'address' },
+    { indexed: true,  name: 'owner',     type: 'address' },
+    { indexed: true,  name: 'tickLower', type: 'int24'   },
+    { indexed: true,  name: 'tickUpper', type: 'int24'   },
+    { indexed: false, name: 'amount',    type: 'uint128' },
+    { indexed: false, name: 'amount0',   type: 'uint256' },
+    { indexed: false, name: 'amount1',   type: 'uint256' },
+  ],
+  name: 'Mint',
+  type: 'event',
+} as const;
+
+export const POOL_BURN_EVENT_ABI = {
+  anonymous: false,
+  inputs: [
+    { indexed: true,  name: 'owner',     type: 'address' },
+    { indexed: true,  name: 'tickLower', type: 'int24'   },
+    { indexed: true,  name: 'tickUpper', type: 'int24'   },
+    { indexed: false, name: 'amount',    type: 'uint128' },
+    { indexed: false, name: 'amount0',   type: 'uint256' },
+    { indexed: false, name: 'amount1',   type: 'uint256' },
+  ],
+  name: 'Burn',
+  type: 'event',
+} as const;
+
+export const POOL_COLLECT_EVENT_ABI = {
+  anonymous: false,
+  inputs: [
+    { indexed: true,  name: 'owner',     type: 'address' },
+    { indexed: false, name: 'recipient', type: 'address' },
+    { indexed: true,  name: 'tickLower', type: 'int24'   },
+    { indexed: true,  name: 'tickUpper', type: 'int24'   },
+    { indexed: false, name: 'amount0',   type: 'uint128' },
+    { indexed: false, name: 'amount1',   type: 'uint128' },
+  ],
+  name: 'Collect',
+  type: 'event',
+} as const;
+
+export const POOL_EVENTS_ABI = [
+  POOL_SWAP_EVENT_ABI,
+  POOL_MINT_EVENT_ABI,
+  POOL_BURN_EVENT_ABI,
+  POOL_COLLECT_EVENT_ABI,
+] as const;
+
+export type PoolEventName = 'Swap' | 'Mint' | 'Burn' | 'Collect';
+
+/** Event signature topics (topics[0]) */
+export const POOL_SWAP_TOPIC   = keccak256(toHex('Swap(address,address,int256,int256,uint160,uint128,int24)'));
+export const POOL_MINT_TOPIC   = keccak256(toHex('Mint(address,address,int24,int24,uint128,uint256,uint256)'));
+export const POOL_BURN_TOPIC   = keccak256(toHex('Burn(address,int24,int24,uint128,uint256,uint256)'));
+export const POOL_COLLECT_TOPIC= keccak256(toHex('Collect(address,address,int24,int24,uint128,uint128)'));
+
+export const POOL_EVENT_TOPICS = [
+  POOL_SWAP_TOPIC,
+  POOL_MINT_TOPIC,
+  POOL_BURN_TOPIC,
+  POOL_COLLECT_TOPIC,
+];

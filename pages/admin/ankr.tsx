@@ -19,6 +19,9 @@ type ApiResponse = {
   stale?: boolean;
 };
 
+const NEXT_CRON = '09:00 UTC daily';
+const STALE_MS = 24 * 60 * 60 * 1000;
+
 export default function AnkrDashboard() {
   const [record, setRecord] = useState<CostRecord | null>(null);
   const [history, setHistory] = useState<CostRecord[]>([]);
@@ -72,7 +75,9 @@ export default function AnkrDashboard() {
       .join(' ');
   }, [formattedHistory]);
 
-  const lastUpdated = record?.lastUpdated ? new Date(record.lastUpdated).toUTCString() : '—';
+  const lastUpdated = record?.lastUpdated ? new Date(record.lastUpdated) : null;
+  const lastUpdatedUtc = lastUpdated ? lastUpdated.toUTCString() : '—';
+  const isStale = lastUpdated ? Date.now() - lastUpdated.getTime() > STALE_MS : true;
 
   return (
     <>
@@ -102,7 +107,7 @@ export default function AnkrDashboard() {
               <Metric label="Daily cost (USD)" value={record ? record.dayCostUsd.toFixed(2) : '—'} />
               <Metric label="Monthly cost (USD)" value={record ? record.monthCostUsd.toFixed(2) : '—'} />
               <Metric label="Total calls" value={record ? record.totalCalls.toLocaleString() : '—'} />
-              <Metric label="Last updated (UTC)" value={lastUpdated} />
+              <Metric label="Last updated (UTC)" value={lastUpdatedUtc} />
               <Metric label="Data freshness" value={stale ? 'STALE (cached)' : 'Fresh'} />
             </div>
             <div className="mt-6 flex gap-3">
@@ -122,6 +127,24 @@ export default function AnkrDashboard() {
               </button>
               {loading && <span className="text-xs text-slate-400">Loading…</span>}
               {error && <span className="text-xs text-rose-300">{error}</span>}
+            </div>
+          </section>
+
+          <section
+            className="rounded-xl border border-slate-800 p-4"
+            style={{ backgroundColor: '#0B1530' }}
+          >
+            <h2 className="text-base font-semibold text-sky-300">Scheduler Status</h2>
+            <div className="mt-2 space-y-1 text-sm" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              <p className="text-slate-300">
+                Next run: <span className="text-cyan-200">{NEXT_CRON}</span>
+              </p>
+              <p className="text-slate-300">
+                Last refresh: <span className="text-cyan-200">{lastUpdatedUtc}</span>
+              </p>
+              {isStale && (
+                <p className="text-sm font-semibold text-rose-300">⚠ Data stale (older than 24 h)</p>
+              )}
             </div>
           </section>
 

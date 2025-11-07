@@ -402,24 +402,22 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
         </div>
   ) : null;
 
+  const buttonClass = address
+    ? [
+        'inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/[0.08] px-4 py-2 text-sm font-semibold text-white transition hover:border-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60A5FA] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1530]',
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')
+    : ['btn-primary', className].filter(Boolean).join(' ');
+
   return (
     <>
-      <button
-        type="button"
-        onClick={address ? handleDisconnect : handleOpenModal}
-        className={`inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-semibold transition ${
-          address
-            ? 'border-white/20 bg-white/[0.08] text-white hover:border-white hover:text-white'
-            : 'border-[#6EA8FF] bg-[#6EA8FF] text-[#0A0F1C] hover:shadow-[0_0_18px_rgba(110,168,255,0.3)]'
-        } ${className ?? ''}`.trim()}
-      >
+      <button type="button" onClick={address ? handleDisconnect : handleOpenModal} className={buttonClass}>
         {address ? `Disconnect ${buttonLabel}` : buttonLabel}
       </button>
 
-      {mounted && modalContent && ReactDOM.createPortal(
-        modalContent,
-        document.body
-      )}
+      {mounted && modalContent && ReactDOM.createPortal(modalContent, document.body)}
     </>
   );
 }

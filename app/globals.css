@@ -1,0 +1,17 @@
+:root {
+  color-scheme: dark light;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-variant-numeric: tabular-nums;
+  min-height: 100dvh;
+}
+

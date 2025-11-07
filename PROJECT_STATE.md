@@ -251,6 +251,12 @@ Expect JSON `{ nfpm, positionId, name, symbol, owner }`. Non-existent IDs or wro
 - **Rate-limit policy:** respect ANKR Advanced quotas; throttle to ≤ 6 concurrent requests, exponential backoff on error.  
 - **Docs:** see `docs/infra/ankr.md` for query examples and roadmap (enrich unknown pools/owners, nightly validation).
 
+## Monitoring — ANKR API usage
+- **API (`pages/api/admin/ankr.ts`):** fetches ANKR billing endpoint, caches responses in `data/ankr_costs.json` for 24 h, supports `?refresh=1` overrides, returns masked API key tail + history array for visualizations.
+- **Dashboard (`pages/admin/ankr.tsx`):** dark-blue admin view (Brand guardrails) showing daily/monthly cost, total calls, last updated, force-refresh controls, and a simple trend chart using cached history.
+- **Daily Ankr refresh job:** on Railway configure a scheduled HTTP call (e.g. `curl -s https://<app>.railway.app/api/admin/ankr?refresh=1`) every 24 h so the cache stays fresh without manual visits. Locally the 24 h TTL handles refreshes automatically.
+- **Scheduler script:** `scripts/scheduler/ankr-refresh.ts` — run via `node scripts/scheduler/ankr-refresh.ts` (Railway Cron @09:00 UTC) to hit `/api/admin/ankr?refresh=1` daily and persist costs to `data/ankr_costs.json`.
+
 ## Analytics: Position index (token_id)
 - **Table:** `analytics_position` (token_id TEXT PK, owner_address, pool_address, nfpm_address, first_block, last_block, first_seen_at, last_seen_at).  
 - **Purpose:** Canonical lookup of every Flare concentrated-liquidity position NFT (Ēnosys + Sparkdex) with latest ownership and pool association for downstream analytics & alerts.
@@ -345,6 +351,11 @@ Outputs:
 
 Next (accuracy): when NFPM address is stored per event/transfer, replace the first-block heuristic with address-based classification for perfect attribution.
 
+### Portfolio & Core Actions (demo API + UI)
+- **API — `/api/analytics/positions`:** paginated JSON feed backed by `analytics_position_flat` (fallback `analytics_position`). Supports `page`, `per`, `owner`, `pool`, `search` filters, clamps per 10‑200, returns `X-Total-Count` header.  
+- **UI — `/portfolio`:** Client-side page with filters (owner/pool/tokenId), pagination controls, empty/error/loading states pulling from the API for demos.  
+- **Docs:** Sidebar now points to “Portfolio & Core Actions” to guide Product/investors to the relevant roadmap section.
+
 ### Indexer — Architecture & Runbook
 - **Reference doc:** `docs/indexer/architecture.md` (streams, storage layout, integrity rules, observability).  
 - **Status:** All streams (factories, pools, NFPM, pool_state, position_reads) share the same 1,000 block window + 16-block confirmation buffer; cursors sync via `data/cursors.json`; raw NDJSON append-only with idempotent upserts.  
@@ -437,15 +448,35 @@ Next (accuracy): when NFPM address is stored per event/transfer, replace the fir
 ## Changelog — 2025-11-07
 • add scripts/dev/provider-estimate.sql — materialized view for per-provider split by first block (Sparkdex start 30617263).  
 • add scripts/dev/verify-provider-estimate.sql — KPIs for provider coverage and (optional) top owners.  
-• update PROJECT_STATE.md — provider split runbook + future NFPM-address follow-up.
-- add docs/product/feature-roadmap.md — compiled LiquiLab feature roadmap (portfolio, alerts, analytics, UX) for product planning.
-- update PROJECT_STATE.md — referenced roadmap doc under Product & Roadmap section.
+• update PROJECT_STATE.md — provider split runbook + future NFPM-address follow-up.  
+- add app/api/analytics/positions/route.ts — first analytics API for Portfolio demo (pagination, filters, total header).  
+- add app/portfolio/page.tsx — UI table hitting the new API (filters, pagination, loading/error states).  
+- update docs/_sidebar.md & public/docs/_sidebar.md — added explicit “Portfolio & Core Actions” link.  
+- add docs/product/feature-roadmap.md — compiled LiquiLab feature roadmap (portfolio, alerts, analytics, UX) for product planning.  
+- update PROJECT_STATE.md — referenced roadmap doc under Product & Roadmap section.  
+- add public/docs/indexer/architecture.md — mirrored indexer architecture doc to unblock `/docs/indexer/architecture` route.  
+- replace pages/api/mail/invoice|order|preview — stubbed mail endpoints with 503 response + `X-Mail-Stub` header for demo builds.
+- add services/topPoolsCache.ts — minimal stub so `/pages/api/pools/top.ts` can import during demo builds.
+- update tsconfig.json — broadened `@/*` alias to cover repo root + `src/` to fix Next.js resolve error.
+- add pages/api/admin/ankr.ts — cached ANKR billing endpoint powering admin dashboard.
+- add pages/admin/ankr.tsx — local dashboard for API key, usage, costs, and trend chart.
+- add data/ankr_costs.json — persisted cache backing the 24 h refresh cycle.
+- add scripts/scheduler/ankr-refresh.ts — Railway cron helper to refresh ANKR billing cache daily at 09:00 UTC.
 - scripts/dev/fix-pool-by-nfpm-viem.mts — Added NFPM.positions + Factory.getPool resolver to classify remaining tokenIds directly from chain data.
 - PROJECT_STATE.md — Documented ERC-721 resolver runbook, env keys, and operational flags under Analytics.
 - scripts/dev/backfill-tokenid-pool.sql — Added tokenId→pool backfill pipeline (strategies A/B/A′) with required indexes.
 - scripts/dev/refresh-analytics-flat.sql — Recreated analytics_position_flat materialized view (token_id, owner, pool, first/last block).
 - scripts/dev/verify-tokenid-pool.sql — Added verification queries (counts, owner/pool coverage, Enosys/Sparkdex ranges).
 - package.json — Added npm scripts to run the tokenId→pool backfill, analytics view refresh, and verification commands.
+- app/layout.tsx — (NEW) Added root layout to satisfy Next 15 App Router build requirement (portfolio route now valid).
+- app/globals.css — (NEW) Minimal brand-safe globals (antialiasing, tabular-nums, 100dvh).
+- src/indexer/lib/rateLimiter.ts — (NEW) Token bucket rate limiter for RPC throttling (configurable RPS + burst).
+- src/indexer/metrics/costMeter.ts — (NEW) Cost tracker for ANKR credits (10M credits = $1 USD; tracks eth_getLogs, eth_blockNumber, etc.).
+- src/indexer/rpcScanner.ts — Added rate limiting, adaptive block window sizing (halves on 429/too large errors, floor 250), cost tracking per window, address chunking (20 per call).
+- indexer.config.ts — Refactored to loadIndexerConfigFromEnv() with env + CLI overrides; added rpc.rps, rpc.concurrency, rpc.blockWindow, cost.creditPerUsd, cost.weights, allowlist.enabled; load from env (INDEXER_RPS, INDEXER_CONCURRENCY, INDEXER_BLOCK_WINDOW, COST_WEIGHTS_JSON, CREDIT_PER_USD, POOLS_ALLOWLIST).
+- src/indexer/indexerCore.ts — Added getCostSummary() method to expose cost metrics from scanner.
+- scripts/indexer-backfill.ts — Added CLI flags: --rps, --concurrency, --blockWindow, --cost-weights; start banner includes rps/concurrency/blockWindow/allowlistActive; final cost summary on exit.
+- scripts/indexer-follower.ts — Added same CLI flags (--rps, --concurrency, --blockWindow) for consistency.
 ### NFPM ERC-721 indexing via ANKR
 - **Env:** `ANKR_API_KEY`, `ANKR_HTTP_URL`, `ANKR_WSS_URL`, `ENOSYS_NFPM`, `SPARKDEX_NFPM`, `FLARE_CHAIN_ID`.  
 - **Client:** `scripts/ankr/ankr-client.ts` (JSON-RPC helper for Advanced API).  

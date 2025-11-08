@@ -52,9 +52,8 @@ prisma/dev.db-journal
 # Railway
 .railway
 
-# Scripts (don't need in production)
+# Scripts (REMOVED: we need indexer-follower.ts for worker!)
 scripts/testIngestion.ts
-scripts/indexer-follower.ts
 
 # README
 README.md

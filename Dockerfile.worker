@@ -1,0 +1,29 @@
+# Lightweight worker Dockerfile for Indexer (NO Next.js build)
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Copy Prisma schema (needed for prisma generate)
+COPY prisma ./prisma
+
+# Install ALL dependencies (including tsx)
+RUN npm ci
+
+# Copy source code and scripts
+COPY scripts ./scripts
+COPY src ./src
+COPY tsconfig.json ./tsconfig.json
+COPY tsconfig.worker.json ./tsconfig.worker.json
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+# Set production environment
+ENV NODE_ENV=production
+
+# Default command (can be overridden by Railway Custom Start Command)
+CMD ["npm", "run", "indexer:backfill:railway"]
+

@@ -19,6 +19,9 @@ COPY indexer.config.ts ./indexer.config.ts
 COPY tsconfig.json ./tsconfig.json
 COPY tsconfig.worker.json ./tsconfig.worker.json
 
+# Create data directory for indexer progress files
+RUN mkdir -p /app/data
+
 # Generate Prisma Client
 RUN npx prisma generate
 

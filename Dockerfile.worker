@@ -15,6 +15,7 @@ RUN npm ci
 # Copy source code and scripts
 COPY scripts ./scripts
 COPY src ./src
+COPY indexer.config.ts ./indexer.config.ts
 COPY tsconfig.json ./tsconfig.json
 COPY tsconfig.worker.json ./tsconfig.worker.json
 

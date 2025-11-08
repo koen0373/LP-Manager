@@ -13,6 +13,8 @@ const ALLOW = [
   /^\/api\/health$/,
   /^\/robots\.txt$/,
   /^\/sitemap\.xml$/,
+  /^\/admin\//,           // Allow all /admin/* routes
+  /^\/api\/admin\//,      // Allow all /api/admin/* routes
 ];
 
 export function middleware(req: NextRequest) {

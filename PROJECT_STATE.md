@@ -1,7 +1,7 @@
 # PROJECT_STATE · LiquiLab Indexer & API (Concise)
 
 > Living document for the LiquiLab Flare V3 indexer stack.  
-> Last updated: 2025-11-07. Target size ≤ 25 KB; archived snapshots live under `docs/ops/STATE_ARCHIVE/`.
+> Last updated: 2025-11-08. Target size ≤ 25 KB; archived snapshots live under `docs/ops/STATE_ARCHIVE/`.
 
 ---
 
@@ -434,6 +434,26 @@ Next (accuracy): when NFPM address is stored per event/transfer, replace the fir
 ### Analytics View (one row per NFT position)
 - Create/refresh: `psql "$PSQL_URL" -f scripts/dev/backfill-analytics-position-flat.sql && psql "$PSQL_URL" -c 'REFRESH MATERIALIZED VIEW CONCURRENTLY analytics_position_flat;'`
 - Verify: `psql "$PSQL_URL" -f scripts/dev/verify-analytics-position-flat.sql`
+
+## Changelog — 2025-11-08
+• **ERC-721 Full Indexing** — Completed full historical backfill of all ERC-721 Transfer events from both Enosys V3 NFPM (`0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657`) and SparkDEX V3 NFPM (`0xEE5FF5Bc5F852764b5584d92A4d592A53DC527da`). Total: 41,777 transfers, 24,432 unique NFT positions, 40,195 MINTs, 532 BURNs. Indexed locally using ANKR RPC (fast) and written directly to Railway Postgres (yamabiko). Earliest block: 29,989,866 (2025-04-13), latest: 50,289,944 (current).
+• **Railway Database Migration** — Successfully migrated from crashed 500MB database (Postgres dc2e) to new 50GB database (yamabiko). Used external proxy URL for local indexing: `postgresql://postgres:tFXzfPtgqJpXOKbGBEiYeAstRdRdqAVF@yamabiko.proxy.rlwy.net:54929/railway`.
+• **Indexer Follower Setup** — Added `indexer:follow:railway` npm script for continuous following using Flare Public RPC (free). Railway service configured with `Dockerfile.worker`, custom start command `npm run indexer:follow:railway`, and environment variables for both NFPMs.
+• **RAILWAY_INDEXER_SETUP.md** — Created comprehensive deployment guide for Railway Indexer Follower service, including environment variables, troubleshooting, verification queries, and known issues (single NFPM scan limitation).
+• **package.json** — Added `indexer:follow:railway` script: `tsx scripts/indexer-follower.ts --stream=nfpm`.
+• **PROJECT_STATE.md** — Updated last modified date to 2025-11-08, added changelog entry for ERC-721 indexing completion and Railway setup.
+
+**Database Status (2025-11-08):**
+- 41,777 total transfers (Enosys + SparkDEX)
+- 24,432 unique NFT positions
+- 6,380 unique wallets
+- Block range: 29,989,866 → 50,289,944
+- Top wallet: `0xf406b4E97c31420D91fBa42a3a9D8cfe47BF710b` (501 transfers)
+
+**Next Steps:**
+1. Deploy Indexer Follower to Railway with Flare Public RPC
+2. Monitor for 1 hour to ensure stability
+3. Consider enhancing indexer to scan both NFPMs simultaneously (currently single contract per run)
 
 ## Changelog — 2025-11-07
 • add scripts/dev/provider-estimate.sql — materialized view for per-provider split by first block (Sparkdex start 30617263).  

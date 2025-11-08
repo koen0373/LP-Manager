@@ -1,26 +1,16 @@
 # PROJECT_STATE · LiquiLab Indexer & API (Concise)
 
 > Living document for the LiquiLab Flare V3 indexer stack.  
-> Last updated: 2025-11-06. Target size ≤ 25 KB; archived snapshots live under `docs/ops/STATE_ARCHIVE/`.
+> Last updated: 2025-11-07. Target size ≤ 25 KB; archived snapshots live under `docs/ops/STATE_ARCHIVE/`.
 
 ---
 
 ## 1. Indexer Overview
-- **Purpose:** Consolidated Flare V3 pipeline that ingests raw Ēnosys/SparkDEX NonfungiblePositionManager and pool-contract events, enriches them into analytics-ready tables, and powers LiquiLab pool dashboards plus market reports.
-- **Scope:**  
-  - Ēnosys + SparkDEX concentrated-liquidity pools on Flare mainnet.  
-  - Streams:  
-    • `factories` → `PoolCreated`/`CreatePool` (pool discovery)  
-    • `nfpm` → Mint / Increase / Decrease / Collect / Transfer (position lifecycle)  
-    • `pools` → Swap / Mint / Burn / Collect (pool-level flow)  
-    • `pool_state` → slot0/liquidity/feeGrowth snapshots (per window)  
-    • `position_reads` → `positions(tokenId)` as-of block snapshots
-- **Architecture (text diagram):**  
-  `CLI (backfill | follower)` → `IndexerCore` → `RpcScanner` → `Event Decoders (factoryScanner | poolScanner | nfpm decoder | state readers)` → `DbWriter` → `Postgres (PoolEvent | PositionEvent | analytics_*)`.
-- **Run modes:**  
-  - **Backfill:** deterministic block windows, re-run friendly, supports stream selection via `--streams=...`.  
-  - **Follower:** 12 s polling tail with confirmation depth=2; sequential stream execution (factories → nfpm → pools) when factory flag supplied.
-- **Data lifecycle:** raw NDJSON shards (180-day retention) → enriched JSON → Postgres (authoritative) → analytics materializations & APIs.
+- **Purpose:** Consolidated Flare V3 pipeline that ingests raw Ēnosys/Sparkdex NonfungiblePositionManager/pool events, enriches them, and feeds LiquiLab dashboards.
+- **Mode (2025-11-07):** **Flare public RPC** (switched from ANKR to `https://flare-api.flare.network/ext/bc/C/rpc` to eliminate credit costs). Middleware gate funnels all traffic to `/placeholder` until demo cookie set; `/placeholder` password is **Demo88**. Admin dashboards: `/admin/ankr` (cache-only stats) and `/admin/db` (table explorer, confirmation pending).
+- **Architecture:** `CLI (backfill | follower)` → `IndexerCore` → `RpcScanner` → `Decoders (factory | pool | nfpm | state)` → `DbWriter` → Postgres (`PoolEvent`, `PositionEvent`, analytics tables). Streams still match Ēnosys/Sparkdex pools + NFPM + pool_state + position_reads.
+- **Run modes:** Backfill (deterministic windows, stream-selectable) + follower tailer (12 s cadence, confirmation depth=2). Data lifecycle: raw NDJSON (180 d) → enriched JSON → Postgres (authoritative) → dashboards/APIs.
+- **Routing:** Pure Pages Router (Next.js 15). Mixed App Router conflicts were resolved by removing `app/` directory and consolidating all API routes under `pages/api/`.
 
 ---
 
@@ -254,8 +244,8 @@ Expect JSON `{ nfpm, positionId, name, symbol, owner }`. Non-existent IDs or wro
 ## Monitoring — ANKR API usage
 - **API (`pages/api/admin/ankr.ts`):** fetches ANKR billing endpoint, caches responses in `data/ankr_costs.json` for 24 h, supports `?refresh=1` overrides, returns masked API key tail + history array for visualizations.
 - **Dashboard (`pages/admin/ankr.tsx`):** dark-blue admin view (Brand guardrails) showing daily/monthly cost, total calls, last updated, force-refresh controls, and a simple trend chart using cached history.
-- **Daily Ankr refresh job:** on Railway configure a scheduled HTTP call (e.g. `curl -s https://<app>.railway.app/api/admin/ankr?refresh=1`) every 24 h so the cache stays fresh without manual visits. Locally the 24 h TTL handles refreshes automatically.
-- **Scheduler script:** `scripts/scheduler/ankr-refresh.ts` — run via `node scripts/scheduler/ankr-refresh.ts` (Railway Cron @09:00 UTC) to hit `/api/admin/ankr?refresh=1` daily and persist costs to `data/ankr_costs.json`.
+- **Daily Ankr refresh job:** EasyCron hits `https://app.liquilab.io/api/admin/ankr?refresh=1` every day at **04:40 Europe/Amsterdam** (account timezone) so the cache stays fresh without manual visits. Railway fallback command: `node scripts/scheduler/ankr-refresh.ts`.
+- **Scheduler script:** `scripts/scheduler/ankr-refresh.ts` — manual helper for Railway cron / local runs (invokes `/api/admin/ankr?refresh=1` and logs success/failure).
 
 ## Analytics: Position index (token_id)
 - **Table:** `analytics_position` (token_id TEXT PK, owner_address, pool_address, nfpm_address, first_block, last_block, first_seen_at, last_seen_at).  
@@ -462,6 +452,7 @@ Next (accuracy): when NFPM address is stored per event/transfer, replace the fir
 - add pages/admin/ankr.tsx — local dashboard for API key, usage, costs, and trend chart.
 - add data/ankr_costs.json — persisted cache backing the 24 h refresh cycle.
 - add scripts/scheduler/ankr-refresh.ts — Railway cron helper to refresh ANKR billing cache daily at 09:00 UTC.
+- PROJECT_STATE.md — Captured Flare-only mode, placeholder/password gate, admin endpoints, EasyCron schedule, and open verification items.
 - scripts/dev/fix-pool-by-nfpm-viem.mts — Added NFPM.positions + Factory.getPool resolver to classify remaining tokenIds directly from chain data.
 - PROJECT_STATE.md — Documented ERC-721 resolver runbook, env keys, and operational flags under Analytics.
 - scripts/dev/backfill-tokenid-pool.sql — Added tokenId→pool backfill pipeline (strategies A/B/A′) with required indexes.
@@ -493,14 +484,20 @@ Next (accuracy): when NFPM address is stored per event/transfer, replace the fir
   - Materialized view reports `transfer_events >= 1` for all active tokens.  
   - `/tmp` exports from verify script clean (manual `COPY` optional).
 
-## Known Issues / Gotchas
-- P1013 invalid port / DSN errors: check for stray spaces or broken query string; prefer `DATABASE_URL="postgresql://koen@localhost:5432/liquilab?schema=public"`.
-- `role "postgres" does not exist`: use `koen` role locally (or create `postgres`).
-- Regex in psql must be single-quoted: `WHERE "amount0" ~ '^-?[0-9]+-[0-9]+$'`.
-- Pools runner is idempotent; no writes if already processed.
-- Concurrency is adaptive (max 12); `--rps=8` is safe on ANKR.
+- **Known Issues / Gotchas**
+  - P1013 invalid port / DSN errors: check for stray spaces or broken query string; prefer `DATABASE_URL="postgresql://koen@localhost:5432/liquilab?schema=public"`.
+  - `role "postgres" does not exist`: use `koen` role locally (or create `postgres`).
+  - Regex in psql must be single-quoted: `WHERE "amount0" ~ '^-?[0-9]+-[0-9]+$'`.
+  - Pools runner is idempotent; no writes if already processed.
+  - Concurrency is adaptive (max 12); `--rps=8` is safe on ANKR.
+  - **ERC-721 NFPM transfers** not yet observed in latest backfill window — re-run NFPM stream (from block ~25,000,000) and confirm addresses.
+  - **Pools indexer progress file** (`data/indexer.progress.json`) not confirmed in recent short runs — kick small pools backfill and verify it writes.
 
 ## Open Actions
+- [P1] Verify `/admin/db` returns table list & rows in production (app router implementation live but pending confirmation).
+- [P1] Re-run ERC-721 backfill with wider cursor (start ≤25,000,000) and confirm NFPM addresses + transfers emitted.
+- [P2] Kick short pools-indexer scan and confirm `data/indexer.progress.json` is created/updated.
+- [P3] Add health row on `/admin/ankr` exposing last cron execution result.
 - [ ] Persist NFPM emitter address into PositionEvent/PositionTransfer and re-classify without heuristic.
 - [ ] Improve pool matching for positions with pool_address IS NULL (txHash+ticks join & NFPM read).
 - [ ] Add materialized view analytics_pool_24h once position table is stable.
@@ -546,6 +543,23 @@ Next (accuracy): when NFPM address is stored per event/transfer, replace the fir
 - scripts/dev/verify-tokenid-pool.sql — (NEW) Verification queries: PositionTransfer/PositionEvent counts, analytics_position_flat summary, top 10 owners/pools, CSV exports to /tmp.
 - package.json — Added npm scripts: sql:backfill:tokenid-pool, sql:refresh:analytics-flat, sql:verify:tokenid-pool.
 - PROJECT_STATE.md — Added tokenId→pool backfill runbook under "Analytics: Position index (token_id)" with npm run commands and success criteria.
+
+## Changelog — 2025-11-07
+• .env.local — Switched FLARE_RPC_URL from ANKR (`https://rpc.ankr.com/flare/...`) to Flare public RPC (`https://flare-api.flare.network/ext/bc/C/rpc`) to eliminate ANKR credit costs.
+• indexer.config.ts — Already reads FLARE_RPC_URL from env; no code changes required.
+• pages/api/analytics/positions.ts — Replaced old placeholder implementation with full analytics API (migrated from app/api/analytics/positions/route.ts). Supports pagination, filters (owner, pool, search), X-Total-Count header, fallback from analytics_position_flat → analytics_position.
+• app/ directory — Deleted entire App Router directory to resolve Next.js 15 mixed routing conflicts (duplicate API routes, 500 errors on homepage/demo/pricing).
+• PROJECT_STATE.md — Updated indexer overview with Flare public RPC and routing architecture (pure Pages Router).
+• Test results — Verified /, /demo, /pricing, /api/analytics/positions all return 200 with no runtime errors.
+
+**Recommended indexer settings for Flare public RPC:**
+```bash
+export INDEXER_RPS=3
+export INDEXER_CONCURRENCY=4
+export INDEXER_BLOCK_WINDOW=500
+```
+
+**Railway worker update:** Set FLARE_RPC_URL, INDEXER_RPS, INDEXER_CONCURRENCY, INDEXER_BLOCK_WINDOW in Railway dashboard env vars.
 
 ---
 

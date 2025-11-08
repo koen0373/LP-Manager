@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/server/db';
 
@@ -60,27 +60,26 @@ async function queryTable(
   return { items, total: Number(count ?? 0) };
 }
 
-export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const params = url.searchParams;
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { query } = req;
 
-  const pageParam = Number(params.get('page'));
-  const perParam = Number(params.get('per'));
+  const pageParam = Number(query.page);
+  const perParam = Number(query.per);
 
   const page = Number.isFinite(pageParam) && pageParam > 0 ? Math.floor(pageParam) : DEFAULT_PAGE;
   let per = Number.isFinite(perParam) && perParam > 0 ? Math.floor(perParam) : DEFAULT_PER;
   per = Math.max(MIN_PER, Math.min(MAX_PER, per));
   const offset = (page - 1) * per;
 
-  const owner = normalizeAddress(params.get('owner'));
-  const pool = normalizeAddress(params.get('pool'));
-  const search = normalizeTokenId(params.get('search'));
+  const owner = normalizeAddress(query.owner as string);
+  const pool = normalizeAddress(query.pool as string);
+  const search = normalizeTokenId(query.search as string);
 
-  if (params.get('owner') && !owner) {
-    return NextResponse.json({ error: 'Invalid owner address' }, { status: 400 });
+  if (query.owner && !owner) {
+    return res.status(400).json({ error: 'Invalid owner address' });
   }
-  if (params.get('pool') && !pool) {
-    return NextResponse.json({ error: 'Invalid pool address' }, { status: 400 });
+  if (query.pool && !pool) {
+    return res.status(400).json({ error: 'Invalid pool address' });
   }
 
   const filters: Prisma.Sql[] = [];
@@ -94,17 +93,16 @@ export async function GET(req: Request) {
   for (const source of sources) {
     try {
       const { items, total } = await queryTable(source, whereClause, orderClause, per, offset);
-      const res = NextResponse.json({ items, page, per, total });
-      res.headers.set('X-Total-Count', total.toString());
-      return res;
+      res.setHeader('X-Total-Count', total.toString());
+      return res.status(200).json({ items, page, per, total });
     } catch (err) {
       if (!isMissingViewError(err) || source === sources[sources.length - 1]) {
         console.error('[analytics positions] failed', err);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return res.status(500).json({ error: 'Internal Server Error' });
       }
       // else loop continues to fallback table
     }
   }
 
-  return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  return res.status(500).json({ error: 'Internal Server Error' });
 }

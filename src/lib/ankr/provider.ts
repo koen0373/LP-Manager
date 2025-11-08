@@ -15,7 +15,7 @@ import { AnkrProvider } from '@ankr.com/ankr.js';
 // Initialize with your multichain endpoint
 const ANKR_MULTICHAIN_URL = 
   process.env.ANKR_ADVANCED_API_URL || 
-  `https://rpc.ankr.com/multichain/${process.env.ANKR_API_KEY || 'cee6b4f8866b7f8afa826f378953ae26eaa74fd174d1d282460e0fbad2b35b01'}`;
+  `https://flare-api.flare.network/ext/C/rpc || 'cee6b4f8866b7f8afa826f378953ae26eaa74fd174d1d282460e0fbad2b35b01'}`;
 
 let cachedProvider: AnkrProvider | null = null;
 

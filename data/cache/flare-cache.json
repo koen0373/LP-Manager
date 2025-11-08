@@ -1,0 +1,10 @@
+{
+  "eth_blockNumber:[]": {
+    "ts": "2025-11-07T13:22:21.336Z",
+    "result": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": "0x2fea24b"
+    }
+  }
+}

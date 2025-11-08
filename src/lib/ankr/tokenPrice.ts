@@ -67,7 +67,7 @@ interface AnkrTokenPriceHistoryResponse {
 }
 
 const ANKR_MULTICHAIN_ENDPOINT = process.env.ANKR_ADVANCED_API_URL || 
-  `https://rpc.ankr.com/multichain/${process.env.ANKR_API_KEY || ''}`;
+  `https://flare-api.flare.network/ext/C/rpc || ''}`;
 
 const FLARE_BLOCKCHAIN_ID = 'flare';
 

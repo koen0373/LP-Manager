@@ -34,7 +34,7 @@ export class AnkrClient {
     this.baseUrl =
       config.baseUrl && config.baseUrl.length > 0
         ? config.baseUrl
-        : `https://rpc.ankr.com/multichain/${config.apiKey}`;
+        : `https://flare-api.flare.network/ext/C/rpc
   }
 
   private async request<T>(method: string, params: JsonRpcParams): Promise<T> {

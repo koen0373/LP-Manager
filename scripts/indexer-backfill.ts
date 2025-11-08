@@ -239,6 +239,9 @@ async function writeStartProgress(payload: StartLogPayload): Promise<void> {
     updatedAt: new Date().toISOString(),
     ...payload,
   };
+  // Ensure data directory exists
+  const dir = path.dirname(PROGRESS_PATH);
+  await fs.mkdir(dir, { recursive: true });
   await fs.writeFile(PROGRESS_PATH, JSON.stringify(body, null, 2), 'utf8');
 }
 

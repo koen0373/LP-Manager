@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross-DEX Liquidity Provider Analysis - LiquiLab Research</title>
+    <style>
+        @page {
+            margin: 2cm;
+            size: A4;
+        }
+        
+        @media print {
+            .no-print { display: none; }
+            body { font-size: 10pt; }
+            h1 { font-size: 20pt; page-break-before: always; }
+            h2 { font-size: 16pt; page-break-after: avoid; }
+            h3 { font-size: 14pt; }
+            table { page-break-inside: avoid; }
+            pre, code { page-break-inside: avoid; }
+        }
+        
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #fff;
+        }
+        
+        .cover {
+            text-align: center;
+            padding: 100px 20px;
+            page-break-after: always;
+        }
+        
+        .cover h1 {
+            color: #00B8D4;
+            font-size: 36pt;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .cover h2 {
+            color: #0097A7;
+            font-size: 24pt;
+            margin-bottom: 40px;
+            font-weight: normal;
+        }
+        
+        .cover .meta {
+            color: #666;
+            font-size: 14pt;
+            margin-top: 40px;
+        }
+        
+        h1 {
+            color: #00B8D4;
+            border-bottom: 3px solid #00B8D4;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+        
+        h2 {
+            color: #0097A7;
+            border-bottom: 2px solid #B2EBF2;
+            padding-bottom: 8px;
+            margin-top: 30px;
+        }
+        
+        h3 {
+            color: #00838F;
+            margin-top: 24px;
+        }
+        
+        h4 {
+            color: #006064;
+            margin-top: 20px;
+        }
+        
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        th {
+            background: linear-gradient(135deg, #00B8D4 0%, #0097A7 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #E0F7FA;
+        }
+        
+        tr:hover {
+            background-color: #E0F7FA;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #F5F5F5;
+        }
+        
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            color: #d14;
+        }
+        
+        pre {
+            background-color: #f8f8f8;
+            border-left: 4px solid #00B8D4;
+            padding: 15px;
+            overflow-x: auto;
+            border-radius: 4px;
+        }
+        
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        
+        blockquote {
+            border-left: 4px solid #00B8D4;
+            padding-left: 20px;
+            margin-left: 0;
+            color: #666;
+            font-style: italic;
+        }
+        
+        hr {
+            border: none;
+            border-top: 2px solid #B2EBF2;
+            margin: 40px 0;
+        }
+        
+        a {
+            color: #00B8D4;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .highlight {
+            background-color: #FFFFCC;
+            padding: 2px 4px;
+        }
+        
+        .callout {
+            background: #E0F7FA;
+            border-left: 4px solid #00B8D4;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .callout strong {
+            color: #00838F;
+        }
+        
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        
+        li {
+            margin: 8px 0;
+        }
+        
+        .footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px solid #B2EBF2;
+            color: #666;
+            font-size: 0.9em;
+            text-align: center;
+        }
+        
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #00B8D4;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            font-size: 14pt;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+        
+        .print-button:hover {
+            background: #0097A7;
+        }
+        
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 20px 10px;
+            }
+            
+            .cover h1 {
+                font-size: 24pt;
+            }
+            
+            .cover h2 {
+                font-size: 18pt;
+            }
+            
+            table {
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button no-print" onclick="window.print()">📄 Print to PDF</button>
+    
+    <div class="cover">
+        <h1>Cross-DEX Liquidity Provider Analysis</h1>
+        <h2>Flare Network V3 Ecosystem Research Report</h2>
+        <div class="meta">
+            <p><strong>LiquiLab Research Team</strong></p>
+            <p>November 2025</p>
+            <p>$58.9M TVL • 74,857 Positions • 8,594 Wallets Analyzed</p>
+        </div>
+    </div>
+    
+    <!-- The markdown content will be inserted here by pandoc -->
+    
+    <div class="footer">
+        <p><strong>© 2025 LiquiLab.</strong> All rights reserved.</p>
+        <p>Data sourced from Flare Network public blockchain via DefiLlama and on-chain analysis.</p>
+        <p>For the latest data and real-time analytics, visit <a href="https://app.liquilab.io">app.liquilab.io</a></p>
+        <hr style="margin: 20px auto; width: 50%; border-color: #ccc;">
+        <p style="font-size: 0.8em; color: #999;">
+            <strong>Disclaimer:</strong> This report is provided for informational purposes only. 
+            Past performance does not guarantee future results. 
+            Cryptocurrency investments carry significant risk.
+        </p>
+    </div>
+    
+    <script>
+        // Add print-friendly page breaks for headers
+        document.querySelectorAll('h1').forEach(h1 => {
+            if (h1.textContent !== 'Cross-DEX Liquidity Provider Analysis') {
+                h1.style.pageBreakBefore = 'always';
+            }
+        });
+        
+        // Enhance tables for mobile
+        document.querySelectorAll('table').forEach(table => {
+            table.style.overflowX = 'auto';
+            table.style.display = 'block';
+        });
+    </script>
+</body>
+</html>
+

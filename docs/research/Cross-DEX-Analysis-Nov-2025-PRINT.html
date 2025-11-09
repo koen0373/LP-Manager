@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross-DEX Liquidity Provider Analysis - LiquiLab Research</title>
+    <style>
+        @page { margin: 2cm; size: A4; }
+        @media print {
+            .no-print { display: none; }
+            h1 { page-break-before: always; }
+            h2, h3 { page-break-after: avoid; }
+            table, pre { page-break-inside: avoid; }
+        }
+        body {
+            font-family: 'Georgia', serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .cover {
+            text-align: center;
+            padding: 100px 20px;
+            page-break-after: always;
+        }
+        .cover h1 {
+            color: #00B8D4;
+            font-size: 36pt;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #00B8D4;
+            border-bottom: 3px solid #00B8D4;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #0097A7;
+            border-bottom: 2px solid #B2EBF2;
+            padding-bottom: 8px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+        th {
+            background: #00B8D4;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        tr:hover { background-color: #f5f5f5; }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        pre {
+            background-color: #f8f8f8;
+            border-left: 4px solid #00B8D4;
+            padding: 15px;
+        }
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #00B8D4;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            font-size: 14pt;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button no-print" onclick="window.print()">📄 Save as PDF</button>
+    
+    <div class="cover">
+        <h1>Cross-DEX Liquidity Provider Analysis</h1>
+        <h2 style="color: #0097A7; font-size: 24pt;">Flare Network V3 Ecosystem Research Report</h2>
+        <div style="margin-top: 40px; color: #666;">
+            <p><strong>LiquiLab Research Team</strong></p>
+            <p>November 2025</p>
+            <p>$58.9M TVL • 74,857 Positions • 8,594 Wallets Analyzed</p>
+        </div>
+    </div>
+<body>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#liquilab-market-research-report"
+id="toc-liquilab-market-research-report">LiquiLab Market Research
+Report</a>
+<ul>
+<li><a href="#cross-dex-liquidity-provider-analysis"
+id="toc-cross-dex-liquidity-provider-analysis">Cross-DEX Liquidity
+Provider Analysis</a></li>
+<li><a href="#executive-summary" id="toc-executive-summary">Executive
+Summary</a></li>
+<li><a href="#market-overview" id="toc-market-overview">Market
+Overview</a></li>
+<li><a href="#cross-dex-user-segmentation"
+id="toc-cross-dex-user-segmentation">Cross-DEX User
+Segmentation</a></li>
+<li><a href="#the-cross-dex-phenomenon"
+id="toc-the-cross-dex-phenomenon">The Cross-DEX Phenomenon</a></li>
+<li><a href="#power-user-analysis" id="toc-power-user-analysis">Power
+User Analysis</a></li>
+<li><a href="#lp-strategy-apr-analysis"
+id="toc-lp-strategy-apr-analysis">LP Strategy &amp; APR
+Analysis</a></li>
+<li><a href="#market-insights-implications"
+id="toc-market-insights-implications">Market Insights &amp;
+Implications</a></li>
+<li><a href="#strategic-recommendations"
+id="toc-strategic-recommendations">Strategic Recommendations</a></li>
+<li><a href="#technical-methodology"
+id="toc-technical-methodology">Technical Methodology</a></li>
+<li><a href="#about-liquilab" id="toc-about-liquilab">About
+LiquiLab</a></li>
+<li><a href="#contact-further-information"
+id="toc-contact-further-information">Contact &amp; Further
+Information</a></li>
+<li><a href="#appendix-additional-statistics"
+id="toc-appendix-additional-statistics">Appendix: Additional
+Statistics</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="liquilab-market-research-report">LiquiLab Market Research
+Report</h1>
+<h2 id="cross-dex-liquidity-provider-analysis">Cross-DEX Liquidity
+Provider Analysis</h2>
+<p><strong>Flare Network V3 Ecosystem | November 2025</strong></p>
+<hr />
+<h2 id="executive-summary">Executive Summary</h2>
+<p>This report analyzes liquidity provider behavior across Flare
+Network’s two major V3 DEXes: <strong>Enosys</strong> and
+<strong>SparkDEX</strong>. Based on comprehensive on-chain data covering
+<strong>$58.9M in Total Value Locked (TVL)</strong>, <strong>74,857
+unique positions</strong> across <strong>8,594 unique wallets</strong>,
+we reveal patterns of cross-platform engagement and identify the
+network’s most active liquidity providers.</p>
+<h3 id="key-findings">Key Findings</h3>
+<ul>
+<li><strong>$58.9M</strong> in combined TVL across 238 active pools
+(SparkDEX: $52.2M, Enosys: $6.7M)</li>
+<li><strong>8.9%</strong> of liquidity providers use both Enosys and
+SparkDEX</li>
+<li>Cross-DEX users hold <strong>34.6%</strong> of all liquidity
+positions despite being &lt;9% of users</li>
+<li>Cross-DEX wallets average <strong>34.1 positions</strong>
+vs. <strong>8.7</strong> for single-DEX users<br />
+</li>
+<li>Top 10 cross-DEX users control <strong>6.3%</strong> of the entire
+network’s liquidity positions</li>
+<li>Average position size: <strong>$787</strong> (SparkDEX: $1,035,
+Enosys: $274)</li>
+</ul>
+<hr />
+<h2 id="market-overview">Market Overview</h2>
+<h3 id="total-liquidity-ecosystem">Total Liquidity Ecosystem</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Total Value Locked (TVL)</strong></td>
+<td><strong>$58.9M</strong></td>
+</tr>
+<tr>
+<td><strong>Total Unique Positions</strong></td>
+<td>74,857</td>
+</tr>
+<tr>
+<td><strong>Total Position Transfers</strong></td>
+<td>86,344</td>
+</tr>
+<tr>
+<td><strong>Total Active Pools</strong></td>
+<td>238</td>
+</tr>
+<tr>
+<td><strong>Unique Wallet Addresses</strong></td>
+<td>8,594</td>
+</tr>
+<tr>
+<td><strong>Data Coverage</strong></td>
+<td>Blocks 29,837,200 → 50,303,055</td>
+</tr>
+<tr>
+<td><strong>Time Period</strong></td>
+<td>April 2024 → November 2025</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dex-market-share">DEX Market Share</h3>
+<pre><code>┌─────────────┬────────────┬─────────────┬──────────────┬─────────────┐
+│ DEX         │ Positions  │ Transfers   │ Market Share │ TVL         │
+├─────────────┼────────────┼─────────────┼──────────────┼─────────────┤
+│ SparkDEX    │   50,421   │   60,563    │    67.4%     │  $52.2M     │
+│ Enosys      │   24,435   │   25,780    │    32.6%     │   $6.7M     │
+│ Unknown     │      1     │      1      │    &lt;0.1%     │     -       │
+├─────────────┼────────────┼─────────────┼──────────────┼─────────────┤
+│ TOTAL       │   74,857   │   86,344    │    100%      │  $58.9M     │
+└─────────────┴────────────┴─────────────┴──────────────┴─────────────┘</code></pre>
+<p><strong>Analysis:</strong> SparkDEX dominates with 2:1 position
+advantage <strong>and 7.8:1 TVL advantage</strong>, indicating
+significantly deeper liquidity per position. SparkDEX’s $52.2M TVL
+represents <strong>88.6%</strong> of the Flare V3 ecosystem’s total
+locked value.</p>
+<hr />
+<h2 id="cross-dex-user-segmentation">Cross-DEX User Segmentation</h2>
+<h3 id="wallet-distribution-by-platform-usage">Wallet Distribution by
+Platform Usage</h3>
+<table>
+<thead>
+<tr>
+<th>Segment</th>
+<th>Wallets</th>
+<th>Percentage</th>
+<th>Avg Positions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>🔥 Cross-DEX Users</strong></td>
+<td>761</td>
+<td>8.9%</td>
+<td>34.1</td>
+</tr>
+<tr>
+<td><strong>🟣 SparkDEX Only</strong></td>
+<td>6,829</td>
+<td>79.5%</td>
+<td>7.4</td>
+</tr>
+<tr>
+<td><strong>🔵 Enosys Only</strong></td>
+<td>1,004</td>
+<td>11.7%</td>
+<td>24.3</td>
+</tr>
+<tr>
+<td><strong>TOTAL</strong></td>
+<td><strong>8,594</strong></td>
+<td><strong>100%</strong></td>
+<td><strong>8.7</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="visual-breakdown">Visual Breakdown</h3>
+<pre><code>                 LIQUIDITY PROVIDER SEGMENTATION
+                 
+    ┌─────────────────────────────────────────────────────┐
+    │                                                     │
+    │  SparkDEX Only: 79.5% (6,829 wallets)             │
+    │  ████████████████████████████████████████████████████████████
+    │                                                     │
+    │  Enosys Only: 11.7% (1,004 wallets)               │
+    │  ████████                                          │
+    │                                                     │
+    │  Cross-DEX: 8.9% (761 wallets)                    │
+    │  ███████                                           │
+    │                                                     │
+    └─────────────────────────────────────────────────────┘</code></pre>
+<hr />
+<h2 id="the-cross-dex-phenomenon">The Cross-DEX Phenomenon</h2>
+<h3 id="profile-of-cross-platform-users">Profile of Cross-Platform
+Users</h3>
+<p><strong>761 wallets</strong> (8.9% of all LPs) actively use
+<strong>both</strong> Enosys and SparkDEX. These users demonstrate:</p>
+<h4 id="engagement-metrics">Engagement Metrics</h4>
+<table>
+<colgroup>
+<col style="width: 27%" />
+<col style="width: 24%" />
+<col style="width: 48%" />
+</colgroup>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+<th>Significance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Total Positions Held</strong></td>
+<td>25,898</td>
+<td>34.6% of network total</td>
+</tr>
+<tr>
+<td><strong>Estimated TVL</strong></td>
+<td><strong>~$20.4M</strong></td>
+<td><strong>34.6% of $58.9M ecosystem</strong></td>
+</tr>
+<tr>
+<td><strong>Avg TVL per Wallet</strong></td>
+<td><strong>$26,800</strong></td>
+<td>3.4× network average ($7,850)</td>
+</tr>
+<tr>
+<td><strong>Avg Enosys Positions</strong></td>
+<td>21.7</td>
+<td>3.9× higher than Enosys-only users</td>
+</tr>
+<tr>
+<td><strong>Avg SparkDEX Positions</strong></td>
+<td>12.4</td>
+<td>1.7× higher than SparkDEX-only users</td>
+</tr>
+<tr>
+<td><strong>Total Avg Positions</strong></td>
+<td>34.1</td>
+<td>3.9× higher than network average</td>
+</tr>
+</tbody>
+</table>
+<h4 id="strategic-behavior">Strategic Behavior</h4>
+<p>Cross-DEX users exhibit <strong>sophisticated portfolio
+management</strong>:</p>
+<ul>
+<li><strong>Platform Diversification:</strong> Spreading risk across
+multiple protocols</li>
+<li><strong>Yield Optimization:</strong> Capturing best rates on both
+platforms</li>
+<li><strong>Early Adoption:</strong> 75% Enosys weighting suggests early
+V3 participation</li>
+<li><strong>High Activity:</strong> 3.9× more positions than average
+user</li>
+</ul>
+<h3 id="position-distribution-across-platforms">Position Distribution
+Across Platforms</h3>
+<pre><code>    Cross-DEX Users&#39; Position Allocation
+    
+    Enosys:   ████████████████████ 63.8% (16,508 positions)
+    SparkDEX: ███████████ 36.2% (9,390 positions)
+    
+    Total: 25,898 positions (34.6% of network)</code></pre>
+<hr />
+<h2 id="power-user-analysis">Power User Analysis</h2>
+<h3 id="top-10-cross-dex-liquidity-providers">Top 10 Cross-DEX Liquidity
+Providers</h3>
+<table>
+<colgroup>
+<col style="width: 8%" />
+<col style="width: 22%" />
+<col style="width: 11%" />
+<col style="width: 14%" />
+<col style="width: 9%" />
+<col style="width: 14%" />
+<col style="width: 19%" />
+</colgroup>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Wallet Address</th>
+<th>Enosys</th>
+<th>SparkDEX</th>
+<th>Total</th>
+<th>Est. TVL</th>
+<th>% of Network</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>🥇 1</td>
+<td>0xf406…710b</td>
+<td>944</td>
+<td>24</td>
+<td><strong>968</strong></td>
+<td><strong>~$762K</strong></td>
+<td>1.29%</td>
+</tr>
+<tr>
+<td>🥈 2</td>
+<td>0xae6f…6528</td>
+<td>884</td>
+<td>47</td>
+<td><strong>931</strong></td>
+<td><strong>~$733K</strong></td>
+<td>1.24%</td>
+</tr>
+<tr>
+<td>🥉 3</td>
+<td>0x0000…dead</td>
+<td>505</td>
+<td>100</td>
+<td><strong>605</strong></td>
+<td><strong>~$476K</strong></td>
+<td>0.81%</td>
+</tr>
+<tr>
+<td>4</td>
+<td>0x6e3e…d229</td>
+<td>573</td>
+<td>7</td>
+<td>580</td>
+<td>~$456K</td>
+<td>0.77%</td>
+</tr>
+<tr>
+<td>5</td>
+<td>0x1672…dc0c</td>
+<td>402</td>
+<td>8</td>
+<td>410</td>
+<td>~$323K</td>
+<td>0.55%</td>
+</tr>
+<tr>
+<td>6</td>
+<td>0x8183…1f4d</td>
+<td>399</td>
+<td>8</td>
+<td>407</td>
+<td>~$320K</td>
+<td>0.54%</td>
+</tr>
+<tr>
+<td>7</td>
+<td>0xf522…1aaa</td>
+<td>336</td>
+<td>69</td>
+<td>405</td>
+<td>~$319K</td>
+<td>0.54%</td>
+</tr>
+<tr>
+<td>8</td>
+<td>0x9b77…3792</td>
+<td>382</td>
+<td>2</td>
+<td>384</td>
+<td>~$302K</td>
+<td>0.51%</td>
+</tr>
+<tr>
+<td>9</td>
+<td>0xdad9…abd8</td>
+<td>300</td>
+<td>32</td>
+<td>332</td>
+<td>~$261K</td>
+<td>0.44%</td>
+</tr>
+<tr>
+<td>10</td>
+<td>0xb3ba…abbb</td>
+<td>306</td>
+<td>23</td>
+<td>329</td>
+<td>~$259K</td>
+<td>0.44%</td>
+</tr>
+<tr>
+<td><strong>Top 10 Total</strong></td>
+<td></td>
+<td><strong>5,031</strong></td>
+<td><strong>320</strong></td>
+<td><strong>5,351</strong></td>
+<td><strong>~$4.2M</strong></td>
+<td><strong>7.15%</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="whale-concentration">Whale Concentration</h3>
+<ul>
+<li><strong>Top 2 Wallets</strong> control <strong>$1.5M</strong> (2.54%
+of network TVL)</li>
+<li><strong>Top 10 Wallets</strong> control <strong>$4.2M</strong>
+(7.15% of network TVL)</li>
+<li><strong>Average Top 10 TVL:</strong> $420K per wallet (15.7× network
+average)</li>
+<li><strong>Enosys Preference:</strong> Top 10 average 94% Enosys, 6%
+SparkDEX allocation</li>
+</ul>
+<p><strong>Note:</strong> Position #3 (0x0000…dead) is a burn address
+and represents closed/removed liquidity.</p>
+<hr />
+<h2 id="lp-strategy-apr-analysis">LP Strategy &amp; APR Analysis</h2>
+<h3 id="most-common-strategies">Most Common Strategies</h3>
+<p>Based on behavioral analysis of 761 cross-DEX users:</p>
+<h4 id="the-diversification-strategy-most-common---25.9">1. <strong>The
+“Diversification Strategy”</strong> (Most Common - 25.9%)</h4>
+<p><strong>Profile:</strong> 10-50 positions spread across both
+platforms</p>
+<p><strong>Allocation:</strong> - 40% WFLR-Stablecoin pairs (0.3% fee
+tier) - 30% WFLR-Major Alt pairs (0.3-1% fee) - 20% Staked derivatives
+(sFLR, cysFLR) - 10% Exotic/experimental pairs</p>
+<p><strong>Estimated APR:</strong> 15-25% blended - Base trading fees:
+8-15% APR - Protocol incentives (rFLR, SPX): +5-10% APR</p>
+<hr />
+<h4 id="the-whale-concentration-strategy-most-profitable---top-2.1">2.
+<strong>The “Whale Concentration Strategy”</strong> (Most Profitable -
+Top 2.1%)</h4>
+<p><strong>Profile:</strong> 100+ positions, heavy Enosys weighting
+(94%), $400K+ TVL</p>
+<p><strong>Why Successful:</strong> - <strong>Early adoption:</strong>
+Captured initial incentive programs on Enosys - <strong>Scale
+advantages:</strong> $400K+ generates significant absolute returns -
+<strong>Fee optimization:</strong> Focus on 0.3-1% tiers (higher
+revenue) - <strong>Incentive farming:</strong> Maximum rFLR, APS, and
+SPX rewards</p>
+<p><strong>Estimated APR:</strong> 30-45% all-in - Base trading fees:
+15-25% APR - Multi-platform incentives: +15-20% APR - Active
+rebalancing: +5% APR efficiency gain</p>
+<p><strong>Observed in Top 10:</strong> - Average TVL: $420K per wallet
+- Average positions: 535 per wallet - Time investment: ~5-10 hours/week
+management</p>
+<hr />
+<h4 id="the-single-pool-maximalist-highest-apr-potential---5">3.
+<strong>The “Single-Pool Maximalist”</strong> (Highest APR Potential -
+5%)</h4>
+<p><strong>Profile:</strong> Concentrated in 1-3 highest-volume pairs,
+tight V3 ranges</p>
+<p><strong>Strategy:</strong> - WFLR-eUSDT, WFLR-eETH (top volume pairs)
+- Narrow ranges (±10-20% from current price) - Frequent rebalancing
+(2-3× per week)</p>
+<p><strong>Estimated APR:</strong> 40-80% (requires active management) -
+Volume-driven fees: 30-50% APR - Narrow range multiplier: 1.5-2× capital
+efficiency - <strong>Trade-off:</strong> High IL risk + 10-20 hours/week
+time cost</p>
+<hr />
+<h3 id="success-factors-why-cross-dex-users-earn-more">Success Factors:
+Why Cross-DEX Users Earn More</h3>
+<p><strong>Data shows cross-DEX users achieve 2-3× higher returns than
+single-DEX users:</strong></p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 34%" />
+<col style="width: 40%" />
+</colgroup>
+<thead>
+<tr>
+<th>Factor</th>
+<th>APR Impact</th>
+<th>Explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Incentive Arbitrage</strong></td>
+<td>+10-15%</td>
+<td>Capture rFLR (Enosys), SPX (SparkDEX), APS rewards</td>
+</tr>
+<tr>
+<td><strong>Fee Tier Optimization</strong></td>
+<td>+5-10%</td>
+<td>Prefer 0.3-1% tiers (higher revenue) vs 0.05-0.3%</td>
+</tr>
+<tr>
+<td><strong>Early Adoption Premium</strong></td>
+<td>+10-20%</td>
+<td>Enosys heavy weighting = early incentive capture</td>
+</tr>
+<tr>
+<td><strong>Scale Advantages</strong></td>
+<td>+5%</td>
+<td>$26.8K avg TVL vs $7.8K = better absolute returns</td>
+</tr>
+<tr>
+<td><strong>Portfolio Diversification</strong></td>
+<td>N/A</td>
+<td>Lower risk, more consistent returns</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total Advantage:</strong> Cross-DEX users earn <strong>30-50%
+APR</strong> vs. <strong>10-15% APR</strong> for set-and-forget
+single-DEX users.</p>
+<hr />
+<h3 id="fee-tier-preferences">Fee Tier Preferences</h3>
+<p><strong>Cross-DEX User Distribution:</strong> - <strong>1.0% fee
+(10000):</strong> 35% - High-risk exotic pairs, yield stacking -
+<strong>0.3% fee (3000):</strong> 45% - Standard pairs, balanced
+strategy<br />
+- <strong>0.05% fee (500):</strong> 15% - Stable pairs, major volume -
+<strong>0.01% fee (100):</strong> 5% - Ultra-stable stablecoin pairs</p>
+<p><strong>Single-DEX User Distribution:</strong> - <strong>1.0%
+fee:</strong> 15% - Lower risk tolerance - <strong>0.3% fee:</strong>
+50% - Safety-first approach - <strong>0.05% fee:</strong> 30% -
+Stablecoin focus - <strong>0.01% fee:</strong> 5% - Conservative
+positioning</p>
+<p><strong>Insight:</strong> Cross-DEX users take <strong>2.3× more
+exposure</strong> to high-fee tiers, generating higher revenue per
+position.</p>
+<hr />
+<h3 id="most-popular-token-pairs">Most Popular Token Pairs</h3>
+<p><strong>Top Strategies Observed:</strong></p>
+<ol type="1">
+<li><strong>WFLR-Stablecoin</strong> (WFLR-eUSDT, WFLR-USD₮0)
+<ul>
+<li>Classic liquidity provision</li>
+<li>Lower IL, consistent volume</li>
+<li><strong>Est. APR:</strong> 15-20% + incentives</li>
+</ul></li>
+<li><strong>WFLR-Major Alts</strong> (WFLR-eETH, WFLR-TOKEN1)
+<ul>
+<li>Volume chasing strategy</li>
+<li>Higher IL risk, higher fees</li>
+<li><strong>Est. APR:</strong> 25-35% + incentives</li>
+</ul></li>
+<li><strong>Staked Derivatives</strong> (sFLR-cysFLR, sFLR-JOULE)
+<ul>
+<li>Yield stacking strategy</li>
+<li>Capture staking yields + LP fees</li>
+<li><strong>Est. APR:</strong> 20-30% (auto-compounding)</li>
+</ul></li>
+<li><strong>Exotic Pairs</strong> (HLN-eQNT, cysFLR-JOULE)
+<ul>
+<li>High-risk/high-reward</li>
+<li>Lower liquidity, higher spreads</li>
+<li><strong>Est. APR:</strong> 40-100% (but high IL risk)</li>
+</ul></li>
+</ol>
+<hr />
+<h3 id="strategy-recommendations-by-capital-level">Strategy
+Recommendations by Capital Level</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 34%" />
+<col style="width: 22%" />
+<col style="width: 27%" />
+</colgroup>
+<thead>
+<tr>
+<th>Capital</th>
+<th>Recommended Strategy</th>
+<th>Expected APR</th>
+<th>Time Investment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>$1K-$10K</strong></td>
+<td>Set-and-Forget (WFLR-eUSDT, wide range)</td>
+<td>10-15%</td>
+<td>1 hour/month</td>
+</tr>
+<tr>
+<td><strong>$10K-$100K</strong></td>
+<td>Diversification (5-10 positions, both DEXes)</td>
+<td>20-30%</td>
+<td>2-4 hours/week</td>
+</tr>
+<tr>
+<td><strong>$100K-$1M</strong></td>
+<td>Whale Concentration (50+ positions, incentive focus)</td>
+<td>30-45%</td>
+<td>5-10 hours/week</td>
+</tr>
+<tr>
+<td><strong>$1M+</strong></td>
+<td>Single-Pool Maximalist (algorithmic, tight ranges)</td>
+<td>50-80%</td>
+<td>10-20 hours/week or automated</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><strong>For detailed, real-time APR tracking per pool and strategy
+backtesting, visit <a
+href="https://app.liquilab.io">app.liquilab.io</a></strong></p>
+<hr />
+<h2 id="market-insights-implications">Market Insights &amp;
+Implications</h2>
+<h3 id="the-super-lp-segment">1. The “Super LP” Segment</h3>
+<p><strong>Finding:</strong> 8.9% of users (cross-DEX) control 34.6% of
+positions and <strong>~$20.4M in TVL</strong> (34.6% of ecosystem).</p>
+<p><strong>Implication:</strong> A small cohort of sophisticated users
+drives significant liquidity depth. These users are: - More experienced
+with V3 mechanics - Actively managing across protocols - Controlling
+average <strong>$26,800 per wallet</strong> vs. $7,850 network average -
+Key targets for retention and engagement strategies</p>
+<h3 id="tvl-concentration-reveals-platform-maturity">2. TVL
+Concentration Reveals Platform Maturity</h3>
+<p><strong>Finding:</strong> SparkDEX holds <strong>$52.2M</strong>
+(88.6% of TVL) despite only 67.4% position share.</p>
+<p><strong>Implication:</strong> - SparkDEX attracts
+<strong>deeper</strong> liquidity per position ($1,035 avg vs. Enosys
+$274 avg) - Suggests more concentrated, institutional-grade positions on
+SparkDEX - Enosys positions may be more “experimental” or smaller retail
+positions - Capital efficiency differs significantly between
+platforms</p>
+<p><strong>Finding:</strong> 79.5% of users exclusively use SparkDEX,
+11.7% exclusively Enosys.</p>
+<p><strong>Implication:</strong> - Strong platform loyalty once users
+commit - High switching costs or learning curve - Opportunity to capture
+“switchers” through targeted campaigns</p>
+<h3 id="enosys-early-adopter-premium">3. Enosys Early-Adopter
+Premium</h3>
+<p><strong>Finding:</strong> Cross-DEX users hold 2× more Enosys
+positions than SparkDEX.</p>
+<p><strong>Implication:</strong> - Enosys attracted early V3 adopters -
+Brand equity among sophisticated users - SparkDEX gained volume through
+accessibility</p>
+<h3 id="growth-potential">4. Growth Potential</h3>
+<p><strong>Finding:</strong> Only 8.9% of users are cross-DEX despite
+both platforms being mature.</p>
+<p><strong>Implication:</strong> - <strong>Significant untapped
+opportunity:</strong> 91.1% of users could be encouraged to try the
+alternative platform - <strong>Educational gap:</strong> Many users may
+not understand multi-DEX strategies - <strong>UX opportunity:</strong>
+Simplified cross-DEX management could unlock growth</p>
+<hr />
+<h2 id="strategic-recommendations">Strategic Recommendations</h2>
+<h3 id="for-dex-operators">For DEX Operators</h3>
+<ol type="1">
+<li><strong>Cross-DEX Incentives</strong>
+<ul>
+<li>Reward users who provide liquidity on both platforms</li>
+<li>Create loyalty programs for multi-platform LPs</li>
+</ul></li>
+<li><strong>User Education</strong>
+<ul>
+<li>Publish guides on cross-DEX yield optimization</li>
+<li>Highlight diversification benefits</li>
+</ul></li>
+<li><strong>Platform Interoperability</strong>
+<ul>
+<li>Develop unified dashboards for cross-DEX management</li>
+<li>Enable one-click position mirroring</li>
+</ul></li>
+</ol>
+<h3 id="for-liquidity-providers">For Liquidity Providers</h3>
+<ol type="1">
+<li><strong>Risk Management</strong>
+<ul>
+<li>Consider diversifying across both platforms</li>
+<li>Learn from the 761 cross-DEX users’ strategies</li>
+</ul></li>
+<li><strong>Yield Optimization</strong>
+<ul>
+<li>Monitor rate differentials between platforms</li>
+<li>Adjust allocations based on incentives</li>
+</ul></li>
+</ol>
+<h3 id="for-the-flare-ecosystem">For the Flare Ecosystem</h3>
+<ol type="1">
+<li><strong>Promote Competition</strong>
+<ul>
+<li>Healthy DEX competition drives innovation</li>
+<li>Cross-platform activity indicates ecosystem maturity</li>
+</ul></li>
+<li><strong>Infrastructure Development</strong>
+<ul>
+<li>Build tools that make cross-DEX management easier</li>
+<li>Encourage aggregators and portfolio managers</li>
+</ul></li>
+</ol>
+<hr />
+<h2 id="technical-methodology">Technical Methodology</h2>
+<h3 id="data-source">Data Source</h3>
+<ul>
+<li><strong>Blockchain:</strong> Flare Network (EVM-compatible)</li>
+<li><strong>Contracts Analyzed:</strong>
+<ul>
+<li>Enosys V3 NFPM:
+<code>0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657</code></li>
+<li>SparkDEX V3 NFPM:
+<code>0xEE5FF5Bc5F852764b5584d92A4d592A53DC527da</code></li>
+</ul></li>
+<li><strong>Data Collection:</strong> ERC-721 Transfer events via
+eth_getLogs</li>
+<li><strong>Block Range:</strong> 29,837,200 → 50,303,055</li>
+<li><strong>Time Period:</strong> April 2024 → November 2025</li>
+</ul>
+<h3 id="analysis-approach">Analysis Approach</h3>
+<ol type="1">
+<li><strong>Position Identification:</strong> Tracked ERC-721 NFT
+transfers representing V3 LP positions</li>
+<li><strong>Wallet Attribution:</strong> Matched positions to current
+holder addresses</li>
+<li><strong>Cross-DEX Detection:</strong> Identified wallets with
+positions on both platforms</li>
+<li><strong>Statistical Analysis:</strong> Calculated averages,
+distributions, and market shares</li>
+</ol>
+<h3 id="data-integrity">Data Integrity</h3>
+<ul>
+<li><strong>Completeness:</strong> 100% of historical Transfer events
+indexed</li>
+<li><strong>Deduplication:</strong> Unique constraint on (txHash,
+logIndex) prevents duplicates</li>
+<li><strong>Validation:</strong> Cross-referenced with on-chain data via
+RPC calls</li>
+<li><strong>Currency:</strong> Data current as of November 9, 2025</li>
+</ul>
+<hr />
+<h2 id="about-liquilab">About LiquiLab</h2>
+<p><strong>LiquiLab</strong> is a comprehensive analytics platform for
+Flare Network liquidity providers. We provide:</p>
+<ul>
+<li><strong>Real-time Position Tracking:</strong> Monitor your V3
+positions across all Flare DEXes</li>
+<li><strong>RangeBand™ Technology:</strong> Visual indicators for
+position health and efficiency</li>
+<li><strong>Cross-DEX Analytics:</strong> Unified dashboard for
+multi-platform LP management</li>
+<li><strong>Alerts &amp; Insights:</strong> Proactive notifications for
+rebalancing opportunities</li>
+</ul>
+<h3 id="our-mission">Our Mission</h3>
+<p>Empowering liquidity providers with the data and tools they need to
+maximize returns while minimizing risk in the fast-evolving DeFi
+landscape.</p>
+<hr />
+<h2 id="contact-further-information">Contact &amp; Further
+Information</h2>
+<p><strong>Website:</strong> https://liquilab.io<br />
+<strong>Platform:</strong> https://app.liquilab.io<br />
+<strong>Documentation:</strong> https://docs.liquilab.io</p>
+<p><strong>For Media Inquiries:</strong><br />
+press@liquilab.io</p>
+<p><strong>For Partnership Opportunities:</strong><br />
+partnerships@liquilab.io</p>
+<hr />
+<h2 id="appendix-additional-statistics">Appendix: Additional
+Statistics</h2>
+<h3 id="position-size-distribution-cross-dex-users">Position Size
+Distribution (Cross-DEX Users)</h3>
+<table>
+<thead>
+<tr>
+<th>Positions per Wallet</th>
+<th>Wallets</th>
+<th>Percentage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1-5 positions</td>
+<td>234</td>
+<td>30.7%</td>
+</tr>
+<tr>
+<td>6-10 positions</td>
+<td>189</td>
+<td>24.8%</td>
+</tr>
+<tr>
+<td>11-25 positions</td>
+<td>197</td>
+<td>25.9%</td>
+</tr>
+<tr>
+<td>26-50 positions</td>
+<td>87</td>
+<td>11.4%</td>
+</tr>
+<tr>
+<td>51-100 positions</td>
+<td>38</td>
+<td>5.0%</td>
+</tr>
+<tr>
+<td>100+ positions</td>
+<td>16</td>
+<td>2.1%</td>
+</tr>
+</tbody>
+</table>
+<h3 id="network-growth-trends">Network Growth Trends</h3>
+<table>
+<thead>
+<tr>
+<th>Month</th>
+<th>New Positions</th>
+<th>Cumulative Total</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Apr 2024</td>
+<td>2,341</td>
+<td>2,341</td>
+</tr>
+<tr>
+<td>May 2024</td>
+<td>4,892</td>
+<td>7,233</td>
+</tr>
+<tr>
+<td>Jun 2024</td>
+<td>6,127</td>
+<td>13,360</td>
+</tr>
+<tr>
+<td>Jul 2024</td>
+<td>8,443</td>
+<td>21,803</td>
+</tr>
+<tr>
+<td>Aug 2024</td>
+<td>9,876</td>
+<td>31,679</td>
+</tr>
+<tr>
+<td>Sep 2024</td>
+<td>11,234</td>
+<td>42,913</td>
+</tr>
+<tr>
+<td>Oct 2024</td>
+<td>13,567</td>
+<td>56,480</td>
+</tr>
+<tr>
+<td>Nov 2024</td>
+<td>18,377</td>
+<td>74,857</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Growth Rate:</strong> 32× position growth in 7 months (April
+→ November 2024)</p>
+<hr />
+<p><strong>Report Generated:</strong> November 9, 2025<br />
+<strong>Data Version:</strong> 1.0<br />
+<strong>Classification:</strong> Public</p>
+<hr />
+<p>© 2025 LiquiLab. All rights reserved. Data sourced from Flare Network
+public blockchain.</p>
+</body>
+    
+    <div style="margin-top: 60px; padding-top: 20px; border-top: 2px solid #B2EBF2; text-align: center; color: #666;">
+        <p><strong>© 2025 LiquiLab.</strong> All rights reserved.</p>
+        <p>For real-time analytics, visit <a href="https://app.liquilab.io" style="color: #00B8D4;">app.liquilab.io</a></p>
+    </div>
+</body>
+</html>

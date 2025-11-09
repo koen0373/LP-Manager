@@ -100,18 +100,32 @@ export class IndexerCore {
       console.log(`[INDEXER] 🎯 Filtering for tokenIds: ${tokenIds.join(', ')}`);
     }
 
-    // Scan blockchain for logs
-    const scanResult = await this.scanner.scan({
-      fromBlock,
-      toBlock,
-      contractAddress: indexerConfig.contracts.npm,
-      tokenIds,
-      dryRun,
-    });
+    // Normalize npm config to array
+    const npmAddresses = Array.isArray(indexerConfig.contracts.npm) 
+      ? indexerConfig.contracts.npm 
+      : [indexerConfig.contracts.npm];
+
+    console.log(`[INDEXER] 📍 Scanning ${npmAddresses.length} NFPM contract(s): ${npmAddresses.join(', ')}`);
+
+    // Scan all NFPM contracts
+    let allLogs: any[] = [];
+    for (const npmAddress of npmAddresses) {
+      const scanResult = await this.scanner.scan({
+        fromBlock,
+        toBlock,
+        contractAddress: npmAddress,
+        tokenIds,
+        dryRun,
+      });
+      console.log(`[INDEXER] ✓ Found ${scanResult.logs.length} logs from ${npmAddress}`);
+      allLogs = allLogs.concat(scanResult.logs);
+    }
+
+    console.log(`[INDEXER] ✓ Total logs found: ${allLogs.length}`);
 
     // Decode events
-    const decodedEvents = this.decoder.decodeBatch(scanResult.logs);
-    console.log(`[INDEXER] ✓ Decoded ${decodedEvents.length}/${scanResult.logs.length} events`);
+    const decodedEvents = this.decoder.decodeBatch(allLogs);
+    console.log(`[INDEXER] ✓ Decoded ${decodedEvents.length}/${allLogs.length} events`);
 
     let writeStats = {
       transfersWritten: 0,

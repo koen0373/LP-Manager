@@ -20,7 +20,7 @@ export interface IndexerConfig {
     blockWindow: number;
   };
   contracts: {
-    npm: string;
+    npm: string | string[]; // Single NFPM or array of NFPMs
     startBlock: number;
     factories: {
       enosys: string;
@@ -76,7 +76,10 @@ const BASE_CONFIG: IndexerConfig = {
     blockWindow: 2000,
   },
   contracts: {
-    npm: process.env.NPM_ADDRESS || '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657',
+    npm: [
+      process.env.ENOSYS_NFPM || '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657',
+      process.env.SPARKDEX_NFPM || '0xEE5FF5Bc5F852764b5584d92A4d592A53DC527da',
+    ],
     startBlock: 48500000,
     factories: {
       enosys: process.env.ENOSYS_V3_FACTORY || '0x17AA157AC8C54034381b840Cb8f6bf7Fc355f0de',

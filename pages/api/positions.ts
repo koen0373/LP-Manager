@@ -9,6 +9,8 @@ import { getWalletPositionsViaFlareScan } from '@/services/flarescanService';
 import { clearCaches } from '@/utils/poolHelpers';
 import { clearRflrRewardCache } from '@/services/rflrRewards';
 import { clearCache } from '@/lib/util/memo';
+import { getEntitlements, maskFreeView } from '@/lib/entitlements';
+import { resolveRole, roleFlags } from '@/lib/entitlements/resolveRole';
 
 const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 const TIMEOUT_MS = 30_000;
@@ -365,6 +367,33 @@ function setCached(address: string, data: NonNullable<PositionsResponse['data']>
   }
 }
 
+export function buildRoleAwareData(
+  canonical: NonNullable<PositionsResponse['data']>,
+  resolution: ReturnType<typeof resolveRole>,
+): NonNullable<PositionsResponse['data']> {
+  const flags = roleFlags(resolution.role);
+  const entitlements = getEntitlements(resolution.role);
+  const shouldMask = !flags.premium;
+
+  return {
+    positions: shouldMask
+      ? canonical.positions.map((position) => maskFreeView(position, entitlements))
+      : canonical.positions,
+    summary: {
+      ...canonical.summary,
+      entitlements: {
+        role: resolution.role,
+        source: resolution.source,
+        flags,
+        fields: entitlements.fields,
+      },
+    },
+    meta: {
+      ...canonical.meta,
+    },
+  };
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<PositionsResponse>,
@@ -381,6 +410,7 @@ export default async function handler(
     return;
   }
 
+  const roleResolution = resolveRole(req);
   const normalizedAddress = addressParam.toLowerCase();
   const startTime = Date.now();
 
@@ -395,15 +425,17 @@ export default async function handler(
 
   const cached = refresh ? null : getCached(normalizedAddress);
   if (cached) {
+    const dataForRole = buildRoleAwareData(
+      {
+        positions: cached.positions,
+        summary: { ...cached.summary },
+        meta: { ...cached.meta, address: normalizedAddress },
+      },
+      roleResolution,
+    );
     res.status(200).json({
       success: true,
-      data: {
-        ...cached,
-        meta: {
-          ...cached.meta,
-          address: normalizedAddress,
-        },
-      },
+      data: dataForRole,
     });
     return;
   }
@@ -414,7 +446,7 @@ export default async function handler(
     );
     const elapsedMs = Date.now() - startTime;
 
-    const data: NonNullable<PositionsResponse['data']> = {
+    const canonicalData: NonNullable<PositionsResponse['data']> = {
       positions: canonicalPositions,
       summary,
       meta: {
@@ -423,11 +455,11 @@ export default async function handler(
       },
     };
 
-    setCached(normalizedAddress, data);
+    setCached(normalizedAddress, canonicalData);
 
     res.status(200).json({
       success: true,
-      data,
+      data: buildRoleAwareData(canonicalData, roleResolution),
     });
   } catch (error) {
     const elapsedMs = Date.now() - startTime;
@@ -441,7 +473,7 @@ export default async function handler(
 
     // Return empty result instead of 500 error when no positions found
     // This allows wallet connect flow to continue gracefully
-    const data: NonNullable<PositionsResponse['data']> = {
+    const canonicalData: NonNullable<PositionsResponse['data']> = {
       positions: [],
       summary: {
         tvlUsd: 0,
@@ -461,7 +493,7 @@ export default async function handler(
 
     res.status(200).json({
       success: true,
-      data,
+      data: buildRoleAwareData(canonicalData, roleResolution),
     });
   }
 }

@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { priceBreakdown } from '@/lib/billing/pricing';
-import { getEntitlements, type Role } from '@/lib/entitlements';
+import { getEntitlements } from '@/lib/entitlements';
+import { resolveRole, roleFlags } from '@/lib/entitlements/resolveRole';
 
 function parseBoolean(value: string | string[] | undefined, fallback = false): boolean {
   if (Array.isArray(value)) return parseBoolean(value[0], fallback);
@@ -20,12 +21,6 @@ function parseSlots(value: string | string[] | undefined): number {
   return Math.max(5, Math.ceil(parsed / 5) * 5);
 }
 
-function parseRole(value: string | string[] | undefined): Role {
-  const raw = Array.isArray(value) ? value[0] : value;
-  if (raw && raw.toUpperCase() === 'PREMIUM_V1') return 'PREMIUM_V1';
-  return 'FREE';
-}
-
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
@@ -34,20 +29,24 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const slots = parseSlots(req.query.slots);
   const alertsSelected = parseBoolean(req.query.alertsSelected, false);
-  const role = parseRole(req.query.role);
+  const resolution = resolveRole(req);
+  const flags = roleFlags(resolution.role);
 
   const breakdown = priceBreakdown({ slots, alertsSelected });
-  const entitlements = getEntitlements(role, slots, alertsSelected, slots);
+  const entitlements = getEntitlements(resolution.role, slots, alertsSelected, slots);
 
   const response = {
-    role,
+    role: resolution.role,
+    source: resolution.source,
+    flags,
     entitlements: {
       role: entitlements.role,
+      flags,
       caps: { maxPools: entitlements.maxPools },
       fields: {
-        apr: entitlements.fields.apr,
-        incentives: entitlements.fields.incentives,
-        rangeBand: entitlements.fields.rangeBand,
+        apr: flags.premium ? entitlements.fields.apr : false,
+        incentives: flags.premium ? entitlements.fields.incentives : false,
+        rangeBand: flags.premium ? entitlements.fields.rangeBand : false,
       },
       ...(typeof entitlements.remainingSlots === 'number'
         ? { remainingSlots: entitlements.remainingSlots }
@@ -58,6 +57,4 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
   return res.status(200).json(response);
 }
-
-
 

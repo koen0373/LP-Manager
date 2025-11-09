@@ -83,6 +83,23 @@ export interface PositionRow {
 /**
  * Response envelope returned by the canonical `/api/positions` endpoint.
  */
+export type PositionEntitlementRole = 'VISITOR' | 'PREMIUM' | 'PRO';
+export type PositionEntitlementSource = 'query' | 'header' | 'cookie' | 'session';
+
+export type PositionSummaryEntitlements = {
+  role: PositionEntitlementRole;
+  source: PositionEntitlementSource;
+  flags: {
+    premium: boolean;
+    analytics: boolean;
+  };
+  fields?: {
+    apr?: boolean;
+    incentives?: boolean;
+    rangeBand?: boolean;
+  };
+};
+
 export interface PositionsResponse {
   success: boolean;
   data?: {
@@ -96,6 +113,7 @@ export interface PositionsResponse {
       active?: number;
       inactive?: number;
       ended?: number;
+      entitlements?: PositionSummaryEntitlements;
     };
     meta: {
       address: string;

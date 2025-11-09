@@ -624,6 +624,49 @@ Next (accuracy): when NFPM address is stored per event/transfer, replace the fir
 - PROJECT_STATE.md — Added tokenId→pool backfill runbook under "Analytics: Position index (token_id)" with npm run commands and success criteria.
 
 ## Changelog — 2025-11-09
+
+### **SparkDEX NFPM Backfill Completed (Append-Only)**
+
+**Date:** 2025-11-09 14:30-15:05 CET  
+**Operation:** Append-only backfill of SparkDEX NFPM position transfers
+
+**Results:**
+- ✅ **60,563 SparkDEX transfers inserted** (0 duplicates, 0 errors)
+- ✅ **50,421 unique SparkDEX positions** indexed
+- ✅ **Block range:** 30,760,825 → 50,302,571
+- ⏱️ **Runtime:** 14.65 minutes
+- 🌐 **RPC Source:** ANKR (`cee6b4f8...`)
+- 🔐 **Safety:** ON CONFLICT DO NOTHING (no updates/deletions)
+
+**Final Database State:**
+```
+DEX        Positions   Transfers   Block Range
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Enosys     24,435      25,780      29,989,866 → 50,291,147
+SparkDEX   50,421      60,563      30,760,825 → 50,302,571
+Unknown    1           1           49,766,640
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TOTAL      74,857      86,344
+```
+
+**Technical Details:**
+- Script: `scripts/backfill-sparkdex-safe.js`
+- Method: Raw JSON-RPC (`eth_getLogs`) + Prisma `$executeRawUnsafe`
+- Window: 5,000 blocks per request
+- Rate: 6.67 RPS (150ms delay)
+- Batch: 500 inserts per transaction
+- UUID & timestamp generation for required schema columns
+
+**Next Steps:**
+1. ✅ Verify daily cron includes SparkDEX NFPM for future runs
+2. ✅ Confirm aggregate counts in `/admin/db` dashboard
+3. ⏳ Update `indexer.config.ts` to use array of NFPMs for unified scanning
+4. ⏳ Test daily follower with both Enosys + SparkDEX
+
+---
+
+## Changelog — 2025-11-09
+
 • **Railway Database Migration:** Migrated from crashed 500MB Railway database ("yamabiko") to new 50GB instance ("switchyard" → renamed to "Postgres"). DATABASE_URL updated to use variable references (`${{Postgres.DATABASE_URL}}`) for both LiquiLab and Indexer Follower services.
 • **Full ERC-721 Data Indexing:** Completed backfill of historical ERC-721 position data (PositionTransfer + PositionEvent) for both Enosys and SparkDEX NFPMs from block 29,837,200 to 51,400,000+ using ANKR RPC. Database now contains **73,468 PositionTransfer** events and **49,012 distinct positions**.
 • **Schema Enhancements:**
@@ -683,3 +726,29 @@ See archives in /docs/changelog/.
 - scripts/cron/update-demo-history.ts — New cron helper that appends TVL/pool totals once every 20h+ with 14-day retention.
 - public/demo.history.json — Seeded history file for API + cron to read/write.
 - PROJECT_STATE.md — Recorded prospect endpoint rollout and linked artefacts in changelog.
+
+## Changelog — 2025-11-09
+- src/lib/entitlements/resolveRole.ts — Added canonical resolver with query/header/cookie overrides plus premium/analytics flags.
+- pages/api/entitlements.ts — Wired resolver output (role, flags, source) into pricing/entitlements response.
+- pages/api/positions.ts — Applied role-aware masking + entitlements metadata and hardened cache to return canonical data per role.
+- src/lib/positions/types.ts — Extended summary contract with entitlements block for client awareness.
+- src/components/dev/RoleOverrideToggle.tsx — Lightweight dev toggle to set ll_role cookie and reload locally.
+- pages/index.tsx — Prospect home now respects ?role overrides, updates PoolsTable entitlements, and exposes the dev toggle.
+- pages/dashboard.tsx — User home reads role override, surfaces current state badge, and reuses the dev toggle.
+
+## Changelog — 2025-11-09
+- src/lib/entitlements.ts — Remapped caps to VISITOR/PREMIUM/PRO and added session-safe role normaliser.
+- src/lib/entitlements/resolveRole.ts — Limited overrides to dev-only channels and returned shared premium/analytics flags.
+- src/lib/positions/types.ts — Updated summary entitlement contract to the new role union and flags.
+- src/components/dev/RoleOverrideToggle.tsx — Trimmed toggle options to VISITOR/PREMIUM/PRO and synced cookie/query handling.
+- src/components/pools/PoolsTable.tsx — Accepted the new role union in entitlement props.
+- pages/api/entitlements.ts — Returned role flags + caps from resolveRole and removed legacy FREE mappings.
+- pages/api/positions.ts — Applied flag-based masking, exported the helper, and attached entitlements metadata to summaries.
+- pages/api/wallet/summary.ts — Reused the role-aware builder so deprecated summary responses share the same entitlements.
+- pages/index.tsx — Prospect home now reads role flags for PoolsTable + copy and surfaces the new dev toggle.
+- pages/dashboard.tsx — Dashboard banner/toggles rely on entitlements flags for premium/analytics context.
+- pages/koen.tsx — Synced summary entitlement types with VISITOR/PREMIUM/PRO for the private dashboard.
+- pages/brand.tsx — Updated curated pools table to the VISITOR entitlement wrapper.
+- pages/pricing-lab.tsx — Updated pricing preview tables to VISITOR entitlements to match the new role model.
+- pages/api/entitlements 2.ts — Removed the stale duplicate handler referencing deprecated FREE/PREMIUM_V1 roles.
+- PROJECT_STATE.md — Logged the role rename + entitlement unification rollout.

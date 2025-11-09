@@ -788,7 +788,7 @@ export default function BrandSystemPage() {
                 <PoolsTable
                   title="Ēnosys & SparkDEX shortlist"
                   items={poolsTableItems}
-                  entitlements={{ role: 'FREE', fields: { apr: true, incentives: true, rangeBand: true } }}
+                  entitlements={{ role: 'VISITOR', fields: { apr: true, incentives: true, rangeBand: true } }}
                   defaultExpanded={false}
                 />
               </div>

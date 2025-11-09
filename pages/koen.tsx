@@ -10,7 +10,11 @@ import type { PositionRow } from '@/lib/positions/types';
 import { fmtUsd } from '@/lib/format';
 
 type SummaryEntitlements = {
-  role?: 'FREE' | 'PREMIUM_V1' | 'PREMIUM_V2';
+  role?: 'VISITOR' | 'PREMIUM' | 'PRO';
+  flags?: {
+    premium: boolean;
+    analytics: boolean;
+  };
   fields?: {
     apr?: boolean;
     incentives?: boolean;
@@ -140,7 +144,7 @@ export default function KoenDashboard() {
 
   const entitlements = useMemo(
     () => ({
-      role: summary?.entitlements?.role ?? 'FREE',
+      role: summary?.entitlements?.role ?? 'VISITOR',
       fields: summary?.entitlements?.fields ?? {},
     }),
     [summary?.entitlements],

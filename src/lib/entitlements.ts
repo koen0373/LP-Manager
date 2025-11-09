@@ -1,11 +1,14 @@
 /**
  * Entitlements & Role-based Access Control
- * Freemium v2: FREE (3 pools, basic view) → PREMIUM_V1 (5+ pools, full features)
+ * Role model (2025-11-09):
+ * VISITOR (read-only teaser) → PREMIUM (full product) → PRO (Premium + Analytics)
  */
 
 import type { NextApiRequest } from 'next';
 
-export type Role = 'FREE' | 'PREMIUM_V1' | 'PREMIUM_V2';
+export type Role = 'VISITOR' | 'PREMIUM' | 'PRO';
+
+const ROLE_VALUES: Role[] = ['VISITOR', 'PREMIUM', 'PRO'];
 
 export type FieldEntitlements = {
   pair: boolean;
@@ -30,7 +33,7 @@ export type Entitlements = {
 };
 
 const ROLE_CAPS: Record<Role, Omit<Entitlements, 'role' | 'remainingSlots' | 'alertsPacks'>> = {
-  FREE: {
+  VISITOR: {
     maxPools: 3,
     fields: {
       pair: true,
@@ -44,7 +47,7 @@ const ROLE_CAPS: Record<Role, Omit<Entitlements, 'role' | 'remainingSlots' | 'al
     alerts: false,
     signals: false,
   },
-  PREMIUM_V1: {
+  PREMIUM: {
     maxPools: Infinity,
     basePools: 5,
     slotPrice: 1.99,
@@ -57,10 +60,10 @@ const ROLE_CAPS: Record<Role, Omit<Entitlements, 'role' | 'remainingSlots' | 'al
       incentives: true,
       rangeBand: true,
     },
-    alerts: false, // requires ADDON_ALERTS
+    alerts: true,
     signals: true,
   },
-  PREMIUM_V2: {
+  PRO: {
     maxPools: Infinity,
     basePools: 5,
     slotPrice: 1.99,
@@ -73,26 +76,22 @@ const ROLE_CAPS: Record<Role, Omit<Entitlements, 'role' | 'remainingSlots' | 'al
       incentives: true,
       rangeBand: true,
     },
-    alerts: false, // requires ADDON_ALERTS
+    alerts: true,
     signals: true,
   },
 };
 
 /**
- * Get user role from request (stub via cookie/header; default FREE)
+ * Get user role from request (stub via cookie/header; default VISITOR)
  */
 export function getRoleForUser(req: NextApiRequest): Role {
-  // Stub: check cookie or header
-  const roleCookie = req.cookies['ll_role'];
-  const roleHeader = req.headers['x-ll-role'] as string | undefined;
-  
-  const rawRole = roleCookie || roleHeader;
-  
-  if (rawRole === 'PREMIUM_V1' || rawRole === 'PREMIUM_V2') {
-    return rawRole;
-  }
-  
-  return 'FREE';
+  const headerRole = normalizeRoleValue(req.headers['x-ll-session-role']);
+  if (headerRole) return headerRole;
+
+  const cookieRole = normalizeRoleValue(req.cookies['ll_session_role']);
+  if (cookieRole) return cookieRole;
+
+  return 'VISITOR';
 }
 
 /**
@@ -109,7 +108,7 @@ export function getEntitlements(
   const entitlements: Entitlements = {
     role,
     ...caps,
-    alerts: alertsEnabled && role !== 'FREE',
+    alerts: caps.alerts || alertsEnabled,
   };
   
   // Calculate remaining slots if watchingCount is provided
@@ -127,7 +126,7 @@ export function getEntitlements(
 
 /**
  * Enforce pool limit for a given role and watching count
- * @throws {status: 402, upgrade_required: true, plan_hint: 'PREMIUM_V1'}
+ * @throws {status: 402, upgrade_required: true, plan_hint: 'PREMIUM'}
  */
 export function enforcePoolsLimit(
   address: string,
@@ -142,14 +141,14 @@ export function enforcePoolsLimit(
     throw {
       status: 402,
       upgrade_required: true,
-      plan_hint: 'PREMIUM_V1',
+      plan_hint: 'PREMIUM',
       message: `You are watching ${watchingCount} pools but your ${role} plan allows ${limit}. Please upgrade.`,
     };
   }
 }
 
 /**
- * Mask fields for FREE users (server-side enforcement)
+ * Mask fields for non-premium users (server-side enforcement)
  */
 export function maskFreeView<T extends Record<string, unknown>>(
   position: T,
@@ -177,3 +176,10 @@ export function maskFreeView<T extends Record<string, unknown>>(
   return masked;
 }
 
+function normalizeRoleValue(value: unknown): Role | null {
+  if (!value) return null;
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (typeof raw !== 'string') return null;
+  const upper = raw.trim().toUpperCase();
+  return ROLE_VALUES.includes(upper as Role) ? (upper as Role) : null;
+}

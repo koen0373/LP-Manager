@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-import { fetchCanonicalPositionData } from '../positions';
+import { fetchCanonicalPositionData, buildRoleAwareData } from '../positions';
 import type { PositionsResponse } from '@/lib/positions/types';
+import { resolveRole } from '@/lib/entitlements/resolveRole';
 
 const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 const SUNSET_DATE = '2025-11-14';
@@ -44,6 +45,7 @@ export default async function handler(
   res.setHeader('Warning', WARNING_HEADER);
   res.setHeader('x-ll-deprecated', 'true');
 
+  const roleResolution = resolveRole(req);
   const addressParam = typeof req.query.address === 'string' ? req.query.address : '';
   if (!ADDRESS_REGEX.test(addressParam)) {
     res.status(400).json({
@@ -59,18 +61,19 @@ export default async function handler(
 
   try {
     const { positions, summary } = await fetchCanonicalPositionData(normalizedAddress);
+    const canonicalData = {
+      positions,
+      summary,
+      meta: {
+        address: normalizedAddress,
+        elapsedMs: Date.now() - startedAt,
+        deprecation: true,
+      },
+    };
 
     res.status(200).json({
       success: true,
-      data: {
-        positions,
-        summary,
-        meta: {
-          address: normalizedAddress,
-          elapsedMs: Date.now() - startedAt,
-          deprecation: true,
-        },
-      },
+      data: buildRoleAwareData(canonicalData, roleResolution),
     });
   } catch (error) {
     console.error('[api/wallet/summary] failed', {

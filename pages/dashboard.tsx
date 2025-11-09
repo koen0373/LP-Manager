@@ -2,16 +2,29 @@
 
 import React from 'react';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
+import { useAccount } from 'wagmi';
 
 import Header from '@/components/Header';
 import WalletConnect from '@/components/WalletConnect';
 import PricingCalculator from '@/components/billing/PricingCalculator';
 import PoolsOverview from '@/features/pools/PoolsOverview';
-import { useAccount } from 'wagmi';
+import {
+  RoleOverrideToggle,
+  formatRoleLabel,
+  getRoleFlags,
+  normalizeRoleParam,
+  type RoleOverride,
+} from '@/components/dev/RoleOverrideToggle';
 
 export default function DashboardPage() {
   const { address, isConnected } = useAccount();
   const [showUpgrade, setShowUpgrade] = React.useState(false);
+  const router = useRouter();
+  const role = React.useMemo<RoleOverride>(() => normalizeRoleParam(router.query?.role) ?? "VISITOR", [router.query?.role]);
+  const flags = getRoleFlags(role);
+  const premiumView = flags.premium;
+  const roleLabel = formatRoleLabel(role);
 
   return (
     <>
@@ -23,8 +36,23 @@ export default function DashboardPage() {
         />
       </Head>
       <div className="relative min-h-screen bg-[#05070C] text-white">
+        <RoleOverrideToggle activeRole={role} />
         <Header showTabs={false} currentPage="dashboard" />
         <main className="relative mx-auto flex w-full max-w-5xl flex-col gap-10 px-6 pb-24 pt-12 md:px-10">
+          <section className="rounded-3xl border border-white/10 bg-[rgba(11,21,48,0.85)] px-6 py-4 text-sm text-white/70 shadow-lg backdrop-blur">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                Viewing entitlements as <span className="font-semibold text-white">{roleLabel}</span>
+              </span>
+              <span className={premiumView ? 'text-white/70' : 'text-[#FECACA]'}>
+                {flags.analytics
+                  ? 'Premium + Analytics enabled'
+                  : premiumView
+                  ? 'Analytics hidden for this role'
+                  : 'Premium metrics masked for this view'}
+              </span>
+            </div>
+          </section>
           {!isConnected ? (
             <section className="rounded-3xl border border-white/10 bg-[rgba(10,15,26,0.85)] px-8 py-14 text-center backdrop-blur-2xl md:px-16">
               <h1 className="font-brand text-3xl font-semibold text-white md:text-4xl">

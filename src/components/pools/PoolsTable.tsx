@@ -43,7 +43,7 @@ export type PoolsTableProps = {
   title: string;
   items: PoolsTableItem[];
   entitlements: {
-    role?: 'FREE' | 'PREMIUM_V1' | 'PREMIUM_V2';
+    role?: 'VISITOR' | 'PREMIUM' | 'PRO';
     fields?: {
       apr?: boolean;
       incentives?: boolean;

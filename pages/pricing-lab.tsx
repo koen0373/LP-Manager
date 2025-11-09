@@ -533,7 +533,7 @@ function OptionAView(props: OptionViewProps) {
           title="All pools"
           items={tableItems}
           entitlements={{
-            role: 'FREE',
+            role: 'VISITOR',
             fields: { apr: true, incentives: true, rangeBand: true },
           }}
           defaultExpanded={false}
@@ -591,7 +591,7 @@ function OptionBView(props: OptionViewProps) {
           title="All pools"
           items={tableItems}
           entitlements={{
-            role: 'FREE',
+            role: 'VISITOR',
             fields: { apr: true, incentives: true, rangeBand: true },
           }}
           defaultExpanded={false}

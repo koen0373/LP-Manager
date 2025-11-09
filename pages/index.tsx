@@ -1,12 +1,20 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import { useRouter } from "next/router";
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PoolsTable, { type PoolsTableItem } from "@/components/pools/PoolsTable";
 import { RangeBand } from "@/components/pools/PoolRangeIndicator";
 import PremiumCard from "@/components/pricing/PremiumCard";
+import {
+  RoleOverrideToggle,
+  formatRoleLabel,
+  getRoleFlags,
+  normalizeRoleParam,
+  type RoleOverride,
+} from "@/components/dev/RoleOverrideToggle";
 
 const HERO = {
   eyebrow: "Built for FLR Liquidity Providers",
@@ -97,6 +105,21 @@ const RANGE_SAMPLE = {
 };
 
 export default function HomePage() {
+  const router = useRouter();
+  const role = useMemo<RoleOverride>(() => normalizeRoleParam(router.query?.role) ?? "VISITOR", [router.query?.role]);
+  const flags = getRoleFlags(role);
+  const tableEntitlements = useMemo(
+    () => ({
+      role: flags.analytics ? ("PRO" as const) : flags.premium ? ("PREMIUM" as const) : ("VISITOR" as const),
+      fields: {
+        apr: flags.premium,
+        incentives: flags.premium,
+        rangeBand: flags.premium,
+      },
+    }),
+    [role],
+  );
+
   return (
     <>
       <Head>
@@ -107,12 +130,13 @@ export default function HomePage() {
         />
       </Head>
       <div className="relative min-h-screen overflow-hidden text-white">
+        <RoleOverrideToggle activeRole={role} />
         <div className="page-bg" aria-hidden="true" />
         <Header currentPage="home" />
 
         <main className="relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-10 px-6 py-20 sm:px-8 md:gap-14 md:py-24">
           <HeroSection />
-          <PoolsTableSection />
+          <PoolsTableSection role={role} entitlements={tableEntitlements} flags={flags} />
           <RangeBandCard />
           <section className="flex justify-center">
             <PremiumCard showExtras />
@@ -145,22 +169,47 @@ function HeroSection() {
   );
 }
 
-function PoolsTableSection() {
+type TableEntitlements = {
+  role: "VISITOR" | "PREMIUM" | "PRO";
+  fields: { apr: boolean; incentives: boolean; rangeBand: boolean };
+};
+
+type TableFlags = ReturnType<typeof getRoleFlags>;
+
+function PoolsTableSection({
+  role,
+  entitlements,
+  flags,
+}: {
+  role: RoleOverride;
+  entitlements: TableEntitlements;
+  flags: TableFlags;
+}) {
+  const premiumView = flags.premium;
+  const viewerLabel = formatRoleLabel(role);
+  const statusText = premiumView
+    ? flags.analytics
+      ? "Premium + Analytics visible"
+      : "Premium metrics visible"
+    : "APR & incentives masked for this view";
+
   return (
     <section className="card space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="font-brand text-2xl font-semibold text-white">Your pools at a glance</h2>
-          <p className="font-ui text-xs text-white/55">Expand by default — collapse (+) to hide RangeBand™ details.</p>
+          <p className="font-ui text-xs text-white/55">
+            Viewing as <span className="font-semibold text-white">{viewerLabel}</span> · {statusText}
+          </p>
         </div>
       </div>
       <PoolsTable
-      title="POOLS TABLE"
-      items={POOLS_SAMPLE}
-      entitlements={{ role: "FREE", fields: { apr: true, incentives: true, rangeBand: true } }}
-      defaultExpanded={false}
-    />
-  </section>
+        title="POOLS TABLE"
+        items={POOLS_SAMPLE}
+        entitlements={entitlements}
+        defaultExpanded={false}
+      />
+    </section>
   );
 }
 

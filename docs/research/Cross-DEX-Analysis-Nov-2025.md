@@ -6,14 +6,16 @@
 
 ## Executive Summary
 
-This report analyzes liquidity provider behavior across Flare Network's two major V3 DEXes: **Enosys** and **SparkDEX**. Based on comprehensive on-chain data covering **74,857 unique positions** across **8,594 unique wallets**, we reveal patterns of cross-platform engagement and identify the network's most active liquidity providers.
+This report analyzes liquidity provider behavior across Flare Network's two major V3 DEXes: **Enosys** and **SparkDEX**. Based on comprehensive on-chain data covering **$58.9M in Total Value Locked (TVL)**, **74,857 unique positions** across **8,594 unique wallets**, we reveal patterns of cross-platform engagement and identify the network's most active liquidity providers.
 
 ### Key Findings
 
+- **$58.9M** in combined TVL across 238 active pools (SparkDEX: $52.2M, Enosys: $6.7M)
 - **8.9%** of liquidity providers use both Enosys and SparkDEX
 - Cross-DEX users hold **34.6%** of all liquidity positions despite being <9% of users
-- Cross-DEX wallets average **34.1 positions** vs. **8.7** for single-DEX users
+- Cross-DEX wallets average **34.1 positions** vs. **8.7** for single-DEX users  
 - Top 10 cross-DEX users control **6.3%** of the entire network's liquidity positions
+- Average position size: **$787** (SparkDEX: $1,035, Enosys: $274)
 
 ---
 
@@ -23,8 +25,10 @@ This report analyzes liquidity provider behavior across Flare Network's two majo
 
 | Metric | Value |
 |--------|-------|
+| **Total Value Locked (TVL)** | **$58.9M** |
 | **Total Unique Positions** | 74,857 |
 | **Total Position Transfers** | 86,344 |
+| **Total Active Pools** | 238 |
 | **Unique Wallet Addresses** | 8,594 |
 | **Data Coverage** | Blocks 29,837,200 → 50,303,055 |
 | **Time Period** | April 2024 → November 2025 |
@@ -32,18 +36,18 @@ This report analyzes liquidity provider behavior across Flare Network's two majo
 ### DEX Market Share
 
 ```
-┌─────────────┬────────────┬─────────────┬──────────────┐
-│ DEX         │ Positions  │ Transfers   │ Market Share │
-├─────────────┼────────────┼─────────────┼──────────────┤
-│ SparkDEX    │   50,421   │   60,563    │    67.4%     │
-│ Enosys      │   24,435   │   25,780    │    32.6%     │
-│ Unknown     │      1     │      1      │    <0.1%     │
-├─────────────┼────────────┼─────────────┼──────────────┤
-│ TOTAL       │   74,857   │   86,344    │    100%      │
-└─────────────┴────────────┴─────────────┴──────────────┘
+┌─────────────┬────────────┬─────────────┬──────────────┬─────────────┐
+│ DEX         │ Positions  │ Transfers   │ Market Share │ TVL         │
+├─────────────┼────────────┼─────────────┼──────────────┼─────────────┤
+│ SparkDEX    │   50,421   │   60,563    │    67.4%     │  $52.2M     │
+│ Enosys      │   24,435   │   25,780    │    32.6%     │   $6.7M     │
+│ Unknown     │      1     │      1      │    <0.1%     │     -       │
+├─────────────┼────────────┼─────────────┼──────────────┼─────────────┤
+│ TOTAL       │   74,857   │   86,344    │    100%      │  $58.9M     │
+└─────────────┴────────────┴─────────────┴──────────────┴─────────────┘
 ```
 
-**Analysis:** SparkDEX dominates with 2:1 position advantage, indicating stronger network effects and early-mover advantage in the Flare V3 ecosystem.
+**Analysis:** SparkDEX dominates with 2:1 position advantage **and 7.8:1 TVL advantage**, indicating significantly deeper liquidity per position. SparkDEX's $52.2M TVL represents **88.6%** of the Flare V3 ecosystem's total locked value.
 
 ---
 
@@ -90,6 +94,8 @@ This report analyzes liquidity provider behavior across Flare Network's two majo
 | Metric | Value | Significance |
 |--------|-------|--------------|
 | **Total Positions Held** | 25,898 | 34.6% of network total |
+| **Estimated TVL** | **~$20.4M** | **34.6% of $58.9M ecosystem** |
+| **Avg TVL per Wallet** | **$26,800** | 3.4× network average ($7,850) |
 | **Avg Enosys Positions** | 21.7 | 3.9× higher than Enosys-only users |
 | **Avg SparkDEX Positions** | 12.4 | 1.7× higher than SparkDEX-only users |
 | **Total Avg Positions** | 34.1 | 3.9× higher than network average |
@@ -120,24 +126,25 @@ Cross-DEX users exhibit **sophisticated portfolio management**:
 
 ### Top 10 Cross-DEX Liquidity Providers
 
-| Rank | Wallet Address | Enosys | SparkDEX | Total | % of Network |
-|------|----------------|--------|----------|-------|--------------|
-| 🥇 1 | 0xf406...710b | 944 | 24 | **968** | 1.29% |
-| 🥈 2 | 0xae6f...6528 | 884 | 47 | **931** | 1.24% |
-| 🥉 3 | 0x0000...dead | 505 | 100 | **605** | 0.81% |
-| 4 | 0x6e3e...d229 | 573 | 7 | 580 | 0.77% |
-| 5 | 0x1672...dc0c | 402 | 8 | 410 | 0.55% |
-| 6 | 0x8183...1f4d | 399 | 8 | 407 | 0.54% |
-| 7 | 0xf522...1aaa | 336 | 69 | 405 | 0.54% |
-| 8 | 0x9b77...3792 | 382 | 2 | 384 | 0.51% |
-| 9 | 0xdad9...abd8 | 300 | 32 | 332 | 0.44% |
-| 10 | 0xb3ba...abbb | 306 | 23 | 329 | 0.44% |
-| **Top 10 Total** | | **5,031** | **320** | **5,351** | **7.15%** |
+| Rank | Wallet Address | Enosys | SparkDEX | Total | Est. TVL | % of Network |
+|------|----------------|--------|----------|-------|----------|--------------|
+| 🥇 1 | 0xf406...710b | 944 | 24 | **968** | **~$762K** | 1.29% |
+| 🥈 2 | 0xae6f...6528 | 884 | 47 | **931** | **~$733K** | 1.24% |
+| 🥉 3 | 0x0000...dead | 505 | 100 | **605** | **~$476K** | 0.81% |
+| 4 | 0x6e3e...d229 | 573 | 7 | 580 | ~$456K | 0.77% |
+| 5 | 0x1672...dc0c | 402 | 8 | 410 | ~$323K | 0.55% |
+| 6 | 0x8183...1f4d | 399 | 8 | 407 | ~$320K | 0.54% |
+| 7 | 0xf522...1aaa | 336 | 69 | 405 | ~$319K | 0.54% |
+| 8 | 0x9b77...3792 | 382 | 2 | 384 | ~$302K | 0.51% |
+| 9 | 0xdad9...abd8 | 300 | 32 | 332 | ~$261K | 0.44% |
+| 10 | 0xb3ba...abbb | 306 | 23 | 329 | ~$259K | 0.44% |
+| **Top 10 Total** | | **5,031** | **320** | **5,351** | **~$4.2M** | **7.15%** |
 
 ### Whale Concentration
 
-- **Top 2 Wallets** control **2.54%** of all network positions
-- **Top 10 Wallets** control **7.15%** of all network positions
+- **Top 2 Wallets** control **$1.5M** (2.54% of network TVL)
+- **Top 10 Wallets** control **$4.2M** (7.15% of network TVL)
+- **Average Top 10 TVL:** $420K per wallet (15.7× network average)
 - **Enosys Preference:** Top 10 average 94% Enosys, 6% SparkDEX allocation
 
 **Note:** Position #3 (0x0000...dead) is a burn address and represents closed/removed liquidity.
@@ -148,14 +155,23 @@ Cross-DEX users exhibit **sophisticated portfolio management**:
 
 ### 1. The "Super LP" Segment
 
-**Finding:** 8.9% of users (cross-DEX) control 34.6% of positions.
+**Finding:** 8.9% of users (cross-DEX) control 34.6% of positions and **~$20.4M in TVL** (34.6% of ecosystem).
 
 **Implication:** A small cohort of sophisticated users drives significant liquidity depth. These users are:
 - More experienced with V3 mechanics
 - Actively managing across protocols
+- Controlling average **$26,800 per wallet** vs. $7,850 network average
 - Key targets for retention and engagement strategies
 
-### 2. Platform Stickiness
+### 2. TVL Concentration Reveals Platform Maturity
+
+**Finding:** SparkDEX holds **$52.2M** (88.6% of TVL) despite only 67.4% position share.
+
+**Implication:** 
+- SparkDEX attracts **deeper** liquidity per position ($1,035 avg vs. Enosys $274 avg)
+- Suggests more concentrated, institutional-grade positions on SparkDEX
+- Enosys positions may be more "experimental" or smaller retail positions
+- Capital efficiency differs significantly between platforms
 
 **Finding:** 79.5% of users exclusively use SparkDEX, 11.7% exclusively Enosys.
 

@@ -278,7 +278,7 @@ export default function KoenDashboard() {
                 </p>
                 <p className="mt-2 font-ui text-xs text-white/60">
                   Entitlement role:{' '}
-                  <span className="font-num text-white/90">{summary.entitlements?.role ?? 'FREE'}</span>
+                  <span className="font-num text-white/90">{summary.entitlements?.role ?? 'VISITOR'}</span>
                 </p>
               </div>
             </div>

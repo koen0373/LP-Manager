@@ -737,18 +737,4 @@ See archives in /docs/changelog/.
 - pages/dashboard.tsx — User home reads role override, surfaces current state badge, and reuses the dev toggle.
 
 ## Changelog — 2025-11-09
-- src/lib/entitlements.ts — Remapped caps to VISITOR/PREMIUM/PRO and added session-safe role normaliser.
-- src/lib/entitlements/resolveRole.ts — Limited overrides to dev-only channels and returned shared premium/analytics flags.
-- src/lib/positions/types.ts — Updated summary entitlement contract to the new role union and flags.
-- src/components/dev/RoleOverrideToggle.tsx — Trimmed toggle options to VISITOR/PREMIUM/PRO and synced cookie/query handling.
-- src/components/pools/PoolsTable.tsx — Accepted the new role union in entitlement props.
-- pages/api/entitlements.ts — Returned role flags + caps from resolveRole and removed legacy FREE mappings.
-- pages/api/positions.ts — Applied flag-based masking, exported the helper, and attached entitlements metadata to summaries.
-- pages/api/wallet/summary.ts — Reused the role-aware builder so deprecated summary responses share the same entitlements.
-- pages/index.tsx — Prospect home now reads role flags for PoolsTable + copy and surfaces the new dev toggle.
-- pages/dashboard.tsx — Dashboard banner/toggles rely on entitlements flags for premium/analytics context.
-- pages/koen.tsx — Synced summary entitlement types with VISITOR/PREMIUM/PRO for the private dashboard.
-- pages/brand.tsx — Updated curated pools table to the VISITOR entitlement wrapper.
-- pages/pricing-lab.tsx — Updated pricing preview tables to VISITOR entitlements to match the new role model.
-- pages/api/entitlements 2.ts — Removed the stale duplicate handler referencing deprecated FREE/PREMIUM_V1 roles.
-- PROJECT_STATE.md — Logged the role rename + entitlement unification rollout.
+- pages/koen.tsx — Fixed entitlement fallback display from 'FREE' → 'VISITOR' to match new role model.

@@ -22,6 +22,7 @@
     "indexer:follow:railway": "tsx scripts/indexer-follower.ts --stream=nfpm",
     "indexer:staking": "tsx scripts/indexer-staking.mts",
     "indexer:incentives": "tsx scripts/compute-incentives.mts",
+    "indexer:incentives:api": "tsx scripts/fetch-api-incentives.mts",
     "indexer:sanity": "tsx scripts/indexer-sanity.ts",
     "railway:start": "sh scripts/railway-entrypoint.sh",
     "migrate:dev": "prisma migrate dev",

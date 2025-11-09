@@ -1,6 +1,6 @@
 #!/bin/bash
-# Complete Weekly Report Workflow
-# Generates report, social media content, and PDF
+# Complete Weekly Report Workflow with LiquiLab Branding
+# Generates report, social media content, and branded PDF-ready HTML
 
 set -e
 
@@ -38,79 +38,313 @@ echo ""
 WEEK=$(date +"%V")
 YEAR=$(date +"%Y")
 WEEK_PADDED=$(printf "%02d" $WEEK)
+MONTH_NAME=$(date +"%B")
 REPORT_DIR="docs/research/weekly"
 REPORT_FILE="${REPORT_DIR}/Cross-DEX-Report-${YEAR}-W${WEEK_PADDED}.md"
 HTML_FILE="${REPORT_DIR}/Cross-DEX-Report-${YEAR}-W${WEEK_PADDED}.html"
 SOCIAL_DIR="${REPORT_DIR}/W${WEEK_PADDED}-social"
 
-# 4. Convert markdown to HTML
-echo "📄 Step 3: Converting to HTML..."
+# 4. Convert markdown to HTML with LiquiLab branding
+echo "📄 Step 3: Converting to branded HTML..."
 
-cat > "${HTML_FILE}" << 'EOF'
+# Create branded HTML with template
+cat > "${HTML_FILE}" << 'TEMPLATE_START'
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiquiLab Weekly Report</title>
+    <title>LiquiLab Weekly Report - Cross-DEX Analysis</title>
+    
+    <!-- Google Fonts: Quicksand (headings) & Inter (body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        @page { margin: 2cm; size: A4; }
+        :root {
+            --electric-blue: #00B8D4;
+            --aqua: #00E5FF;
+            --dark-navy: #0B1530;
+            --medium-navy: #1A2847;
+            --light-aqua: #E0F7FA;
+        }
+        
+        @page { margin: 0; size: A4; }
         @media print {
-            .no-print { display: none; }
-            h1 { page-break-before: always; }
-            h2, h3 { page-break-after: avoid; }
+            .no-print { display: none !important; }
+            .cover { page-break-after: always; }
+            h1 { page-break-before: always; font-size: 18pt; }
+            h2 { page-break-after: avoid; }
             table, pre { page-break-inside: avoid; }
         }
+        
         body {
-            font-family: 'Georgia', serif;
+            font-family: 'Inter', -apple-system, sans-serif;
             line-height: 1.6;
             color: #333;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 40px 20px;
+            margin: 0;
+            padding: 0;
+            font-variant-numeric: tabular-nums;
         }
-        h1 { color: #00B8D4; border-bottom: 3px solid #00B8D4; padding-bottom: 10px; }
-        h2 { color: #0097A7; border-bottom: 2px solid #B2EBF2; padding-bottom: 8px; }
-        h3 { color: #00838F; }
-        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
-        th { background: #00B8D4; color: white; padding: 12px; text-align: left; }
-        td { padding: 10px; border-bottom: 1px solid #ddd; }
-        tr:hover { background-color: #f5f5f5; }
-        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 3px; }
-        pre { background-color: #f8f8f8; border-left: 4px solid #00B8D4; padding: 15px; }
+        
+        /* Cover Page with Wave Hero */
+        .cover {
+            position: relative;
+            width: 100%;
+            min-height: 100vh;
+            background: linear-gradient(180deg, var(--dark-navy) 0%, var(--medium-navy) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .cover::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 400px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%2300B8D4" fill-opacity="0.15" d="M0,96L48,112C96,128,192,160,288,165.3C384,171,480,149,576,128C672,107,768,85,864,90.7C960,96,1056,128,1152,138.7C1248,149,1344,139,1392,133.3L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom center;
+            background-size: cover;
+        }
+        
+        .cover-logo {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 28pt;
+            font-weight: 700;
+            z-index: 10;
+        }
+        
+        .cover-logo .liqui { color: var(--aqua); }
+        .cover-logo .lab { color: white; font-weight: 400; }
+        
+        .cover-content {
+            position: relative;
+            z-index: 5;
+            text-align: center;
+            padding: 0 40px;
+            max-width: 900px;
+        }
+        
+        .cover h1 {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 700;
+            font-size: 48pt;
+            color: white;
+            margin-bottom: 20px;
+            letter-spacing: -0.02em;
+        }
+        
+        .cover h2 {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 500;
+            font-size: 24pt;
+            color: var(--aqua);
+            margin-bottom: 60px;
+        }
+        
+        .cover .meta {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14pt;
+            line-height: 1.8;
+        }
+        
+        /* Content Pages */
+        .content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+        
+        /* Headings use Quicksand */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        
+        h1 {
+            font-size: 32pt;
+            color: var(--electric-blue);
+            border-bottom: 3px solid var(--electric-blue);
+            padding-bottom: 12px;
+            margin-top: 40px;
+        }
+        
+        h2 {
+            font-size: 24pt;
+            color: var(--electric-blue);
+            border-bottom: 2px solid var(--light-aqua);
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        
+        h3 { font-size: 18pt; color: #00838F; margin-top: 24px; }
+        h4 { font-size: 14pt; color: #006064; margin-top: 20px; }
+        
+        /* Tables use Inter with tabular nums */
+        table {
+            font-family: 'Inter', sans-serif;
+            font-variant-numeric: tabular-nums;
+            border-collapse: collapse;
+            width: 100%;
+            margin: 24px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th {
+            background: linear-gradient(135deg, var(--electric-blue), #0097A7);
+            color: white;
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 11pt;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--light-aqua);
+            font-size: 10pt;
+        }
+        
+        tr:hover { background-color: rgba(0,184,212,0.04); }
+        tr:nth-child(even) { background-color: rgba(0,0,0,0.02); }
+        
+        code {
+            font-family: Monaco, monospace;
+            background-color: var(--light-aqua);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9pt;
+            color: #00838F;
+        }
+        
+        pre {
+            background-color: var(--dark-navy);
+            border-left: 4px solid var(--electric-blue);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        pre code {
+            background: none;
+            padding: 0;
+            color: var(--aqua);
+        }
+        
+        a {
+            color: var(--electric-blue);
+            text-decoration: none;
+        }
+        
+        a:hover {
+            color: var(--aqua);
+            text-decoration: underline;
+        }
+        
+        .footer {
+            margin-top: 80px;
+            padding: 40px;
+            background: var(--dark-navy);
+            color: rgba(255,255,255,0.8);
+            text-align: center;
+            font-size: 9pt;
+        }
+        
+        .footer strong { color: white; }
+        .footer a { color: var(--aqua); }
+        
         .print-button {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #00B8D4;
+            top: 24px;
+            right: 24px;
+            background: var(--electric-blue);
             color: white;
-            padding: 12px 24px;
-            border-radius: 6px;
-            cursor: pointer;
+            padding: 14px 28px;
+            border-radius: 8px;
             border: none;
-            font-size: 14pt;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 11pt;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,184,212,0.3);
+            z-index: 1000;
+        }
+        
+        .print-button:hover {
+            background: var(--aqua);
+            transform: translateY(-2px);
         }
     </style>
 </head>
 <body>
     <button class="print-button no-print" onclick="window.print()">📄 Save as PDF</button>
-EOF
+    
+    <!-- Cover Page -->
+    <div class="cover">
+        <div class="cover-logo">
+            <span class="liqui">Liqui</span><span class="lab">Lab</span>
+        </div>
+        
+        <div class="cover-content">
+            <h1>Cross-DEX Liquidity Provider Analysis</h1>
+            <h2>Flare Network V3 Ecosystem | Weekly Report</h2>
+            
+            <div class="meta">
+                <p><strong>LiquiLab Research Team</strong></p>
+                <p>Week WEEK_PLACEHOLDER, MONTH_PLACEHOLDER YEAR_PLACEHOLDER</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Content -->
+    <div class="content">
+TEMPLATE_START
 
-# Convert markdown to HTML body and append
+# Convert markdown to HTML and append
 pandoc "${REPORT_FILE}" --to html >> "${HTML_FILE}"
 
-cat >> "${HTML_FILE}" << 'EOF'
-    
-    <div style="margin-top: 60px; padding-top: 20px; border-top: 2px solid #B2EBF2; text-align: center; color: #666;">
-        <p><strong>© 2025 LiquiLab.</strong> All rights reserved.</p>
-        <p>For real-time analytics, visit <a href="https://app.liquilab.io" style="color: #00B8D4;">app.liquilab.io</a></p>
+# Close HTML
+cat >> "${HTML_FILE}" << 'TEMPLATE_END'
     </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        <p><strong>© 2025 LiquiLab.</strong> All rights reserved.</p>
+        <p>For real-time analytics, visit <a href="https://app.liquilab.io">app.liquilab.io</a></p>
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.2);margin:24px auto;width:50%;">
+        <p style="font-size:8pt;color:rgba(255,255,255,0.6);">
+            <strong>Disclaimer:</strong> Past performance does not guarantee future results. Cryptocurrency investments carry risk.
+        </p>
+    </div>
+    
+    <script>
+        document.querySelectorAll('.content h1').forEach(h1 => {
+            h1.style.pageBreakBefore = 'always';
+        });
+    </script>
 </body>
 </html>
-EOF
+TEMPLATE_END
 
-echo "✅ HTML generated: ${HTML_FILE}"
+# Replace placeholders
+sed -i '' "s/WEEK_PLACEHOLDER/${WEEK}/g" "${HTML_FILE}"
+sed -i '' "s/MONTH_PLACEHOLDER/${MONTH_NAME}/g" "${HTML_FILE}"
+sed -i '' "s/YEAR_PLACEHOLDER/${YEAR}/g" "${HTML_FILE}"
+
+echo "✅ Branded HTML generated: ${HTML_FILE}"
 echo ""
 
 # 5. Open HTML for manual PDF export
@@ -138,7 +372,7 @@ echo ""
 echo "📄 Report (Markdown):"
 echo "   ${REPORT_FILE}"
 echo ""
-echo "📄 Report (HTML):"
+echo "📄 Report (HTML with LiquiLab branding):"
 echo "   ${HTML_FILE}"
 echo ""
 echo "📱 Social Media Content:"
@@ -160,11 +394,13 @@ echo "5. 💬 Share in Discord/Telegram"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "🔔 Schedule this script with cron for automatic weekly reports:"
-echo "   0 10 * * 1 cd /path/to/Liquilab && ./scripts/weekly-report-workflow.sh"
-echo ""
-echo "   (Runs every Monday at 10:00 AM)"
+echo "🎨 Branding Applied:"
+echo "   ✅ Wave hero background on cover"
+echo "   ✅ LiquiLab logo (top-left)"
+echo "   ✅ Quicksand font for headings"
+echo "   ✅ Inter font for body text & tables"
+echo "   ✅ Electric Blue (#00B8D4) brand colors"
+echo "   ✅ Tabular numbers in tables"
 echo ""
 echo "✨ Done!"
 echo ""
-

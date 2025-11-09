@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiquiLab Weekly Report - Cross-DEX Analysis</title>
+    
+    <!-- Google Fonts: Quicksand (headings) & Inter (body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Brand Colors */
+        :root {
+            --electric-blue: #00B8D4;
+            --aqua: #00E5FF;
+            --dark-navy: #0B1530;
+            --medium-navy: #1A2847;
+            --light-aqua: #E0F7FA;
+            --white: #FFFFFF;
+        }
+        
+        @page {
+            margin: 0;
+            size: A4;
+        }
+        
+        @media print {
+            .no-print { display: none !important; }
+            body { font-size: 10pt; }
+            .cover { page-break-after: always; }
+            h1 { page-break-before: always; font-size: 18pt; }
+            h2 { page-break-after: avoid; font-size: 14pt; }
+            h3 { page-break-after: avoid; font-size: 12pt; }
+            table { page-break-inside: avoid; }
+            pre, code { page-break-inside: avoid; }
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: var(--white);
+            font-variant-numeric: tabular-nums;
+        }
+        
+        /* Cover Page with Wave Hero */
+        .cover {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            min-height: 1122px; /* A4 height at 96 DPI */
+            background: linear-gradient(180deg, var(--dark-navy) 0%, var(--medium-navy) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .cover::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 400px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%2300B8D4" fill-opacity="0.15" d="M0,96L48,112C96,128,192,160,288,165.3C384,171,480,149,576,128C672,107,768,85,864,90.7C960,96,1056,128,1152,138.7C1248,149,1344,139,1392,133.3L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path><path fill="%2300E5FF" fill-opacity="0.1" d="M0,224L48,208C96,192,192,160,288,144C384,128,480,128,576,138.7C672,149,768,171,864,165.3C960,160,1056,128,1152,117.3C1248,107,1344,117,1392,122.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom center;
+            background-size: cover;
+            opacity: 1;
+        }
+        
+        .cover-logo {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            z-index: 10;
+        }
+        
+        .cover-logo svg {
+            width: 180px;
+            height: auto;
+        }
+        
+        .cover-content {
+            position: relative;
+            z-index: 5;
+            text-align: center;
+            padding: 0 40px;
+            max-width: 900px;
+        }
+        
+        .cover h1 {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 700;
+            font-size: 48pt;
+            color: var(--white);
+            margin-bottom: 20px;
+            letter-spacing: -0.02em;
+        }
+        
+        .cover h2 {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 500;
+            font-size: 24pt;
+            color: var(--aqua);
+            margin-bottom: 60px;
+        }
+        
+        .cover .meta {
+            font-family: 'Inter', sans-serif;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14pt;
+            line-height: 1.8;
+        }
+        
+        .cover .meta strong {
+            color: var(--white);
+            font-weight: 600;
+        }
+        
+        .cover .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .cover .stat {
+            text-align: center;
+        }
+        
+        .cover .stat-value {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 28pt;
+            color: var(--electric-blue);
+            display: block;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .cover .stat-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 11pt;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 8px;
+        }
+        
+        /* Content Pages */
+        .content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+        
+        /* Typography - Headings use Quicksand */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 600;
+            line-height: 1.3;
+            margin-top: 40px;
+            margin-bottom: 16px;
+        }
+        
+        h1 {
+            font-size: 32pt;
+            color: var(--electric-blue);
+            border-bottom: 3px solid var(--electric-blue);
+            padding-bottom: 12px;
+        }
+        
+        h2 {
+            font-size: 24pt;
+            color: var(--electric-blue);
+            border-bottom: 2px solid var(--light-aqua);
+            padding-bottom: 10px;
+        }
+        
+        h3 {
+            font-size: 18pt;
+            color: #00838F;
+        }
+        
+        h4 {
+            font-size: 14pt;
+            color: #006064;
+        }
+        
+        /* Body text uses Inter */
+        p, li, td, th {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        p {
+            margin: 12px 0;
+            line-height: 1.7;
+        }
+        
+        /* Tables - Inter font, tabular nums */
+        table {
+            font-family: 'Inter', sans-serif;
+            font-variant-numeric: tabular-nums;
+            border-collapse: collapse;
+            width: 100%;
+            margin: 24px 0;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th {
+            background: linear-gradient(135deg, var(--electric-blue) 0%, #0097A7 100%);
+            color: white;
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 11pt;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--light-aqua);
+            font-size: 10pt;
+        }
+        
+        tr:hover {
+            background-color: rgba(0, 184, 212, 0.04);
+        }
+        
+        tr:nth-child(even) {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        /* Code blocks */
+        code {
+            font-family: 'Monaco', 'Courier New', monospace;
+            background-color: var(--light-aqua);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9pt;
+            color: #00838F;
+        }
+        
+        pre {
+            background-color: var(--dark-navy);
+            border-left: 4px solid var(--electric-blue);
+            padding: 20px;
+            overflow-x: auto;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        pre code {
+            background: none;
+            padding: 0;
+            color: var(--aqua);
+            font-size: 9pt;
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 16px 0;
+            padding-left: 32px;
+        }
+        
+        li {
+            margin: 8px 0;
+            line-height: 1.7;
+        }
+        
+        /* Links */
+        a {
+            color: var(--electric-blue);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        a:hover {
+            color: var(--aqua);
+            text-decoration: underline;
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--electric-blue);
+            padding-left: 24px;
+            margin: 24px 0;
+            color: #666;
+            font-style: italic;
+        }
+        
+        /* Callouts */
+        .callout {
+            background: var(--light-aqua);
+            border-left: 4px solid var(--electric-blue);
+            padding: 20px 24px;
+            margin: 24px 0;
+            border-radius: 8px;
+        }
+        
+        .callout strong {
+            color: #00838F;
+            font-weight: 600;
+        }
+        
+        /* Horizontal Rules */
+        hr {
+            border: none;
+            border-top: 2px solid var(--light-aqua);
+            margin: 40px 0;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: 80px;
+            padding: 40px;
+            background: var(--dark-navy);
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+            font-size: 9pt;
+            line-height: 1.8;
+        }
+        
+        .footer strong {
+            color: var(--white);
+            font-weight: 600;
+        }
+        
+        .footer a {
+            color: var(--aqua);
+        }
+        
+        .footer hr {
+            border-color: rgba(255, 255, 255, 0.2);
+            margin: 24px auto;
+            width: 50%;
+        }
+        
+        /* Print Button */
+        .print-button {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: var(--electric-blue);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 11pt;
+            box-shadow: 0 4px 12px rgba(0, 184, 212, 0.3);
+            z-index: 1000;
+            transition: all 0.2s;
+        }
+        
+        .print-button:hover {
+            background: var(--aqua);
+            box-shadow: 0 6px 16px rgba(0, 229, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        /* Mobile Responsive */
+        @media screen and (max-width: 768px) {
+            .cover h1 {
+                font-size: 32pt;
+            }
+            
+            .cover h2 {
+                font-size: 18pt;
+            }
+            
+            .cover .stats {
+                gap: 20px;
+            }
+            
+            .cover .stat-value {
+                font-size: 20pt;
+            }
+            
+            .content {
+                padding: 40px 20px;
+            }
+            
+            table {
+                font-size: 9pt;
+            }
+            
+            th, td {
+                padding: 10px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button no-print" onclick="window.print()">📄 Save as PDF</button>
+    
+    <!-- Cover Page with Wave Hero -->
+    <div class="cover">
+        <!-- LiquiLab Logo -->
+        <div class="cover-logo">
+            <svg width="180" height="50" viewBox="0 0 180 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <text x="0" y="35" font-family="Quicksand, sans-serif" font-weight="700" font-size="32" fill="#00E5FF">Liqui</text>
+                <text x="82" y="35" font-family="Quicksand, sans-serif" font-weight="400" font-size="32" fill="#FFFFFF">Lab</text>
+            </svg>
+        </div>
+        
+        <div class="cover-content">
+            <h1>Cross-DEX Liquidity Provider Analysis</h1>
+            <h2>Flare Network V3 Ecosystem | Weekly Report</h2>
+            
+            <div class="meta">
+                <p><strong>LiquiLab Research Team</strong></p>
+                <p>Week [WEEK], [MONTH] [YEAR]</p>
+            </div>
+            
+            <div class="stats">
+                <div class="stat">
+                    <span class="stat-value">$[TVL]M</span>
+                    <span class="stat-label">Total Value Locked</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">[POSITIONS]</span>
+                    <span class="stat-label">Positions</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">[WALLETS]</span>
+                    <span class="stat-label">Wallets Analyzed</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Content Pages -->
+    <div class="content">
+        <!-- Markdown content will be inserted here by pandoc -->
+        [CONTENT_PLACEHOLDER]
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        <p><strong>© 2025 LiquiLab.</strong> All rights reserved.</p>
+        <p>Data sourced from Flare Network public blockchain via DefiLlama and on-chain analysis.</p>
+        <p>For the latest data and real-time analytics, visit <a href="https://app.liquilab.io">app.liquilab.io</a></p>
+        <hr>
+        <p style="font-size: 8pt; color: rgba(255, 255, 255, 0.6);">
+            <strong>Disclaimer:</strong> This report is provided for informational purposes only. 
+            Past performance does not guarantee future results. 
+            Cryptocurrency investments carry significant risk.
+        </p>
+    </div>
+    
+    <script>
+        // Add print-friendly page breaks for h1 headers (except cover)
+        document.querySelectorAll('.content h1').forEach(h1 => {
+            h1.style.pageBreakBefore = 'always';
+        });
+        
+        // Ensure tables are scrollable on mobile
+        document.querySelectorAll('table').forEach(table => {
+            const wrapper = document.createElement('div');
+            wrapper.style.overflowX = 'auto';
+            wrapper.style.width = '100%';
+            table.parentNode.insertBefore(wrapper, table);
+            wrapper.appendChild(table);
+        });
+    </script>
+</body>
+</html>
+

@@ -15,6 +15,7 @@ import { createPublicClient, http, type Log, decodeEventLog } from 'viem';
 import { flare } from 'viem/chains';
 import type { StakingContractConfig } from './config/stakingContracts';
 import { STAKING_EVENTS_ABI, GAUGE_EVENTS_ABI } from './abis/staking';
+import { TOKEN_DISTRIBUTOR_ABI } from './abis/tokenDistributor';
 
 export interface StakingEventRow {
   id: string;                // txHash:logIndex
@@ -47,7 +48,15 @@ export class StakingScanner {
    * Scan for staking events in block range
    */
   async scan(fromBlock: number, toBlock: number): Promise<StakingEventRow[]> {
-    const abi = this.config.type === 'gauge' ? GAUGE_EVENTS_ABI : STAKING_EVENTS_ABI;
+    // Select ABI based on contract type
+    let abi: readonly any[];
+    if (this.config.type === 'gauge') {
+      abi = GAUGE_EVENTS_ABI;
+    } else if (this.config.type === 'custom') {
+      abi = TOKEN_DISTRIBUTOR_ABI; // SparkDEX TokenDistributor
+    } else {
+      abi = STAKING_EVENTS_ABI; // MasterChef
+    }
 
     console.log(
       `[StakingScanner] Scanning ${this.config.address} (${this.config.dex}) blocks ${fromBlock}→${toBlock}`

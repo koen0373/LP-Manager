@@ -29,6 +29,26 @@ export const STAKING_CONTRACTS: StakingContractConfig[] = [
     apiUrl: 'https://v3.dex.enosys.global/api/flr/v2/stats/rflr', // Per-position API
   },
 
+  // SPARKDEX SPX REWARDS (On-chain via TokenDistributor)
+  {
+    address: '0xc2DF11C68f86910B99EAf8acEd7F5189915Ba24F', // TokenDistributor contract
+    dex: 'sparkdex-v3',
+    type: 'custom', // Custom distributor pattern (not standard MasterChef)
+    rewardToken: '0x657097cC15fdEc9e383dB8628B57eA4a763F2ba0', // SPRK token
+    rewardTokenSymbol: 'SPX',
+    startBlock: 29_837_200, // SparkDEX V3 launch
+  },
+
+  // SPARKDEX rFLR REWARDS (via TokenDistributor - same contract, different token)
+  {
+    address: '0xc2DF11C68f86910B99EAf8acEd7F5189915Ba24F', // TokenDistributor contract
+    dex: 'sparkdex-v3',
+    type: 'custom',
+    rewardToken: '0x0000000000000000000000000000000000000000', // Placeholder for rFLR
+    rewardTokenSymbol: 'rFLR',
+    startBlock: 29_837_200,
+  },
+
   // ENOSYS STAKING CONTRACT (indien gevonden - voor on-chain verification)
   // {
   //   address: '0x...', // Enosys MasterChef/Farm contract
@@ -41,16 +61,6 @@ export const STAKING_CONTRACTS: StakingContractConfig[] = [
   //     '0': '0x686f53F0950Ef193C887527eC027E6A574A4DbE1', // PID 0 = FXRP-USDT pool
   //     // ... meer pools
   //   }
-  // },
-
-  // SPARKDEX STAKING (PLACEHOLDER - moet worden ingevuld)
-  // {
-  //   address: '0x...', // SparkDEX Farm contract
-  //   dex: 'sparkdex-v3',
-  //   type: 'masterchef',
-  //   rewardToken: '0x...', // SPARK token address?
-  //   rewardTokenSymbol: 'SPARK',
-  //   startBlock: 29_837_200,
   // },
 ];
 

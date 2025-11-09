@@ -1,0 +1,31 @@
+Schrijf een prompt voor CLAUDE die onderstaande data ophaalt via ANKR en opslaat in de RAILWAY DB
+
+A. Netwerk & toegang
+	1.	FLARE RPC endpoint(s) definitief? → Staat in .env.local als FLARE_RPC_URLS (liefst 2–3 rotatie) 
+	2.	Confirm NFPM contracten (en Ēnosys/SparkDEX) → staan in .env.local als:
+	•	ENOSYS_NFPM = 0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657 — 
+	•	SPARKDEX_NFPM = 0xEE5FF5Bc5F852764b5584d92A4d592A53DC527da — 
+	•	ENOSYS_V3_FACTORY / SPARKDEX_V3_FACTORY — JA/NEE + waarden
+	3.	Database target voor nu (alle backfills) → Railway switchyard laten staan? — 
+	•	Als NEE: geef DATABASE_URL voor de gewenste DB.
+
+B. Pools (Factory + pool-contract events)
+4) Pool discovery: alle PoolCreated events ophalen + immutables (token0, token1, fee, factory) 
+5) Pool runtime: alle pool-contract events (Swap/Mint/Burn/Collect) incl. sqrtPriceX96, tick, liquidity, feeGrowthGlobal*
+6) Snapshots: periodic slot0/liquidity/feeGrowthGlobal* per pool (bijv. iedere N blokken) — 
+7) Token metadata: symbol/name/decimals per token (on-chain; fallback labels waar nodig) —
+
+C. Positions (ERC-721 / NFPM)
+8) Transfers: alle Transfer (ERC-721) voor beide NFPM’s — J
+9) Mints/Increase/Decrease/Collect via NFPM events + storage reads (feeGrowthInside*, tokensOwed*, liquidity) 
+10) Owner mapping: actuele owner per tokenId (last Transfer) + history 
+
+D. Analytics & UX afleidingen
+11) RangeBand™: status per tokenId (IN/NEAR/OUT), time-weighted in-range%, PnL (realized/unrealized), unclaimed fee-estimates — 
+12) Pool stats: TVL (token & USD/EUR), volume(24h/7d/30d), fees accrued/collected, unique LPs, top LPs, heatmap per tick-band — J
+13) Daily/Hourly rollups: per pool/wallet/tokenId voor dashboard & social content 
+E. Operationeel
+14) Checkpoints/cursors (per stream) + confirm-depth (bijv. 16) 
+15) Health endpoints: /api/admin/erc721/health, /api/admin/pools/health (non-zero + freshness) —
+16) Retention: RAW 180–365d; ENRICHED onbeperkt; Parquet export voor BI — 
+17) Budget / RPS: FAST via ANKR

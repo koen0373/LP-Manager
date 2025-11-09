@@ -1,23 +1,18 @@
 {
   "phase": "start",
-  "updatedAt": "2025-11-08T05:36:54.700Z",
+  "updatedAt": "2025-11-08T15:02:25.022Z",
   "mode": "backfill",
-  "factory": "enosys",
-  "startSelected": 29837200,
-  "reason": "cli",
-  "rpcBase": "https://flare-api.flare.network/ext/bc/C/rpc",
+  "factory": "all",
+  "startSelected": 50294577,
+  "reason": "checkpoint",
+  "rpcBase": "https://rpc.ankr.com/flare/cee6b4f8866b7f8afa826f378953ae26eaa74fd174d1d282460e0fbad2b35b01",
   "streams": [
-    "factories",
-    "nfpm",
     "pools"
   ],
   "chosenChunk": 1000,
-  "factoryStarts": {
-    "enosys": 29837200
-  },
   "poolCount": 404,
-  "rps": 2,
-  "concurrency": 2,
-  "blockWindow": 25,
+  "rps": 10,
+  "concurrency": 5,
+  "blockWindow": 1000,
   "allowlistActive": false
 }

@@ -20,6 +20,8 @@
     "indexer:backfill:railway": "tsx scripts/indexer-backfill.ts --stream=nfpm --rps=2 --concurrency=2 --blockWindow=25",
     "indexer:follow": "tsx scripts/indexer-follower.ts",
     "indexer:follow:railway": "tsx scripts/indexer-follower.ts --stream=nfpm",
+    "indexer:staking": "tsx scripts/indexer-staking.mts",
+    "indexer:incentives": "tsx scripts/compute-incentives.mts",
     "indexer:sanity": "tsx scripts/indexer-sanity.ts",
     "railway:start": "sh scripts/railway-entrypoint.sh",
     "migrate:dev": "prisma migrate dev",
@@ -43,7 +45,7 @@
   "dependencies": {
     "@ankr.com/ankr.js": "^0.6.1",
     "@perplexity-ai/perplexity_ai": "^0.16.0",
-    "@prisma/client": "^6.17.1",
+    "@prisma/client": "^6.19.0",
     "@radix-ui/react-tabs": "^1.1.13",
     "@tanstack/react-query": "5.90.5",
     "@wagmi/connectors": "^3.1.5",

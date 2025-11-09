@@ -1,13 +1,13 @@
 # PROJECT_STATE · LiquiLab Indexer & API (Concise)
 
 > Living document for the LiquiLab Flare V3 indexer stack.  
-> Last updated: 2025-11-08. Target size ≤ 25 KB; archived snapshots live under `docs/ops/STATE_ARCHIVE/`.
+> Last updated: 2025-11-09 06:00 CET. Target size ≤ 25 KB; archived snapshots live under `docs/ops/STATE_ARCHIVE/`.
 
 ---
 
 ## 1. Indexer Overview
 - **Purpose:** Consolidated Flare V3 pipeline that ingests raw Ēnosys/Sparkdex NonfungiblePositionManager/pool events, enriches them, and feeds LiquiLab dashboards.
-- **Mode (2025-11-07):** **Flare public RPC** (switched from ANKR to `https://flare-api.flare.network/ext/bc/C/rpc` to eliminate credit costs). Middleware gate funnels all traffic to `/placeholder` until demo cookie set; `/placeholder` password is **Demo88**. Admin dashboards: `/admin/ankr` (cache-only stats) and `/admin/db` (table explorer, confirmation pending).
+- **Mode (2025-11-09):** **Flare-only RPC** (no ANKR traffic). Middleware gate funnels all traffic to `/placeholder` until demo cookie set; `/placeholder` password is **Demo88**. Admin dashboards: `/admin/ankr` (cache-only stats) and `/admin/db` (table explorer, confirmation pending).
 - **Architecture:** `CLI (backfill | follower)` → `IndexerCore` → `RpcScanner` → `Decoders (factory | pool | nfpm | state)` → `DbWriter` → Postgres (`PoolEvent`, `PositionEvent`, analytics tables). Streams still match Ēnosys/Sparkdex pools + NFPM + pool_state + position_reads.
 - **Run modes:** Backfill (deterministic windows, stream-selectable) + follower tailer (12 s cadence, confirmation depth=2). Data lifecycle: raw NDJSON (180 d) → enriched JSON → Postgres (authoritative) → dashboards/APIs.
 - **Routing:** Pure Pages Router (Next.js 15). Mixed App Router conflicts were resolved by removing `app/` directory and consolidating all API routes under `pages/api/`.
@@ -15,6 +15,8 @@
 ---
 
 ## Decisions (D#)
+- **D-2025-11-06** — Documented Database configuration (source of truth) in PROJECT_STATE.md and aligned local/.env keys for `DATABASE_URL`, `RAW_DB`, `FLARE_API_BASE`, and `FLARE_RPC_URL`.
+- **D-2025-11-06** — Added V3 addresses & Indexer scripts to PROJECT_STATE.md; confirmed DB config as source of truth and aligned .env keys (DATABASE_URL, RAW_DB, FLARE_API_BASE, FLARE_RPC_URL).
 - **D-2025-11-06** — Documented Database configuration (source of truth) in PROJECT_STATE.md and aligned local/.env keys for `DATABASE_URL`, `RAW_DB`, `FLARE_API_BASE`, and `FLARE_RPC_URL`.
 - **D-2025-11-06** — Added V3 addresses & Indexer scripts to PROJECT_STATE.md; confirmed DB config as source of truth and aligned .env keys (DATABASE_URL, RAW_DB, FLARE_API_BASE, FLARE_RPC_URL).
 
@@ -436,6 +438,63 @@ Next (accuracy): when NFPM address is stored per event/transfer, replace the fir
 - Verify: `psql "$PSQL_URL" -f scripts/dev/verify-analytics-position-flat.sql`
 
 ## Changelog — 2025-11-08
+
+### **ERC-721 Full Indexing + Pool Metadata Architecture**
+
+**Database Migration (2025-11-08 12:00-14:45 CET):**
+- ✅ Created new Railway Postgres database "switchyard" (50GB) after previous database crash
+- ✅ Applied Prisma migrations (all tables created fresh)
+- ⏳ **INDEXER RUNNING** — Full backfill in progress with ANKR RPC
+  - Streams: `factories`, `pools`, `nfpm`
+  - Progress: 132,000/242,300 events written (~54% complete)
+  - ETA: ~45 minutes remaining
+  - Database URL: `postgresql://postgres:***@switchyard.proxy.rlwy.net:52817/railway`
+
+**Schema Changes:**
+- ✅ Added `nfpmAddress` column to `PositionTransfer` table (distinguish Enosys vs SparkDEX)
+- ✅ Created `Pool` table for pool metadata:
+  - `address` (PK), `token0`, `token1`, `fee`
+  - `token0Symbol`, `token1Symbol` (e.g. "WFLR/USDT")
+  - `token0Name`, `token1Name`, `token0Decimals`, `token1Decimals`
+  - `factory`, `blockNumber`, `txHash`
+  - Indexes on `factory`, `token0+token1`, `blockNumber`
+
+**New Scripts:**
+- ✅ `scripts/dev/enrich-pools.mts` — Enriches Pool table with token metadata via RPC
+  - Reads `PoolCreated` events from `PoolEvent`
+  - Fetches ERC-20 symbol/name/decimals for token0 and token1
+  - Usage: `tsx scripts/dev/enrich-pools.mts [--limit=100] [--offset=0]`
+  - Rate limited: 100ms delay between pools to avoid RPC throttling
+
+**Data Model Updates:**
+- ✅ `eventDecoder.ts` — Added `nfpmAddress` to `DecodedTransfer` interface
+- ✅ `dbWriter.ts` — Now writes `nfpmAddress` to `PositionTransfer` table
+- ✅ `prisma/schema.prisma` — Added Pool model + nfpmAddress field
+
+**Current Database Status (2025-11-08 14:45):**
+```
+✅ PositionEvent: 132,000 (INCREASE/DECREASE/COLLECT)
+✅ PositionTransfer: 25,780 (NFT ownership transfers)
+✅ PoolEvent: 404 (PoolCreated events only)
+⏳ Pool contract events (Swap/Mint/Burn/Collect): Pending
+⏳ Pool metadata enrichment: Pending (after indexer completes)
+```
+
+**Next Steps (After Indexer Completes):**
+1. Verify all data: PositionEvent, PositionTransfer, PoolEvent counts
+2. Run pool metadata enrichment: `tsx scripts/dev/enrich-pools.mts`
+3. Verify pool names display correctly (e.g. "WFLR/USDT (0.05%)")
+4. Setup Railway Indexer Follower for continuous updates
+5. Implement RangeBand™ status API (IN_RANGE/NEAR_BAND/OUT_OF_RANGE)
+
+**Known Issues:**
+- Pool contract events (Swap/Mint/Burn/Collect) not yet appearing in database despite indexer scanning them
+- Pool enrichment script will fetch metadata for 404 pools (~40 minutes with rate limiting)
+- `poolCount: 0` in progress file suggests pool registry may not be populated yet
+
+---
+
+## Changelog — 2025-11-08 (Earlier)
 • **ERC-721 Full Indexing** — Completed full historical backfill of all ERC-721 Transfer events from both Enosys V3 NFPM (`0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657`) and SparkDEX V3 NFPM (`0xEE5FF5Bc5F852764b5584d92A4d592A53DC527da`). Total: 41,777 transfers, 24,432 unique NFT positions, 40,195 MINTs, 532 BURNs. Indexed locally using ANKR RPC (fast) and written directly to Railway Postgres (yamabiko). Earliest block: 29,989,866 (2025-04-13), latest: 50,289,944 (current).
 • **Railway Database Migration** — Successfully migrated from crashed 500MB database (Postgres dc2e) to new 50GB database (yamabiko). Used external proxy URL for local indexing: `postgresql://postgres:tFXzfPtgqJpXOKbGBEiYeAstRdRdqAVF@yamabiko.proxy.rlwy.net:54929/railway`.
 • **Indexer Follower Setup** — Added `indexer:follow:railway` npm script for continuous following using Flare Public RPC (free). Railway service configured with `Dockerfile.worker`, custom start command `npm run indexer:follow:railway`, and environment variables for both NFPMs.
@@ -563,6 +622,31 @@ Next (accuracy): when NFPM address is stored per event/transfer, replace the fir
 - scripts/dev/verify-tokenid-pool.sql — (NEW) Verification queries: PositionTransfer/PositionEvent counts, analytics_position_flat summary, top 10 owners/pools, CSV exports to /tmp.
 - package.json — Added npm scripts: sql:backfill:tokenid-pool, sql:refresh:analytics-flat, sql:verify:tokenid-pool.
 - PROJECT_STATE.md — Added tokenId→pool backfill runbook under "Analytics: Position index (token_id)" with npm run commands and success criteria.
+
+## Changelog — 2025-11-09
+• **Railway Database Migration:** Migrated from crashed 500MB Railway database ("yamabiko") to new 50GB instance ("switchyard" → renamed to "Postgres"). DATABASE_URL updated to use variable references (`${{Postgres.DATABASE_URL}}`) for both LiquiLab and Indexer Follower services.
+• **Full ERC-721 Data Indexing:** Completed backfill of historical ERC-721 position data (PositionTransfer + PositionEvent) for both Enosys and SparkDEX NFPMs from block 29,837,200 to 51,400,000+ using ANKR RPC. Database now contains **73,468 PositionTransfer** events and **49,012 distinct positions**.
+• **Schema Enhancements:**
+  - Added `nfpmAddress` column to `PositionTransfer` table to distinguish between Enosys and SparkDEX NFPMs.
+  - Created `Pool` table with metadata (token0, token1, fee, symbols, names, decimals, factory, blockNumber).
+  - Created `Token` model for reusable token metadata.
+• **New Scripts:**
+  - `scripts/dev/enrich-pools.mts` — Enriches Pool table with token metadata via RPC calls (symbols, names, decimals).
+  - `scripts/ankr/fetch-factories-pools.mts` — Fetches PoolCreated events from factories and Mint/Burn/Collect events from pools.
+  - `scripts/ankr/smart-pool-scanner.mts` — Two-phase scanner: quick scan to identify top 50 active pools, then full scan for those pools.
+• **Railway Deployment:**
+  - Created dedicated `Dockerfile.worker` for Indexer Follower service (avoids Next.js build, includes scripts/src/indexer.config.ts).
+  - Fixed `tsx` dependency placement (moved from devDependencies to dependencies).
+  - Configured Railway Cron Job for daily indexer backfills (8:00 AM CET).
+  - Indexer Follower now uses Flare public RPC with reduced settings (RPS=2, Concurrency=2, BlockWindow=25) to comply with 30-block limit.
+• **Placeholder Restoration:**
+  - Re-created `pages/placeholder.tsx` with wave-hero background and modern glassmorphic login UI.
+  - Middleware correctly redirects all traffic to `/placeholder` when `PLACEHOLDER_PASS` is set.
+  - Access password: `Demo88`.
+• **Vercel Migration:** Removed all Vercel-related configuration (`.vercel/`, `vercel.json`, `vercel.json.backup`). Project now fully deployed on Railway.
+• **Documentation:**
+  - Created `RAILWAY_INDEXER_SETUP.md` with detailed Railway configuration instructions.
+  - Updated `HANDOVER_TO_CHATGPT.md` with latest indexer status, database credentials, and next steps.
 
 ## Changelog — 2025-11-07
 • .env.local — Switched FLARE_RPC_URL from ANKR (`https://rpc.ankr.com/flare/...`) to Flare public RPC (`https://flare-api.flare.network/ext/bc/C/rpc`) to eliminate ANKR credit costs.

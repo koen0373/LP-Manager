@@ -99,7 +99,7 @@ model PositionEvent {
 }
 
 model PositionTransfer {
-  id          String @id // txHash:logIndex
+  id          String  @id // txHash:logIndex
   tokenId     String
   from        String
   to          String
@@ -108,9 +108,92 @@ model PositionTransfer {
   logIndex    Int
   timestamp   Int
   metadata    Json?
+  nfpmAddress String? // NFPM contract address (Enosys or SparkDEX)
 
   @@unique([txHash, logIndex])
   @@index([tokenId, blockNumber])
+  @@index([nfpmAddress])
+}
+
+model Pool {
+  address       String   @id // Pool contract address (lowercase)
+  token0        String   // Token0 address
+  token1        String   // Token1 address
+  fee           Int      // Fee tier (500 = 0.05%, 3000 = 0.3%, 10000 = 1%)
+  token0Symbol  String?  // Token0 symbol (e.g. "WFLR")
+  token1Symbol  String?  // Token1 symbol (e.g. "USDT")
+  token0Name    String?  // Token0 name (e.g. "Wrapped Flare")
+  token1Name    String?  // Token1 name (e.g. "Tether USD")
+  token0Decimals Int?    // Token0 decimals
+  token1Decimals Int?    // Token1 decimals
+  factory       String   // Factory address (Enosys or SparkDEX)
+  blockNumber   Int      // Block when pool was created
+  txHash        String   // Transaction hash of PoolCreated event
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  incentives    PoolIncentive[]
+
+  @@index([factory])
+  @@index([token0, token1])
+  @@index([blockNumber])
+}
+
+model PoolIncentive {
+  id                Int      @id @default(autoincrement())
+  poolAddress       String   // FK naar Pool.address
+  pool              Pool     @relation(fields: [poolAddress], references: [address], onDelete: Cascade)
+  dex               String   // 'enosys-v3' | 'sparkdex-v3'
+  
+  // Reward details
+  rewardToken       String   // Token address (e.g. WFLR, ENOSYS token)
+  rewardTokenSymbol String?  // Token symbol (e.g. "WFLR", "ENOSYS")
+  rewardPerDay      Decimal  @db.Decimal(38, 18) // Raw token amount per day
+  rewardUsdPerDay   Decimal? @db.Decimal(38, 18) // USD value (computed via prices)
+  
+  // Program metadata
+  programName       String?  // "Enosys LP Rewards Q4 2024"
+  startDate         DateTime
+  endDate           DateTime? // NULL = ongoing/perpetual
+  sourceUrl         String?  // Link naar announcement/docs
+  sourceType        String   @default("on-chain") // 'on-chain' | 'manual' | 'api'
+  stakingContract   String?  // Staking contract address (if on-chain)
+  
+  // Status flags
+  isActive          Boolean  @default(true)
+  verified          Boolean  @default(false) // Manual verification flag
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([poolAddress, rewardToken, startDate])
+  @@index([poolAddress, isActive])
+  @@index([dex, isActive])
+  @@index([endDate])
+  @@index([stakingContract])
+}
+
+// Raw staking events (for on-chain incentives tracking)
+model StakingEvent {
+  id              String   @id // txHash:logIndex
+  stakingContract String   // Staking/Farm contract address
+  poolAddress     String?  // LP pool address (if identifiable)
+  eventName       String   // 'Deposit' | 'Withdraw' | 'RewardPaid' | 'RewardAdded'
+  userAddress     String?  // Staker address
+  rewardToken     String?  // Reward token address
+  amount          String?  // Raw amount (wei)
+  blockNumber     Int
+  txHash          String
+  logIndex        Int
+  timestamp       Int
+  metadata        Json?    // Extra event-specific data
+  
+  createdAt       DateTime @default(now())
+
+  @@unique([txHash, logIndex])
+  @@index([stakingContract, blockNumber])
+  @@index([poolAddress, eventName])
+  @@index([eventName, timestamp])
 }
 
 enum CapitalFlowType {

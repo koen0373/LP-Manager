@@ -22,6 +22,7 @@ export interface DecodedTransfer {
   blockNumber: number;
   txHash: string;
   logIndex: number;
+  nfpmAddress: string;
 }
 
 export interface DecodedPositionEvent {
@@ -84,6 +85,7 @@ export class EventDecoder {
       blockNumber: Number(log.blockNumber),
       txHash: log.transactionHash!,
       logIndex: Number(log.logIndex),
+      nfpmAddress: log.address.toLowerCase(),
     };
   }
 

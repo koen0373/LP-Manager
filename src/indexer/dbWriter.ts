@@ -162,6 +162,7 @@ export class DbWriter {
               txHash: transfer.txHash,
               logIndex: transfer.logIndex,
               timestamp,
+              nfpmAddress: transfer.nfpmAddress,
             },
             update: {}, // No-op on duplicate
           })

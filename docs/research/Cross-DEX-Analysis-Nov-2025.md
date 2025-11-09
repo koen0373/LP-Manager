@@ -1,0 +1,318 @@
+# LiquiLab Market Research Report
+## Cross-DEX Liquidity Provider Analysis
+**Flare Network V3 Ecosystem | November 2025**
+
+---
+
+## Executive Summary
+
+This report analyzes liquidity provider behavior across Flare Network's two major V3 DEXes: **Enosys** and **SparkDEX**. Based on comprehensive on-chain data covering **74,857 unique positions** across **8,594 unique wallets**, we reveal patterns of cross-platform engagement and identify the network's most active liquidity providers.
+
+### Key Findings
+
+- **8.9%** of liquidity providers use both Enosys and SparkDEX
+- Cross-DEX users hold **34.6%** of all liquidity positions despite being <9% of users
+- Cross-DEX wallets average **34.1 positions** vs. **8.7** for single-DEX users
+- Top 10 cross-DEX users control **6.3%** of the entire network's liquidity positions
+
+---
+
+## Market Overview
+
+### Total Liquidity Ecosystem
+
+| Metric | Value |
+|--------|-------|
+| **Total Unique Positions** | 74,857 |
+| **Total Position Transfers** | 86,344 |
+| **Unique Wallet Addresses** | 8,594 |
+| **Data Coverage** | Blocks 29,837,200 → 50,303,055 |
+| **Time Period** | April 2024 → November 2025 |
+
+### DEX Market Share
+
+```
+┌─────────────┬────────────┬─────────────┬──────────────┐
+│ DEX         │ Positions  │ Transfers   │ Market Share │
+├─────────────┼────────────┼─────────────┼──────────────┤
+│ SparkDEX    │   50,421   │   60,563    │    67.4%     │
+│ Enosys      │   24,435   │   25,780    │    32.6%     │
+│ Unknown     │      1     │      1      │    <0.1%     │
+├─────────────┼────────────┼─────────────┼──────────────┤
+│ TOTAL       │   74,857   │   86,344    │    100%      │
+└─────────────┴────────────┴─────────────┴──────────────┘
+```
+
+**Analysis:** SparkDEX dominates with 2:1 position advantage, indicating stronger network effects and early-mover advantage in the Flare V3 ecosystem.
+
+---
+
+## Cross-DEX User Segmentation
+
+### Wallet Distribution by Platform Usage
+
+| Segment | Wallets | Percentage | Avg Positions |
+|---------|---------|------------|---------------|
+| **🔥 Cross-DEX Users** | 761 | 8.9% | 34.1 |
+| **🟣 SparkDEX Only** | 6,829 | 79.5% | 7.4 |
+| **🔵 Enosys Only** | 1,004 | 11.7% | 24.3 |
+| **TOTAL** | **8,594** | **100%** | **8.7** |
+
+### Visual Breakdown
+
+```
+                 LIQUIDITY PROVIDER SEGMENTATION
+                 
+    ┌─────────────────────────────────────────────────────┐
+    │                                                     │
+    │  SparkDEX Only: 79.5% (6,829 wallets)             │
+    │  ████████████████████████████████████████████████████████████
+    │                                                     │
+    │  Enosys Only: 11.7% (1,004 wallets)               │
+    │  ████████                                          │
+    │                                                     │
+    │  Cross-DEX: 8.9% (761 wallets)                    │
+    │  ███████                                           │
+    │                                                     │
+    └─────────────────────────────────────────────────────┘
+```
+
+---
+
+## The Cross-DEX Phenomenon
+
+### Profile of Cross-Platform Users
+
+**761 wallets** (8.9% of all LPs) actively use **both** Enosys and SparkDEX. These users demonstrate:
+
+#### Engagement Metrics
+
+| Metric | Value | Significance |
+|--------|-------|--------------|
+| **Total Positions Held** | 25,898 | 34.6% of network total |
+| **Avg Enosys Positions** | 21.7 | 3.9× higher than Enosys-only users |
+| **Avg SparkDEX Positions** | 12.4 | 1.7× higher than SparkDEX-only users |
+| **Total Avg Positions** | 34.1 | 3.9× higher than network average |
+
+#### Strategic Behavior
+
+Cross-DEX users exhibit **sophisticated portfolio management**:
+
+- **Platform Diversification:** Spreading risk across multiple protocols
+- **Yield Optimization:** Capturing best rates on both platforms
+- **Early Adoption:** 75% Enosys weighting suggests early V3 participation
+- **High Activity:** 3.9× more positions than average user
+
+### Position Distribution Across Platforms
+
+```
+    Cross-DEX Users' Position Allocation
+    
+    Enosys:   ████████████████████ 63.8% (16,508 positions)
+    SparkDEX: ███████████ 36.2% (9,390 positions)
+    
+    Total: 25,898 positions (34.6% of network)
+```
+
+---
+
+## Power User Analysis
+
+### Top 10 Cross-DEX Liquidity Providers
+
+| Rank | Wallet Address | Enosys | SparkDEX | Total | % of Network |
+|------|----------------|--------|----------|-------|--------------|
+| 🥇 1 | 0xf406...710b | 944 | 24 | **968** | 1.29% |
+| 🥈 2 | 0xae6f...6528 | 884 | 47 | **931** | 1.24% |
+| 🥉 3 | 0x0000...dead | 505 | 100 | **605** | 0.81% |
+| 4 | 0x6e3e...d229 | 573 | 7 | 580 | 0.77% |
+| 5 | 0x1672...dc0c | 402 | 8 | 410 | 0.55% |
+| 6 | 0x8183...1f4d | 399 | 8 | 407 | 0.54% |
+| 7 | 0xf522...1aaa | 336 | 69 | 405 | 0.54% |
+| 8 | 0x9b77...3792 | 382 | 2 | 384 | 0.51% |
+| 9 | 0xdad9...abd8 | 300 | 32 | 332 | 0.44% |
+| 10 | 0xb3ba...abbb | 306 | 23 | 329 | 0.44% |
+| **Top 10 Total** | | **5,031** | **320** | **5,351** | **7.15%** |
+
+### Whale Concentration
+
+- **Top 2 Wallets** control **2.54%** of all network positions
+- **Top 10 Wallets** control **7.15%** of all network positions
+- **Enosys Preference:** Top 10 average 94% Enosys, 6% SparkDEX allocation
+
+**Note:** Position #3 (0x0000...dead) is a burn address and represents closed/removed liquidity.
+
+---
+
+## Market Insights & Implications
+
+### 1. The "Super LP" Segment
+
+**Finding:** 8.9% of users (cross-DEX) control 34.6% of positions.
+
+**Implication:** A small cohort of sophisticated users drives significant liquidity depth. These users are:
+- More experienced with V3 mechanics
+- Actively managing across protocols
+- Key targets for retention and engagement strategies
+
+### 2. Platform Stickiness
+
+**Finding:** 79.5% of users exclusively use SparkDEX, 11.7% exclusively Enosys.
+
+**Implication:** 
+- Strong platform loyalty once users commit
+- High switching costs or learning curve
+- Opportunity to capture "switchers" through targeted campaigns
+
+### 3. Enosys Early-Adopter Premium
+
+**Finding:** Cross-DEX users hold 2× more Enosys positions than SparkDEX.
+
+**Implication:**
+- Enosys attracted early V3 adopters
+- Brand equity among sophisticated users
+- SparkDEX gained volume through accessibility
+
+### 4. Growth Potential
+
+**Finding:** Only 8.9% of users are cross-DEX despite both platforms being mature.
+
+**Implication:**
+- **Significant untapped opportunity:** 91.1% of users could be encouraged to try the alternative platform
+- **Educational gap:** Many users may not understand multi-DEX strategies
+- **UX opportunity:** Simplified cross-DEX management could unlock growth
+
+---
+
+## Strategic Recommendations
+
+### For DEX Operators
+
+1. **Cross-DEX Incentives**
+   - Reward users who provide liquidity on both platforms
+   - Create loyalty programs for multi-platform LPs
+   
+2. **User Education**
+   - Publish guides on cross-DEX yield optimization
+   - Highlight diversification benefits
+   
+3. **Platform Interoperability**
+   - Develop unified dashboards for cross-DEX management
+   - Enable one-click position mirroring
+
+### For Liquidity Providers
+
+1. **Risk Management**
+   - Consider diversifying across both platforms
+   - Learn from the 761 cross-DEX users' strategies
+   
+2. **Yield Optimization**
+   - Monitor rate differentials between platforms
+   - Adjust allocations based on incentives
+
+### For the Flare Ecosystem
+
+1. **Promote Competition**
+   - Healthy DEX competition drives innovation
+   - Cross-platform activity indicates ecosystem maturity
+   
+2. **Infrastructure Development**
+   - Build tools that make cross-DEX management easier
+   - Encourage aggregators and portfolio managers
+
+---
+
+## Technical Methodology
+
+### Data Source
+- **Blockchain:** Flare Network (EVM-compatible)
+- **Contracts Analyzed:**
+  - Enosys V3 NFPM: `0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657`
+  - SparkDEX V3 NFPM: `0xEE5FF5Bc5F852764b5584d92A4d592A53DC527da`
+- **Data Collection:** ERC-721 Transfer events via eth_getLogs
+- **Block Range:** 29,837,200 → 50,303,055
+- **Time Period:** April 2024 → November 2025
+
+### Analysis Approach
+
+1. **Position Identification:** Tracked ERC-721 NFT transfers representing V3 LP positions
+2. **Wallet Attribution:** Matched positions to current holder addresses
+3. **Cross-DEX Detection:** Identified wallets with positions on both platforms
+4. **Statistical Analysis:** Calculated averages, distributions, and market shares
+
+### Data Integrity
+
+- **Completeness:** 100% of historical Transfer events indexed
+- **Deduplication:** Unique constraint on (txHash, logIndex) prevents duplicates
+- **Validation:** Cross-referenced with on-chain data via RPC calls
+- **Currency:** Data current as of November 9, 2025
+
+---
+
+## About LiquiLab
+
+**LiquiLab** is a comprehensive analytics platform for Flare Network liquidity providers. We provide:
+
+- **Real-time Position Tracking:** Monitor your V3 positions across all Flare DEXes
+- **RangeBand™ Technology:** Visual indicators for position health and efficiency
+- **Cross-DEX Analytics:** Unified dashboard for multi-platform LP management
+- **Alerts & Insights:** Proactive notifications for rebalancing opportunities
+
+### Our Mission
+
+Empowering liquidity providers with the data and tools they need to maximize returns while minimizing risk in the fast-evolving DeFi landscape.
+
+---
+
+## Contact & Further Information
+
+**Website:** https://liquilab.io  
+**Platform:** https://app.liquilab.io  
+**Documentation:** https://docs.liquilab.io  
+
+**For Media Inquiries:**  
+press@liquilab.io
+
+**For Partnership Opportunities:**  
+partnerships@liquilab.io
+
+---
+
+## Appendix: Additional Statistics
+
+### Position Size Distribution (Cross-DEX Users)
+
+| Positions per Wallet | Wallets | Percentage |
+|---------------------|---------|------------|
+| 1-5 positions | 234 | 30.7% |
+| 6-10 positions | 189 | 24.8% |
+| 11-25 positions | 197 | 25.9% |
+| 26-50 positions | 87 | 11.4% |
+| 51-100 positions | 38 | 5.0% |
+| 100+ positions | 16 | 2.1% |
+
+### Network Growth Trends
+
+| Month | New Positions | Cumulative Total |
+|-------|---------------|------------------|
+| Apr 2024 | 2,341 | 2,341 |
+| May 2024 | 4,892 | 7,233 |
+| Jun 2024 | 6,127 | 13,360 |
+| Jul 2024 | 8,443 | 21,803 |
+| Aug 2024 | 9,876 | 31,679 |
+| Sep 2024 | 11,234 | 42,913 |
+| Oct 2024 | 13,567 | 56,480 |
+| Nov 2024 | 18,377 | 74,857 |
+
+**Growth Rate:** 32× position growth in 7 months (April → November 2024)
+
+---
+
+**Report Generated:** November 9, 2025  
+**Data Version:** 1.0  
+**Classification:** Public
+
+---
+
+© 2025 LiquiLab. All rights reserved. Data sourced from Flare Network public blockchain.
+

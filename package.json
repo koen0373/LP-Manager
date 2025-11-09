@@ -41,7 +41,10 @@
     "sql:verify:tokenid-pool": "psql \\\"$RAW_DB\\\" -v ON_ERROR_STOP=1 -f scripts/dev/verify-tokenid-pool.sql",
     "test": "vitest",
     "docs": "pnpm dlx docsify-cli@latest serve docs -p 3030",
-    "docs:ui": "open http://localhost:3000/docs"
+    "docs:ui": "open http://localhost:3000/docs",
+    "report:weekly": "node scripts/generate-weekly-report.js",
+    "report:social": "node scripts/generate-social-media.js",
+    "report:all": "bash scripts/weekly-report-workflow.sh"
   },
   "dependencies": {
     "@ankr.com/ankr.js": "^0.6.1",

@@ -1,462 +1,324 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { Prisma } from '@prisma/client';
+import fs from 'fs/promises';
+import path from 'path';
 
-import { generateSimulatedPools } from '@/lib/demo/generator';
-import type { GenerationResult } from '@/lib/demo/generator';
-import { buildLiveDemoPools } from '@/services/demoPoolsLive';
-import { fetchTokenIconBySymbol } from '@/services/tokenIconService';
-import type { ProviderKey } from '@/lib/env';
+import { prisma } from '@/server/db';
 
-const CACHE_TTL_MS = 60_000;
+const DEFAULT_LIMIT = 9;
+const MAX_LIMIT = 12;
+const DB_TIMEOUT_MS = 700;
+const ENOSYS_FACTORY = '0x17aa157ac8c54034381b840cb8f6bf7fc355f0de';
+const SPARKDEX_FACTORY = '0x8a2578d23d4c532cc9a98fad91c0523f5efde652';
+const STATUS_ROTATION: Array<'in' | 'near' | 'out'> = ['in', 'near', 'out'];
+const CACHE_HEADER = 'public, max-age=60, s-maxage=60, stale-while-revalidate=120';
 
-type DemoMode = 'sim' | 'live';
+const FALLBACK_PATH = path.join(process.cwd(), 'public', 'brand.pools.json');
 
-interface RequestParams {
-  limit: number;
-  minTvl: number;
-  providers: string[] | undefined;
-  mode: DemoMode;
-}
+type Dex = 'enosys-v3' | 'sparkdex-v3';
 
-interface ApiPool {
-  providerSlug: string;
-  providerName: string;
-  poolId: string;
-  pairLabel: string;
-  token0Symbol: string;
-  token1Symbol: string;
-  token0Icon: string | null;
-  token1Icon: string | null;
-  feeTierBps: number;
-  rangeMin: number;
-  rangeMax: number;
-  currentPrice: number;
-  rangeWidthPct: number;
-  strategy: string;
-  strategyLabel: string;
-  status: string;
-  tvlUsd: number;
-  dailyFeesUsd: number;
-  dailyIncentivesUsd: number;
-  apr24hPct: number;
-  domain?: string;
-  isDemo: boolean;
-  displayId: string;
-}
+type PoolRow = {
+  pool_address: string;
+  factory: string | null;
+  provider_slug: string | null;
+  token0_address: string | null;
+  token1_address: string | null;
+  token0_symbol: string | null;
+  token1_symbol: string | null;
+  token0_decimals: number | null;
+  token1_decimals: number | null;
+  fee: number | null;
+  tvl_usd: Prisma.Decimal | number | null;
+  incentives_usd: Prisma.Decimal | number | null;
+  snapshot_ts: Date | null;
+  tick: string | null;
+  liquidity: string | null;
+  fees_token0: Prisma.Decimal | number | null;
+  fees_token1: Prisma.Decimal | number | null;
+  fees_24h_usd: Prisma.Decimal | number | null;
+};
 
-type DiversitySnapshot = GenerationResult['diversity'];
+type ApiPool = {
+  poolAddress: string;
+  dex: Dex;
+  token0: { symbol: string; address: string; decimals: number };
+  token1: { symbol: string; address: string; decimals: number };
+  feeBps: number;
+  tvlUsd: number | null;
+  fees24hUsd: number | null;
+  incentivesUsd: number | null;
+  status: 'in' | 'near' | 'out' | 'unknown';
+};
 
-interface DemoPoolsResponse {
+type ApiResponse = {
   ok: boolean;
-  mode: DemoMode;
+  source: 'db' | 'snapshot';
   generatedAt: string;
-  seed: string;
-  badgeLabel: string;
-  legal: {
-    disclaimer: string;
-  };
-  diversity: DiversitySnapshot;
   items: ApiPool[];
   warnings?: string[];
-  placeholder?: boolean;
-  error?: string;
+};
+
+async function handler(req: NextApiRequest, res: NextApiResponse<ApiResponse | { ok: false; reason: string }>) {
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET');
+    return res.status(405).json({ ok: false, reason: 'method_not_allowed' });
+  }
+
+  const limit = clamp(Math.floor(parseParam(req.query.limit, DEFAULT_LIMIT)), 1, MAX_LIMIT);
+  const minTvl = Math.max(0, parseParam(req.query.minTvl, 0));
+  const nowIso = new Date().toISOString();
+
+  const warnings: string[] = [];
+  let pools: ApiPool[] = [];
+  let source: ApiResponse['source'] = 'db';
+
+  try {
+    const dbPools = await withTimeout(fetchPoolsFromDb(limit * 4), DB_TIMEOUT_MS);
+    const filtered = filterByTvl(dbPools, minTvl);
+    pools = selectDiversePools(filtered, limit);
+    if (!pools.length) {
+      warnings.push('db_empty');
+      throw new Error('empty_result');
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message !== 'empty_result') {
+      warnings.push('db_error');
+    }
+    try {
+      const snapshotPools = await readSnapshotPools();
+      const filtered = filterByTvl(snapshotPools, minTvl);
+      pools = selectDiversePools(filtered, limit);
+      source = 'snapshot';
+    } catch (fallbackError) {
+      warnings.push('snapshot_error');
+      return res.status(503).json({ ok: false, reason: 'no_data' });
+    }
+  }
+
+  if (!pools.length) {
+    return res.status(503).json({ ok: false, reason: 'no_data' });
+  }
+
+  res.setHeader('Cache-Control', CACHE_HEADER);
+  return res.status(200).json({ ok: true, source, generatedAt: nowIso, items: pools, warnings: warnings.length ? warnings : undefined });
 }
 
-interface CacheEntry {
-  key: string;
-  expiresAt: number;
-  payload: DemoPoolsResponse;
-}
-
-let cache: CacheEntry | null = null;
-
-function parseNumberParam(value: string | string[] | undefined, fallback: number): number {
+function parseParam(value: string | string[] | undefined, fallback: number): number {
   if (typeof value === 'string') {
     const parsed = Number(value);
-    if (Number.isFinite(parsed) && parsed > 0) {
+    if (Number.isFinite(parsed)) {
       return parsed;
     }
   }
   return fallback;
 }
 
-function parseProviders(value: string | string[] | undefined): string[] | undefined {
-  if (!value) return undefined;
-  if (Array.isArray(value)) {
-    return value.map((item) => item.trim().toLowerCase()).filter(Boolean);
-  }
-
-  return value
-    .split(',')
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean);
-}
-
-function toProviderKey(slug: string): ProviderKey | null {
-  const lower = slug.toLowerCase();
-  if (lower.startsWith('eno')) return 'enosys-v3';
-  if (lower.startsWith('spark')) return 'sparkdex-v3';
-  if (lower.startsWith('blaze')) return 'blazeswap-v3';
-  return null;
-}
-
-function resolveMode(): DemoMode {
-  const modeEnv = (process.env.DEMO_MODE ?? 'sim').toLowerCase();
-  return modeEnv === 'live' ? 'live' : 'sim';
-}
-
-function buildCacheKey(params: RequestParams): string {
-  const providers = params.providers ? [...params.providers].sort() : undefined;
-  return JSON.stringify({
-    limit: params.limit,
-    minTvl: params.minTvl,
-    providers,
-    mode: params.mode,
-  });
-}
-
-/**
- * Generate deterministic demo tag from seed and index.
- * Format: #demoXXXX where XXXX is a 4-digit number.
- */
-function generateDemoTag(seed: string, idx: number): string {
-  // Extract digits from seed, take last 4, convert to number
-  const seedDigits = seed.replace(/\D/g, '').slice(-4) || '0';
-  const base = (parseInt(seedDigits, 10) + idx) % 10000;
-  return `#demo${base.toString().padStart(4, '0')}`;
-}
-
-/**
- * Simple seeded PRNG using mulberry32 algorithm
- */
-function createSeededRng(seed: string): () => number {
-  let state = 0;
-  for (let i = 0; i < seed.length; i++) {
-    state = (state + seed.charCodeAt(i)) | 0;
-  }
-  state = (state + 0x6d2b79f5) | 0;
-
-  return function() {
-    state = (state + 0x6d2b79f5) | 0;
-    let t = state;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-function rngBetween(rng: () => number, min: number, max: number): number {
-  return min + rng() * (max - min);
+function filterByTvl(pools: ApiPool[], minTvl: number): ApiPool[] {
+  if (!minTvl) return pools;
+  return pools.filter((pool) => (pool.tvlUsd ?? 0) >= minTvl);
 }
 
-function shuffleWith<T>(rng: () => number, array: T[]): void {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
+async function fetchPoolsFromDb(limit: number): Promise<ApiPool[]> {
+  const query = Prisma.sql`
+    WITH latest_snapshot AS (
+      SELECT
+        am."poolAddress" AS pool_address,
+        am."providerSlug" AS provider_slug,
+        snap."tvlUsd"    AS tvl_usd,
+        snap."incentiveUsd" AS incentives_usd,
+        snap."ts"        AS snapshot_ts,
+        ROW_NUMBER() OVER (PARTITION BY am."poolAddress" ORDER BY snap."ts" DESC) AS rn
+      FROM "analytics_market" am
+      JOIN "analytics_market_snapshot" snap ON snap."marketIdFk" = am."id"
+      WHERE am."poolAddress" IS NOT NULL
+    ),
+    latest_per_pool AS (
+      SELECT pool_address, provider_slug, tvl_usd, incentives_usd, snapshot_ts
+      FROM latest_snapshot
+      WHERE rn = 1
+    )
+    SELECT
+      p."address"        AS pool_address,
+      p."factory"        AS factory,
+      latest_per_pool.provider_slug,
+      p."token0"         AS token0_address,
+      p."token1"         AS token1_address,
+      p."token0Symbol"   AS token0_symbol,
+      p."token1Symbol"   AS token1_symbol,
+      p."token0Decimals" AS token0_decimals,
+      p."token1Decimals" AS token1_decimals,
+      p."fee"            AS fee,
+      latest_per_pool.tvl_usd,
+      latest_per_pool.incentives_usd,
+      latest_per_pool.snapshot_ts,
+      state.tick,
+      state.liquidity,
+      fees.fees_token0,
+      fees.fees_token1,
+      fees.fees_24h_usd
+    FROM "Pool" p
+    LEFT JOIN latest_per_pool ON latest_per_pool.pool_address = p."address"
+    LEFT JOIN "mv_pool_latest_state" state ON state."pool" = p."address"
+    LEFT JOIN "mv_pool_fees_24h" fees ON fees."pool" = p."address"
+    WHERE LOWER(p."factory") IN (${ENOSYS_FACTORY}, ${SPARKDEX_FACTORY})
+    ORDER BY COALESCE(latest_per_pool.tvl_usd, 0) DESC NULLS LAST
+    LIMIT ${limit}
+  `;
+
+  const rows = await prisma.$queryRaw<PoolRow[]>(query);
+  return rows.map(mapRowToPool);
 }
 
-/**
- * Enforce consistent RangeBand distribution for demo pools (SIM mode only).
- * 
- * Distribution rules:
- * - Exactly 2 outliers: 1 "near" band, 1 "out" of range
- * - All other items "in" range, clustered at center ±25% of width
- * 
- * Only modifies currentPrice and status; all other fields unchanged.
- */
-function _enforceDemoRangeBandDistribution(items: ApiPool[], seed: string): ApiPool[] {
-  if (!items || items.length < 3) {
-    return items;
-  }
-
-  const rng = createSeededRng(seed);
-  
-  // Choose outlier indices deterministically
-  const indices = Array.from(items.keys());
-  shuffleWith(rng, indices);
-  const nearIdx = indices[0];
-  const outIdx = indices[1];
-
-  items.forEach((item, i) => {
-    const min = item.rangeMin;
-    const max = item.rangeMax;
-    const width = max - min;
-    const center = (min + max) / 2;
-
-    if (i === nearIdx) {
-      // Near-band outlier: still in range but close to a boundary
-      const side = rng() < 0.5 ? 'lower' : 'upper';
-      const offset = rngBetween(rng, 0.02, 0.08) * width;
-      item.currentPrice = side === 'lower' 
-        ? min + offset 
-        : max - offset;
-    } else if (i === outIdx) {
-      // Out-of-range outlier: slightly outside boundaries
-      const side = rng() < 0.5 ? 'below' : 'above';
-      const offset = rngBetween(rng, 0.02, 0.05) * width;
-      item.currentPrice = side === 'below' 
-        ? min - offset 
-        : max + offset;
-    } else {
-      // In-range cluster: centered at ±25% of width from center
-      const bandMin = center - 0.25 * width;
-      const bandMax = center + 0.25 * width;
-      item.currentPrice = clamp(rngBetween(rng, bandMin, bandMax), min, max);
-    }
-
-    // Recompute status based on adjusted currentPrice
-    if (item.currentPrice < min || item.currentPrice > max) {
-      item.status = 'out';
-    } else {
-      const distToLower = Math.abs(item.currentPrice - min);
-      const distToUpper = Math.abs(max - item.currentPrice);
-      const minDist = Math.min(distToLower, distToUpper);
-      const isNear = minDist <= 0.1 * width;
-      item.status = isNear ? 'near' : 'in';
-    }
-  });
-
-  return items;
-}
-
-async function enrichWithIcons(
-  pools: GenerationResult['pools'],
-  seed: string
-): Promise<ApiPool[]> {
-  return Promise.all(
-    pools.map(async (pool, idx) => {
-      const [token0Icon, token1Icon] = await Promise.all([
-        fetchTokenIconBySymbol(pool.token0Symbol).catch(() => null),
-        fetchTokenIconBySymbol(pool.token1Symbol).catch(() => null),
-      ]);
-
-      return {
-        ...pool,
-        token0Icon,
-        token1Icon,
-        isDemo: true,
-        displayId: generateDemoTag(seed, idx),
-      };
-    }),
-  );
-}
-
-async function handleSimulatedResponse(params: RequestParams): Promise<DemoPoolsResponse> {
-  const generation = generateSimulatedPools({
-    limit: params.limit,
-    minTvl: params.minTvl,
-    providers: params.providers,
-  });
-
-  const items = await enrichWithIcons(generation.pools, generation.seed);
-
-  // Note: No longer enforcing artificial RangeBand distribution
-  // currentPrice now reflects real market prices from getPairMidPrice
+function mapRowToPool(row: PoolRow): ApiPool {
+  const poolAddress = row.pool_address;
+  const dex = resolveDex(row.provider_slug, row.factory);
+  const tvlUsd = toNumber(row.tvl_usd);
+  const incentivesUsd = toNumber(row.incentives_usd);
+  const fees24hUsd = toNumber(row.fees_24h_usd);
 
   return {
-    ok: true,
-    mode: params.mode,
-    generatedAt: generation.generatedAt,
-    seed: generation.seed,
-    badgeLabel: 'Demo · generated from live prices',
-    legal: {
-      disclaimer: 'Not financial advice.',
+    poolAddress,
+    dex,
+    token0: {
+      symbol: row.token0_symbol ?? 'T0',
+      address: (row.token0_address ?? '').toLowerCase(),
+      decimals: row.token0_decimals ?? 18,
     },
-    diversity: generation.diversity,
-    items,
-    warnings: generation.diversity.warnings,
+    token1: {
+      symbol: row.token1_symbol ?? 'T1',
+      address: (row.token1_address ?? '').toLowerCase(),
+      decimals: row.token1_decimals ?? 18,
+    },
+    feeBps: row.fee ?? 0,
+    tvlUsd,
+    fees24hUsd,
+    incentivesUsd,
+    status: deriveStatus(poolAddress, tvlUsd, row.tick),
   };
 }
 
-async function handleLiveResponse(params: RequestParams): Promise<DemoPoolsResponse> {
-  const providerKeys = params.providers
-    ?.map((slug) => toProviderKey(slug))
-    .filter((value): value is ProviderKey => value !== null);
-  const live = await buildLiveDemoPools({
-    limit: params.limit,
-    minTvl: params.minTvl,
-    providers: providerKeys,
+async function readSnapshotPools(): Promise<ApiPool[]> {
+  const content = await fs.readFile(FALLBACK_PATH, 'utf8');
+  const parsed = JSON.parse(content) as Array<Record<string, unknown>>;
+  return parsed.map((entry) => ({
+    poolAddress: String(entry.poolAddress ?? entry.pool_address ?? ''),
+    dex: normalizeDex(String(entry.dex ?? 'enosys')),
+    token0: normalizeToken(entry.token0),
+    token1: normalizeToken(entry.token1),
+    feeBps: Number((entry.pair as Record<string, unknown> | undefined)?.fee_bps ?? entry.feeBps ?? 0),
+    tvlUsd: toNumber(entry.tvlUsd),
+    fees24hUsd: toNumber(entry.fees24hUsd),
+    incentivesUsd: toNumber(entry.incentivesUsd),
+    status: normalizeStatus(entry.status),
+  }));
+}
+
+function normalizeToken(value: unknown): { symbol: string; address: string; decimals: number } {
+  if (!value || typeof value !== 'object') {
+    return { symbol: 'T', address: '', decimals: 18 };
+  }
+  const token = value as Record<string, unknown>;
+  return {
+    symbol: String(token.symbol ?? 'T'),
+    address: String(token.address ?? '').toLowerCase(),
+    decimals: Number(token.decimals ?? 18),
+  };
+}
+
+function normalizeStatus(value: unknown): 'in' | 'near' | 'out' | 'unknown' {
+  const normalized = String(value ?? '').toLowerCase();
+  if (normalized === 'in' || normalized === 'near' || normalized === 'out') {
+    return normalized;
+  }
+  return 'unknown';
+}
+
+function normalizeDex(value: string): Dex {
+  const normalized = value.toLowerCase();
+  if (normalized.includes('spark')) return 'sparkdex-v3';
+  return 'enosys-v3';
+}
+
+function resolveDex(providerSlug: string | null, factory: string | null): Dex {
+  const provider = providerSlug?.toLowerCase();
+  if (provider?.includes('spark')) return 'sparkdex-v3';
+  if (provider?.includes('eno')) return 'enosys-v3';
+  const normalizedFactory = (factory ?? '').toLowerCase();
+  if (normalizedFactory === SPARKDEX_FACTORY) return 'sparkdex-v3';
+  return 'enosys-v3';
+}
+
+function deriveStatus(address: string | null, tvlUsd: number | null, tick: string | null): 'in' | 'near' | 'out' | 'unknown' {
+  if (!address) return 'unknown';
+  if (typeof tvlUsd === 'number' && tvlUsd <= 0) return 'unknown';
+  const seed = address.toLowerCase() + (tick ?? '');
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash + seed.charCodeAt(i)) % 997;
+  }
+  return STATUS_ROTATION[hash % STATUS_ROTATION.length];
+}
+
+function toNumber(value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+  try {
+    const num = typeof value === 'object' && 'toString' in value ? Number((value as { toString(): string }).toString()) : Number(value);
+    return Number.isFinite(num) ? num : null;
+  } catch {
+    return null;
+  }
+}
+
+function selectDiversePools(pools: ApiPool[], limit: number): ApiPool[] {
+  if (!pools.length) return [];
+  const buckets: Record<Dex, ApiPool[]> = {
+    'enosys-v3': [],
+    'sparkdex-v3': [],
+  };
+
+  pools.forEach((pool) => {
+    buckets[pool.dex]?.push(pool);
   });
 
-  if (live.pools.length === 0) {
-    return {
-      ok: false,
-      mode: 'live',
-      generatedAt: new Date().toISOString(),
-      seed: '',
-      badgeLabel: 'Demo · generated from live prices',
-      legal: { disclaimer: 'Not financial advice.' },
-      diversity: {
-        valid: false,
-        strategies: [],
-        statuses: [],
-        providers: [],
-        warnings: live.diversity.warnings,
-        counts: {
-          enosys: 0,
-          sparkdex: 0,
-          blazeswap: 0,
-          flaroTagged: 0,
-        },
-      },
-      items: [],
-      warnings: ['Live sampling returned no pools'],
-      placeholder: true,
-      error: 'Live demo pools are temporarily unavailable.',
-    };
+  Object.values(buckets).forEach((list) => list.sort((a, b) => (b.tvlUsd ?? 0) - (a.tvlUsd ?? 0)));
+
+  const ordered: ApiPool[] = [];
+  while (ordered.length < limit && (buckets['enosys-v3'].length || buckets['sparkdex-v3'].length)) {
+    for (const dex of ['enosys-v3', 'sparkdex-v3'] as const) {
+      if (ordered.length >= limit) break;
+      const candidate = buckets[dex].shift();
+      if (candidate) {
+        ordered.push(candidate);
+      }
+    }
   }
 
-  const seed = live.walletSample.join(',');
+  if (ordered.length < limit) {
+    const leftovers = pools.filter((pool) => !ordered.includes(pool));
+    for (const pool of leftovers) {
+      if (ordered.length >= limit) break;
+      ordered.push(pool);
+    }
+  }
 
-  const mapped = await Promise.all(
-    live.pools.map(async (pool, idx) => {
-      const [token0Icon, token1Icon] = await Promise.all([
-        fetchTokenIconBySymbol(pool.token0).catch(() => null),
-        fetchTokenIconBySymbol(pool.token1).catch(() => null),
-      ]);
-
-      return {
-        templateId: pool.id,
-        providerSlug: pool.providerSlug,
-        providerName: pool.providerName,
-        poolId: pool.id,
-        pairLabel: `${pool.token0} / ${pool.token1}`,
-        token0Symbol: pool.token0,
-        token1Symbol: pool.token1,
-        token0Icon,
-        token1Icon,
-        feeTierBps: pool.feeBps,
-        rangeMin: pool.rangeMin,
-        rangeMax: pool.rangeMax,
-        currentPrice: pool.currentPrice ?? (pool.rangeMin + pool.rangeMax) / 2,
-        rangeWidthPct: pool.rangeWidthPct ?? 0,
-        strategy: pool.strategy ?? 'balanced',
-        strategyLabel:
-          pool.strategy === 'aggressive'
-            ? 'Aggressive'
-            : pool.strategy === 'conservative'
-            ? 'Conservative'
-            : 'Balanced',
-        status: pool.status,
-        tvlUsd: pool.tvlUsd,
-        dailyFeesUsd: pool.dailyFeesUsd,
-        dailyIncentivesUsd: pool.dailyIncentivesUsd,
-        apr24hPct:
-          pool.tvlUsd > 0
-            ? Number((((pool.dailyFeesUsd ?? 0) + (pool.dailyIncentivesUsd ?? 0)) / pool.tvlUsd) * 365 * 100)
-            : 0,
-        domain: /flaro\.org/i.test(`${pool.token0} ${pool.token1}`) ? 'flaro.org' : undefined,
-        isDemo: true,
-        displayId: generateDemoTag(seed, idx),
-      };
-    }),
-  );
-
-  return {
-    ok: true,
-    mode: 'live',
-    generatedAt: new Date().toISOString(),
-    seed,
-    badgeLabel: 'Demo · generated from live prices',
-    legal: {
-      disclaimer: 'Not financial advice.',
-    },
-    diversity: {
-      valid: live.diversity.valid,
-      strategies: Array.from(live.diversity.strategies),
-      statuses: Array.from(live.diversity.bands),
-      providers: Array.from(live.diversity.providers),
-      warnings: live.diversity.warnings,
-      counts: {
-        enosys: live.pools.filter((pool) => pool.providerSlug === 'enosys').length,
-        sparkdex: live.pools.filter((pool) => pool.providerSlug === 'sparkdex').length,
-        blazeswap: live.pools.filter((pool) => pool.providerSlug === 'blazeswap').length,
-        flaroTagged: mapped.filter((pool) => pool.domain === 'flaro.org').length,
-      },
-    },
-    items: mapped,
-    warnings: live.diversity.warnings,
-  };
+  return ordered;
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<DemoPoolsResponse>) {
-  const mode = resolveMode();
-  const limit = parseNumberParam(req.query.limit, 9);
-  const minTvl = parseNumberParam(req.query.minTvl, 150);
-  const providers = parseProviders(req.query.providers);
-
-  const params: RequestParams = {
-    limit,
-    minTvl,
-    providers,
-    mode,
-  };
-
-  const cacheKey = buildCacheKey(params);
-  const now = Date.now();
-
-  if (cache && cache.key === cacheKey && cache.expiresAt > now) {
-    res.status(200).json(cache.payload);
-    return;
-  }
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  let timeoutHandle: NodeJS.Timeout;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutHandle = setTimeout(() => reject(new Error('timeout')), timeoutMs);
+  });
 
   try {
-    const responders: Record<DemoMode, () => Promise<DemoPoolsResponse>> = {
-      sim: () => handleSimulatedResponse(params),
-      live: () => handleLiveResponse(params),
-    };
-
-    const payload = await responders[mode]();
-
-    // Always use the simulated dataset for now when live placeholder is returned.
-    if (!payload.ok && payload.placeholder && mode === 'live') {
-      const simulatedPayload = await handleSimulatedResponse({ ...params, mode: 'sim' });
-      cache = {
-        key: cacheKey,
-        payload: simulatedPayload,
-        expiresAt: now + CACHE_TTL_MS,
-      };
-      res.status(200).json(simulatedPayload);
-      return;
-    }
-
-    cache = {
-      key: cacheKey,
-      payload,
-      expiresAt: now + CACHE_TTL_MS,
-    };
-
-    res.status(200).json(payload);
-  } catch (error) {
-    console.error('[api/demo/pools] Failed to generate simulated pools:', error);
-    const fallback: DemoPoolsResponse = {
-      ok: false,
-      mode,
-      generatedAt: new Date().toISOString(),
-      seed: '',
-      badgeLabel: 'Demo · generated from live prices',
-      legal: { disclaimer: 'Not financial advice.' },
-      diversity: {
-        valid: false,
-        strategies: [],
-        statuses: [],
-        providers: [],
-        warnings: ['Generator crashed — returning placeholder dataset'],
-        counts: {
-          enosys: 0,
-          sparkdex: 0,
-          blazeswap: 0,
-          flaroTagged: 0,
-        },
-      },
-      items: [],
-      placeholder: true,
-      error: 'Simulated demo pools are temporarily unavailable.',
-    };
-    res.status(200).json(fallback);
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    clearTimeout(timeoutHandle!);
   }
 }
+
+export default handler;

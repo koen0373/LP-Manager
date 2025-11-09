@@ -9,44 +9,69 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { getRflrRewardForPosition } from '../src/services/rflrRewards';
 
 const prisma = new PrismaClient();
 
+const RFLR_API_BASE_URL = 'https://v3.dex.enosys.global/api/flr/v2/stats/rflr';
 const RFLR_PRICE_USD = 0.016; // rFLR ≈ $0.016 (update via price API later)
+
+/**
+ * Fetch rFLR reward for a single position via Enosys API
+ */
+async function getRflrReward(positionId: string): Promise<number | null> {
+  try {
+    const response = await fetch(`${RFLR_API_BASE_URL}/${positionId}`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const reward = await response.json();
+    const numericReward = typeof reward === 'number' ? reward : Number(reward);
+
+    return Number.isFinite(numericReward) ? numericReward : null;
+  } catch (error) {
+    return null;
+  }
+}
 
 async function main() {
   console.log('[APIIncentivesFetcher] Starting Enosys rFLR aggregation...');
 
-  // 1. Get all active Enosys positions from PositionEvent
-  const enosysPositions = await prisma.positionEvent.findMany({
+  const ENOSYS_NFPM = '0xd9770b1c7a6ccd33c75b5bcb1c0078f46be46657'.toLowerCase();
+
+  // 1. Get all unique Enosys positions from PositionTransfer
+  const enosysPositions = await prisma.positionTransfer.findMany({
     where: {
-      pool: {
-        in: await getEnosysPools(),
-      },
-      eventType: { in: ['MINT', 'INCREASE'] },
+      nfpmAddress: ENOSYS_NFPM,
     },
     distinct: ['tokenId'],
     select: {
       tokenId: true,
-      pool: true,
     },
+    take: 50, // Sample first 50 positions for quick test
   });
 
   console.log(`[APIIncentivesFetcher] Found ${enosysPositions.length} Enosys positions`);
 
+  if (enosysPositions.length === 0) {
+    console.log('[APIIncentivesFetcher] No Enosys positions found. Exiting.');
+    return;
+  }
+
   // 2. Fetch rFLR rewards per position via API
-  const poolRewardsMap = new Map<string, { totalRflr: number; positionCount: number }>();
+  const positionRewards: Array<{ tokenId: string; rflr: number }> = [];
 
   for (const position of enosysPositions) {
     try {
-      const rflrReward = await getRflrRewardForPosition(position.tokenId);
+      const rflrReward = await getRflrReward(position.tokenId);
       
       if (rflrReward && rflrReward > 0) {
-        const poolData = poolRewardsMap.get(position.pool) || { totalRflr: 0, positionCount: 0 };
-        poolData.totalRflr += rflrReward;
-        poolData.positionCount += 1;
-        poolRewardsMap.set(position.pool, poolData);
+        positionRewards.push({ tokenId: position.tokenId, rflr: rflrReward });
+        console.log(`[APIIncentivesFetcher] Position ${position.tokenId}: ${rflrReward.toFixed(2)} rFLR`);
       }
 
       // Rate limit
@@ -56,53 +81,36 @@ async function main() {
     }
   }
 
-  console.log(`[APIIncentivesFetcher] Aggregated rFLR for ${poolRewardsMap.size} pools`);
+  console.log(`[APIIncentivesFetcher] Found ${positionRewards.length} positions with rFLR rewards`);
 
-  // 3. Convert to per-day rewards (rFLR API returns total claimable, we estimate daily rate)
-  // Assumption: rewards accumulate linearly, estimate daily rate from current claimable amount
-  // Better approach: track delta over 24h, but for MVP we use a fixed daily rate estimate
-
-  const DAILY_RATE_ESTIMATE = 0.05; // Assume 5% of claimable amount accrues per day
-
-  for (const [poolAddress, data] of poolRewardsMap) {
-    const avgRflrPerPosition = data.totalRflr / data.positionCount;
-    const estimatedDailyRflr = avgRflrPerPosition * DAILY_RATE_ESTIMATE * data.positionCount;
-    const estimatedDailyUsd = estimatedDailyRflr * RFLR_PRICE_USD;
-
-    console.log(
-      `[APIIncentivesFetcher] ${poolAddress}: ${estimatedDailyRflr.toFixed(2)} rFLR/day ($${estimatedDailyUsd.toFixed(2)}) — ${data.positionCount} positions`
-    );
-
-    // 4. Upsert into PoolIncentive table
-    await prisma.poolIncentive.upsert({
-      where: {
-        poolAddress_rewardToken_startDate: {
-          poolAddress,
-          rewardToken: '0x0000000000000000000000000000000000000000', // Placeholder for rFLR
-          startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
-        },
-      },
-      create: {
-        poolAddress,
-        dex: 'enosys-v3',
-        rewardToken: '0x0000000000000000000000000000000000000000',
-        rewardTokenSymbol: 'rFLR',
-        rewardPerDay: estimatedDailyRflr.toString(),
-        rewardUsdPerDay: estimatedDailyUsd.toString(),
-        startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-        sourceType: 'api',
-        isActive: true,
-        verified: false, // API-derived, needs manual verification
-      },
-      update: {
-        rewardPerDay: estimatedDailyRflr.toString(),
-        rewardUsdPerDay: estimatedDailyUsd.toString(),
-        updatedAt: new Date(),
-      },
-    });
+  if (positionRewards.length === 0) {
+    console.log('[APIIncentivesFetcher] No rewards found. Exiting.');
+    return;
   }
 
-  console.log('[APIIncentivesFetcher] Done! rFLR incentives updated in PoolIncentive table.');
+  // 3. Aggregate by pool (we need to resolve tokenId → pool first)
+  // For now, create a single "Enosys V3 Global" incentive entry
+  const totalRflr = positionRewards.reduce((sum, p) => sum + p.rflr, 0);
+  const avgRflrPerPosition = totalRflr / positionRewards.length;
+
+  // Estimate daily rate: 5% of current claimable amount accrues per day
+  const DAILY_RATE_ESTIMATE = 0.05;
+  const estimatedDailyRflr = avgRflrPerPosition * DAILY_RATE_ESTIMATE * positionRewards.length;
+  const estimatedDailyUsd = estimatedDailyRflr * RFLR_PRICE_USD;
+
+  console.log(
+    `[APIIncentivesFetcher] Total: ${totalRflr.toFixed(2)} rFLR claimable across ${positionRewards.length} positions`
+  );
+  console.log(
+    `[APIIncentivesFetcher] Estimated daily rate: ${estimatedDailyRflr.toFixed(2)} rFLR/day ($${estimatedDailyUsd.toFixed(2)})`
+  );
+
+  // 4. Since we don't have pool mapping yet, store as "global" Enosys incentive
+  // This will be distributed across pools proportionally later
+  console.log('[APIIncentivesFetcher] Note: Pool-specific mapping not yet available.');
+  console.log('[APIIncentivesFetcher] Run pool enrichment script first, or use this as global Enosys rFLR rate.');
+
+  console.log('[APIIncentivesFetcher] Done!');
 }
 
 /**

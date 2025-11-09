@@ -674,3 +674,12 @@ export INDEXER_BLOCK_WINDOW=500
 
 <!-- CHANGELOG_ARCHIVE_INDEX -->
 See archives in /docs/changelog/.
+
+## Changelog — 2025-11-09
+- prisma/migrations/20251109_mv_pool_latest_state/migration.sql — Added latest-state materialized view for pool tick/liquidity snapshots.
+- prisma/migrations/20251109_mv_pool_fees_24h/migration.sql — Added 24h fees materialized view with pool index for concurrent refreshes.
+- pages/api/demo/pools.ts — Rebuilt endpoint to prefer Railway Postgres views with snapshot fallback and 60s caching.
+- pages/api/demo/history.ts — Added read-only history endpoint exposing 24h deltas from demo.history.json.
+- scripts/cron/update-demo-history.ts — New cron helper that appends TVL/pool totals once every 20h+ with 14-day retention.
+- public/demo.history.json — Seeded history file for API + cron to read/write.
+- PROJECT_STATE.md — Recorded prospect endpoint rollout and linked artefacts in changelog.

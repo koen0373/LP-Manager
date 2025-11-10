@@ -7,8 +7,8 @@ Hey r/FlareNetwork! We just published our weekly deep-dive into V3 liquidity pro
 * **Total Value Locked:** $59.3M
 * **Total Positions:** 50,542
 * **Active Wallets:** 4,889
-* **SparkDEX TVL:** $52.7M (88.9%)
-* **Enosys TVL:** $6.6M (11.1%)
+* **SparkDEX TVL:** $52.6M (88.8%)
+* **Enosys TVL:** $6.6M (11.2%)
 
 ## 🔥 Most Interesting Finding
 

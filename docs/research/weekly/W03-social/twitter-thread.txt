@@ -27,12 +27,12 @@ TWEET 3/7
 3/ 📊 MARKET BREAKDOWN
 
 SparkDEX 🟣
-$52.7M TVL
-88.9% market share
+$52.6M TVL
+88.8% market share
 
 Enosys 🔵
 $6.6M TVL
-11.1% market share
+11.2% market share
 
 SparkDEX dominates in both volume AND pool depth
 

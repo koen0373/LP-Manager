@@ -10,11 +10,11 @@ This week's report analyzes liquidity provider behavior across Flare Network's t
 
 ### Key Findings (Week 3)
 
-- **$59.3M** in combined TVL across 238 active pools (SparkDEX: $52.7M, Enosys: $6.6M)
+- **$59.3M** in combined TVL across 238 active pools (SparkDEX: $52.6M, Enosys: $6.6M)
 - **15.6%** of liquidity providers use both Enosys and SparkDEX
 - Cross-DEX users hold **~15.6%** of all liquidity positions
 - Cross-DEX wallets average **536.5 positions** vs. **10.3** for single-DEX users
-- Average position size: **$1173** (SparkDEX: $1043, Enosys: $269)
+- Average position size: **$1173** (SparkDEX: $1042, Enosys: $270)
 
 ---
 
@@ -29,7 +29,7 @@ This week's report analyzes liquidity provider behavior across Flare Network's t
 | **Total Position Transfers** | 85,088 | - |
 | **Total Active Pools** | 238 | - |
 | **Unique Wallet Addresses** | 4,889 | - |
-| **Report Date** | 2025-11-09 | - |
+| **Report Date** | 2025-11-10 | - |
 
 ### DEX Market Share
 
@@ -37,14 +37,14 @@ This week's report analyzes liquidity provider behavior across Flare Network's t
 ┌─────────────┬────────────┬─────────────┬──────────────┬─────────────┐
 │ DEX         │ Positions  │ Transfers   │ Market Share │ TVL         │
 ├─────────────┼────────────┼─────────────┼──────────────┼─────────────┤
-│ SparkDEX    │   50,542 │   60,736   │    100.0%     │  $52.7M     │
+│ SparkDEX    │   50,542 │   60,736   │    100.0%     │  $52.6M     │
 │ Enosys      │   24,568 │   25,913   │    48.6%     │   $6.6M     │
 ├─────────────┼────────────┼─────────────┼──────────────┼─────────────┤
 │ TOTAL       │   50,542 │   85,088   │    100%      │  $59.3M     │
 └─────────────┴────────────┴─────────────┴──────────────┴─────────────┘
 ```
 
-**Analysis:** SparkDEX dominates with 100.0% position share **and 88.9% TVL share**, indicating significantly deeper liquidity per position.
+**Analysis:** SparkDEX dominates with 100.0% position share **and 88.8% TVL share**, indicating significantly deeper liquidity per position.
 
 ---
 
@@ -65,7 +65,7 @@ This week's report analyzes liquidity provider behavior across Flare Network's t
 
 **Estimated Metrics:**
 - **Total TVL:** ~$9.3M (15.6% of ecosystem)
-- **Avg TVL per Wallet:** ~$12129
+- **Avg TVL per Wallet:** ~$12123
 - **Est. APR:** 30-50% (vs 10-15% single-DEX)
 
 ---
@@ -117,7 +117,7 @@ This week's report analyzes liquidity provider behavior across Flare Network's t
 
 ---
 
-**Report Generated:** 2025-11-09T17:39:54.175Z  
+**Report Generated:** 2025-11-10T05:46:21.468Z  
 **Data Source:** Flare Network blockchain + DefiLlama API  
 **Next Report:** Week 4, 2025
 

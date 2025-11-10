@@ -29,7 +29,8 @@
 - [P3] Add health row on `/admin/ankr` exposing last cron execution result.
 - [ ] Persist NFPM emitter address into PositionEvent/PositionTransfer and re-classify without heuristic.
 - [ ] Improve pool matching for positions with `pool_address IS NULL` (txHash+ticks join & NFPM read).
-- [ ] Add materialized view `analytics_pool_24h` once position table is stable.
+- [ ] Add materiali
+zed view `analytics_pool_24h` once position table is stable.
 - [ ] Run ANKR nightly validation job (sampled PositionTransfer owners vs ANKR responses).
 - [ ] Design enrichment job to fill unknown pools/owners via ANKR Advanced API.
 - [ ] Document pricing/cache retention strategy for ANKR-sourced token data.
@@ -78,3 +79,6 @@
 ---
 
 > Rotation: run `npm run state:rotate` (or `npm run state:check`) before merging to archive older changelog entries and keep the snapshot lean.
+
+<!-- CHANGELOG_ARCHIVE_INDEX -->
+See archives in /docs/changelog/.

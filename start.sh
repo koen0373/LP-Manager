@@ -1,25 +1,43 @@
 #!/bin/sh
 
-echo "🔍 Checking environment..."
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🚀 LiquiLab Startup Script"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+echo ""
+echo "🔍 Environment Check:"
+echo "   PWD: $(pwd)"
+echo "   USER: $(whoami)"
 echo "   PORT: ${PORT:-3000}"
 echo "   NODE_ENV: ${NODE_ENV:-development}"
-echo "   DATABASE_URL: ${DATABASE_URL:0:30}..." # Show first 30 chars only
 
-# Check if DATABASE_URL is set
+# Check DATABASE_URL
 if [ -z "$DATABASE_URL" ]; then
-  echo "❌ ERROR: DATABASE_URL is not set!"
-  echo "   Skipping migrations and starting app anyway..."
+  echo "   DATABASE_URL: ❌ NOT SET"
+  echo ""
+  echo "⚠️  WARNING: DATABASE_URL is missing!"
+  echo "   Skipping migrations..."
+  echo ""
 else
+  echo "   DATABASE_URL: ✅ SET (${DATABASE_URL:0:40}...)"
+  echo ""
   echo "🔄 Running Prisma migrations..."
-  if npx prisma migrate deploy; then
+  if npx prisma migrate deploy 2>&1; then
     echo "✅ Migrations complete!"
   else
-    echo "⚠️  Migrations failed, but continuing to start app..."
+    echo "⚠️  Migrations failed (exit code: $?)"
+    echo "   Continuing anyway..."
   fi
 fi
 
-echo "🚀 Starting Next.js server on port ${PORT:-3000}..."
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🚀 Starting Next.js Server"
+echo "   Port: ${PORT:-3000}"
+echo "   Mode: production"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
 
-# Don't use 'set -e' to allow graceful error handling
+# Start Next.js (use exec to replace shell process)
 exec npx next start -p "${PORT:-3000}"
 

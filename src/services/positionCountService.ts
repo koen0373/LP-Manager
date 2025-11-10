@@ -1,169 +1,253 @@
-/**
- * Position Count Service - Fetch V3 Position Counts
- * 
- * Uses FlareScan to get the total supply of ERC-721 position NFTs
- * for Enosys and SparkDEX V3 position managers.
- */
+import { type Address, getAddress, parseAbiItem } from 'viem';
 
-interface PositionCountResponse {
+import { publicClient } from '@/lib/viemClient';
+import { prisma } from '@/server/db';
+
+type SourceKey = 'enosys' | 'sparkdex';
+
+type SourceConfig = {
+  key: SourceKey;
+  address: Address;
+  startBlock: bigint;
+  normalized: string;
+};
+
+type PositionCountRow = {
+  nfpm: string;
+  total: bigint | number;
+  last_block: bigint | number | null;
+  updated_at: Date;
+};
+
+type AggregateSummary = {
   enosys: number;
   sparkdex: number;
   total: number;
-}
+  lastBlock: number;
+};
 
-const POSITION_MANAGERS = {
-  enosys: '0xD9770b1C7A6ccd33C75b5bcB1c0078f46bE46657',
-  sparkdex: '0xEE5FF5Bc5F852764b5584d92A4d592A53DC527da',
-} as const;
+type CachedSummary = {
+  enosys: number;
+  sparkdex: number;
+  total: number;
+  updatedAt: string | null;
+};
 
-/**
- * Fetch position count from FlareScan
- * 
- * FlareScan provides token holder counts which equals total minted positions
- */
-async function fetchPositionCountFromFlareScan(
-  contractAddress: string
-): Promise<number> {
-  const url = `https://flarescan.com/token/${contractAddress}?erc721&chainid=14`;
-  
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'LiquiLab/1.0',
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error(`FlareScan API error: ${response.status}`);
-    }
-    
-    const html = await response.text();
-    
-    // Parse the HTML to extract token count
-    // FlareScan shows "Total Holders: X" for ERC-721 tokens
-    const holderMatch = html.match(/Total\s+Holders[:\s]+([0-9,]+)/i);
-    if (holderMatch) {
-      return parseInt(holderMatch[1].replace(/,/g, ''), 10);
-    }
-    
-    // Alternative: look for token supply in the page
-    const supplyMatch = html.match(/Total\s+Supply[:\s]+([0-9,]+)/i);
-    if (supplyMatch) {
-      return parseInt(supplyMatch[1].replace(/,/g, ''), 10);
-    }
-    
-    console.warn(`[PositionCount] Could not parse count from FlareScan for ${contractAddress}`);
-    return 0;
-  } catch (error) {
-    console.error(`[PositionCount] Failed to fetch from FlareScan:`, error);
-    return 0;
+const ZERO_ADDRESS = getAddress('0x0000000000000000000000000000000000000000');
+const LOG_CHUNK = 10_000n;
+const TRANSFER_EVENT = parseAbiItem('event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)');
+
+const SOURCE_SPECS = [
+  { key: 'enosys' as const, env: 'ENOSYS_NFPM', startEnv: 'ENOSYS_NFPM_START_BLOCK' },
+  { key: 'sparkdex' as const, env: 'SPARKDEX_NFPM', startEnv: 'SPARKDEX_NFPM_START_BLOCK' },
+] as const;
+
+let tableReady = false;
+
+export async function aggregatePositionCountsViaRpc(): Promise<AggregateSummary> {
+  await ensurePositionCountsTable();
+
+  const configs = loadSourceConfigs();
+  if (!configs.length) {
+    return { enosys: 0, sparkdex: 0, total: 0, lastBlock: 0 };
   }
-}
 
-/**
- * Fetch position count from on-chain (fallback)
- * 
- * Uses the totalSupply() function if available on the NFT contract
- */
-async function fetchPositionCountOnChain(
-  contractAddress: string
-): Promise<number> {
-  try {
-    const { createPublicClient, http } = await import('viem');
-    const { flareChain } = await import('@/chains/flare');
-    
-    const client = createPublicClient({
-      chain: flareChain,
-      transport: http(process.env.FLARE_RPC_URL),
-    });
-    
-    // Try to call totalSupply() - standard ERC-721 enumerable function
-    const totalSupply = await client.readContract({
-      address: contractAddress as `0x${string}`,
-      abi: [
-        {
-          inputs: [],
-          name: 'totalSupply',
-          outputs: [{ type: 'uint256' }],
-          stateMutability: 'view',
-          type: 'function',
-        },
-      ],
-      functionName: 'totalSupply',
-    });
-    
-    return Number(totalSupply);
-  } catch (error) {
-    console.warn(`[PositionCount] On-chain totalSupply() failed:`, error);
-    return 0;
+  const latestBlock = await publicClient.getBlockNumber();
+  const perSource: Record<SourceKey, { total: number; lastBlock: number }> = {
+    enosys: { total: 0, lastBlock: 0 },
+    sparkdex: { total: 0, lastBlock: 0 },
+  };
+
+  for (const config of configs) {
+    try {
+      const existing = await readExistingRow(config.normalized);
+      const previousTotal = existing ? toBigInt(existing.total) : 0n;
+      const previousLastBlock = existing ? toBigInt(existing.last_block ?? 0) : (config.startBlock > 0n ? config.startBlock - 1n : 0n);
+      const effectiveFrom = determineFromBlock(previousLastBlock + 1n, config.startBlock);
+
+      let mintedDelta = 0n;
+      let processedBlock = previousLastBlock;
+
+      if (effectiveFrom <= latestBlock) {
+        const scanResult = await countMintLogs(config.address, effectiveFrom, latestBlock);
+        mintedDelta = scanResult.mintedDelta;
+        processedBlock = scanResult.processedBlock > processedBlock ? scanResult.processedBlock : processedBlock;
+      }
+
+      const updatedTotal = previousTotal + mintedDelta;
+      const finalLastBlock = processedBlock > previousLastBlock ? processedBlock : previousLastBlock;
+
+      await upsertPositionCount(config.normalized, updatedTotal, finalLastBlock);
+
+      perSource[config.key] = {
+        total: Number(updatedTotal),
+        lastBlock: Number(finalLastBlock),
+      };
+    } catch (error) {
+      console.warn('[positionCountService] failed to aggregate counts', {
+        nfpm: config.address,
+        error,
+      });
+    }
   }
+
+  return {
+    enosys: perSource.enosys.total,
+    sparkdex: perSource.sparkdex.total,
+    total: perSource.enosys.total + perSource.sparkdex.total,
+    lastBlock: Math.max(perSource.enosys.lastBlock, perSource.sparkdex.lastBlock),
+  };
 }
 
-/**
- * Get position counts for all V3 DEXes
- */
-export async function getPositionCounts(): Promise<PositionCountResponse> {
-  const counts: PositionCountResponse = {
+export async function getCachedPositionCounts(): Promise<CachedSummary> {
+  await ensurePositionCountsTable();
+
+  const configs = loadSourceConfigs();
+  const addressMap = new Map<string, SourceKey>();
+  configs.forEach((config) => addressMap.set(config.normalized, config.key));
+
+  const rows = await prisma.$queryRaw<PositionCountRow[]>`
+    SELECT nfpm, total, last_block, updated_at
+    FROM position_counts
+  `;
+
+  const summary: CachedSummary = {
     enosys: 0,
     sparkdex: 0,
     total: 0,
+    updatedAt: null,
   };
-  
-  // Try FlareScan first (more reliable), fallback to on-chain
-  try {
-    counts.enosys = await fetchPositionCountFromFlareScan(POSITION_MANAGERS.enosys);
-    
-    // If FlareScan failed, try on-chain
-    if (counts.enosys === 0) {
-      counts.enosys = await fetchPositionCountOnChain(POSITION_MANAGERS.enosys);
+
+  for (const row of rows) {
+    const key = addressMap.get(row.nfpm.toLowerCase());
+    if (!key) continue;
+
+    const total = Number(toBigInt(row.total));
+    summary[key] = total;
+    summary.total = summary.enosys + summary.sparkdex;
+
+    if (!summary.updatedAt || new Date(row.updated_at).getTime() > new Date(summary.updatedAt).getTime()) {
+      summary.updatedAt = row.updated_at.toISOString();
     }
-  } catch (error) {
-    console.error('[PositionCount] Failed to fetch Enosys count:', error);
   }
-  
-  try {
-    counts.sparkdex = await fetchPositionCountFromFlareScan(POSITION_MANAGERS.sparkdex);
-    
-    // If FlareScan failed, try on-chain
-    if (counts.sparkdex === 0) {
-      counts.sparkdex = await fetchPositionCountOnChain(POSITION_MANAGERS.sparkdex);
-    }
-  } catch (error) {
-    console.error('[PositionCount] Failed to fetch SparkDEX count:', error);
-  }
-  
-  counts.total = counts.enosys + counts.sparkdex;
-  
-  console.log('[PositionCount] Fetched counts:', counts);
-  
-  return counts;
+
+  return summary;
 }
 
-/**
- * Get position counts with fallback to reasonable estimates
- */
-export async function getPositionCountsWithFallback(): Promise<PositionCountResponse> {
-  try {
-    const counts = await getPositionCounts();
-    
-    // If both are 0, use mock data
-    if (counts.total === 0) {
-      console.warn('[PositionCount] All counts are 0, using estimates');
+async function countMintLogs(address: Address, fromBlock: bigint, latest: bigint) {
+  let mintedDelta = 0n;
+  let processedBlock = fromBlock > 0n ? fromBlock - 1n : 0n;
+
+  let cursor = fromBlock;
+  while (cursor <= latest) {
+    const chunkEnd = cursor + LOG_CHUNK - 1n;
+    const toBlock = chunkEnd > latest ? latest : chunkEnd;
+
+    try {
+      const logs = await publicClient.getLogs({
+        address,
+        event: TRANSFER_EVENT,
+        args: { from: ZERO_ADDRESS },
+        fromBlock: cursor,
+        toBlock,
+      });
+
+      mintedDelta += BigInt(logs.length);
+      processedBlock = toBlock;
+    } catch (error) {
+      console.warn('[positionCountService] log scan error', {
+        address,
+        fromBlock: cursor,
+        toBlock,
+        error,
+      });
+      break;
+    }
+
+    if (toBlock === latest) break;
+    cursor = toBlock + 1n;
+  }
+
+  return { mintedDelta, processedBlock };
+}
+
+async function readExistingRow(nfpm: string) {
+  const rows = await prisma.$queryRaw<PositionCountRow[]>`
+    SELECT nfpm, total, last_block, updated_at
+    FROM position_counts
+    WHERE nfpm = ${nfpm}
+    LIMIT 1
+  `;
+  return rows[0];
+}
+
+async function upsertPositionCount(nfpm: string, total: bigint, lastBlock: bigint) {
+  await prisma.$executeRaw`
+    INSERT INTO position_counts (nfpm, total, last_block, updated_at)
+    VALUES (${nfpm}, ${total}, ${lastBlock}, NOW())
+    ON CONFLICT (nfpm)
+    DO UPDATE
+    SET total = EXCLUDED.total,
+        last_block = EXCLUDED.last_block,
+        updated_at = NOW()
+  `;
+}
+
+function loadSourceConfigs(): SourceConfig[] {
+  return SOURCE_SPECS.map((spec) => {
+    const addressValue = process.env[spec.env];
+    if (!addressValue) return null;
+
+    try {
+      const address = getAddress(addressValue as `0x${string}`);
+      const startBlock = parseEnvBigInt(process.env[spec.startEnv]) ?? 0n;
       return {
-        enosys: 450,
-        sparkdex: 380,
-        total: 830,
+        key: spec.key,
+        address,
+        startBlock,
+        normalized: address.toLowerCase(),
       };
+    } catch {
+      return null;
     }
-    
-    return counts;
-  } catch (error) {
-    console.error('[PositionCount] Failed to fetch counts, using estimates:', error);
-    return {
-      enosys: 450,
-      sparkdex: 380,
-      total: 830,
-    };
+  }).filter((entry): entry is SourceConfig => Boolean(entry));
+}
+
+function parseEnvBigInt(value?: string): bigint {
+  if (!value) return 0n;
+  try {
+    return BigInt(value);
+  } catch {
+    return 0n;
   }
 }
 
+function determineFromBlock(candidate: bigint, minimum: bigint) {
+  return candidate < minimum ? minimum : candidate;
+}
+
+function toBigInt(value: bigint | number | null | undefined): bigint {
+  if (typeof value === 'bigint') return value;
+  if (typeof value === 'number') return BigInt(value);
+  if (typeof value === 'string') {
+    try {
+      return BigInt(value);
+    } catch {
+      return 0n;
+    }
+  }
+  return 0n;
+}
+
+async function ensurePositionCountsTable() {
+  if (tableReady) return;
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS position_counts (
+      nfpm TEXT PRIMARY KEY,
+      total BIGINT NOT NULL DEFAULT 0,
+      last_block BIGINT NOT NULL DEFAULT 0,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  tableReady = true;
+}

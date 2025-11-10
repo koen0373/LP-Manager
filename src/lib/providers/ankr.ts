@@ -1,14 +1,66 @@
+import { getAddress, type Address } from 'viem';
+
+import { publicClient } from '@/lib/viemClient';
+
 const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 const ANKR_URL = process.env.ANKR_URL;
 const ANKR_API_KEY = process.env.ANKR_API_KEY;
-const NFPM_ADDRESSES = [
-  process.env.ENOSYS_NFPM,
-  process.env.SPARKDEX_NFPM,
-]
-  .filter(Boolean)
-  .map((address) => address!.toLowerCase());
 
 type JsonRecord = Record<string, unknown>;
+
+type NfpmConfig = {
+  address: Address;
+  fromBlock: bigint;
+};
+
+const NFPM_CONFIGS: NfpmConfig[] = [
+  process.env.ENOSYS_NFPM
+    ? {
+        address: getAddress(process.env.ENOSYS_NFPM as `0x${string}`),
+        fromBlock: BigInt(process.env.ENOSYS_NFPM_START_BLOCK ?? 0),
+      }
+    : null,
+  process.env.SPARKDEX_NFPM
+    ? {
+        address: getAddress(process.env.SPARKDEX_NFPM as `0x${string}`),
+        fromBlock: BigInt(process.env.SPARKDEX_NFPM_START_BLOCK ?? 0),
+      }
+    : null,
+].filter((entry): entry is NfpmConfig => Boolean(entry));
+
+const NFT_CACHE = new Map<string, { expires: number; tokenIds: bigint[] }>();
+const NFT_CACHE_TTL_MS = 120_000;
+const LOG_CHUNK = 10_000n;
+
+const ERC721_ENUMERABLE_ABI = [
+  {
+    type: 'function',
+    name: 'balanceOf',
+    stateMutability: 'view',
+    inputs: [{ name: 'owner', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'tokenOfOwnerByIndex',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'index', type: 'uint256' },
+    ],
+    outputs: [{ name: 'tokenId', type: 'uint256' }],
+  },
+] as const;
+
+const TRANSFER_EVENT = {
+  type: 'event',
+  name: 'Transfer',
+  inputs: [
+    { name: 'from', type: 'address', indexed: true },
+    { name: 'to', type: 'address', indexed: true },
+    { name: 'tokenId', type: 'uint256', indexed: true },
+  ],
+} as const;
 
 async function ankrRequest<T>(method: string, params: JsonRecord): Promise<T | null> {
   if (!ANKR_URL || !ANKR_API_KEY) return null;
@@ -49,49 +101,92 @@ async function ankrRequest<T>(method: string, params: JsonRecord): Promise<T | n
   }
 }
 
-function parseTokenId(tokenId: unknown): bigint | null {
-  if (typeof tokenId === 'number' && Number.isInteger(tokenId)) {
-    return BigInt(tokenId);
+export async function nftsByOwner(owner: string): Promise<bigint[]> {
+  if (!ADDRESS_REGEX.test(owner) || !NFPM_CONFIGS.length) {
+    return [];
   }
-  if (typeof tokenId === 'string' && tokenId.length > 0) {
-    try {
-      return BigInt(tokenId);
-    } catch {
-      return null;
-    }
+
+  let normalizedOwner: Address;
+  try {
+    normalizedOwner = getAddress(owner);
+  } catch {
+    return [];
   }
-  return null;
+
+  const results = await Promise.all(NFPM_CONFIGS.map((config) => enumerateForConfig(config, normalizedOwner)));
+  const unique = new Set<string>();
+  results.forEach((list) => {
+    list.forEach((tokenId) => unique.add(tokenId.toString()));
+  });
+  return Array.from(unique).map((value) => BigInt(value));
 }
 
-export async function nftsByOwner(owner: string): Promise<bigint[]> {
-  if (!ADDRESS_REGEX.test(owner) || NFPM_ADDRESSES.length === 0) {
-    return [];
+async function enumerateForConfig(config: NfpmConfig, owner: Address): Promise<bigint[]> {
+  const cacheKey = `${config.address}:${owner.toLowerCase()}`;
+  const cached = NFT_CACHE.get(cacheKey);
+  if (cached && cached.expires > Date.now()) {
+    return cached.tokenIds;
   }
 
-  const nfpmSet = new Set(NFPM_ADDRESSES);
-  const result = await ankrRequest<{
-    assets?: Array<{ contractAddress?: string; tokenId?: string | number }>;
-  }>('ankr_getNFTsByOwner', {
-    blockchain: 'flare',
-    walletAddress: owner,
-    pageSize: 1000,
-  });
+  const tokens =
+    (await enumerateViaEnumerable(config.address, owner).catch(() => enumerateViaLogs(config, owner)))
+    ?? [];
 
-  if (!result || !Array.isArray(result.assets)) {
-    return [];
+  NFT_CACHE.set(cacheKey, { expires: Date.now() + NFT_CACHE_TTL_MS, tokenIds: tokens });
+  return tokens;
+}
+
+async function enumerateViaEnumerable(nfpm: Address, owner: Address): Promise<bigint[]> {
+  const balance = await publicClient.readContract({
+    address: nfpm,
+    abi: ERC721_ENUMERABLE_ABI,
+    functionName: 'balanceOf',
+    args: [owner],
+  }) as bigint;
+
+  const tokenIds: bigint[] = [];
+  for (let i = 0n; i < balance; i += 1n) {
+    const tokenId = await publicClient.readContract({
+      address: nfpm,
+      abi: ERC721_ENUMERABLE_ABI,
+      functionName: 'tokenOfOwnerByIndex',
+      args: [owner, i],
+    }) as bigint;
+    tokenIds.push(tokenId);
   }
 
-  const ids: bigint[] = [];
-  for (const asset of result.assets) {
-    const contract = typeof asset.contractAddress === 'string' ? asset.contractAddress.toLowerCase() : null;
-    if (!contract || !nfpmSet.has(contract)) continue;
-    const parsed = parseTokenId(asset.tokenId);
-    if (parsed !== null) {
-      ids.push(parsed);
+  return tokenIds;
+}
+
+async function enumerateViaLogs(config: NfpmConfig, owner: Address): Promise<bigint[]> {
+  const fromBlock = config.fromBlock ?? 0n;
+  const latest = await publicClient.getBlockNumber();
+  const tokenIds = new Set<bigint>();
+
+  for (let start = fromBlock; start <= latest; start += LOG_CHUNK) {
+    const end = start + LOG_CHUNK - 1n;
+    try {
+      const logs = await publicClient.getLogs({
+        address: config.address,
+        event: TRANSFER_EVENT,
+        args: { to: owner },
+        fromBlock: start,
+        toBlock: end > latest ? latest : end,
+      });
+
+      logs.forEach((log) => {
+        const tokenId = log.args?.tokenId as bigint | undefined;
+        if (typeof tokenId === 'bigint') {
+          tokenIds.add(tokenId);
+        }
+      });
+    } catch (error) {
+      console.warn('[nfpm] log scan error', error);
+      break;
     }
   }
 
-  return ids;
+  return Array.from(tokenIds);
 }
 
 function extractPrice(candidate: unknown): number | null {

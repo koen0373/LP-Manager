@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { probeBlazeSwapPairs } from '@/lib/providers/blazeswapV2';
-import { getPositionCountsWithFallback } from '@/services/positionCountService';
+import { getCachedPositionCounts } from '@/services/positionCountService';
 
 type ProviderHealth = {
   configured: boolean;
@@ -14,6 +14,12 @@ type HealthResponse = {
   ok: true;
   service: 'liquilab';
   ts: string;
+  positionCounts: {
+    enosys: number;
+    sparkdex: number;
+    total: number;
+    updatedAt: string | null;
+  };
   providers: {
     enosys?: ProviderHealth;
     sparkdex?: ProviderHealth;
@@ -33,7 +39,7 @@ export default async function handler(
   try {
     // Fetch position counts and BlazeSwap pairs in parallel
     const [positionCounts, blazeswap] = await Promise.all([
-      getPositionCountsWithFallback(),
+      getCachedPositionCounts(),
       probeBlazeSwapPairs(),
     ]);
 
@@ -41,6 +47,7 @@ export default async function handler(
       ok: true,
       service: 'liquilab',
       ts: new Date().toISOString(),
+      positionCounts,
       providers: {
         enosys: {
           configured: true,

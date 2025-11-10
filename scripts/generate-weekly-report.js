@@ -195,9 +195,11 @@ async function fetchDefiLlamaTVL() {
   }
 }
 
-// Main TVL fetcher (tries LiquiLab first, then DefiLlama)
+// Main TVL fetcher (DefiLlama until Railway issue is fixed)
 async function fetchTVL() {
-  return await fetchLiquiLabTVL();
+  // Temporarily use DefiLlama directly until /api/analytics/tvl is stable on Railway
+  return await fetchDefiLlamaTVL();
+  // return await fetchLiquiLabTVL(); // Re-enable when Railway is fixed
 }
 
 // Generate markdown report

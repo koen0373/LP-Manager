@@ -73,7 +73,8 @@ const BASE_CONFIG: IndexerConfig = {
     requestTimeout: 30000,
     rps: 6,
     concurrency: 6,
-    blockWindow: 2000,
+    // Flare RPC limit: 30 blocks max per eth_getLogs. Use 25 for safety margin.
+    blockWindow: parseInt(process.env.INDEXER_BLOCK_WINDOW || '25', 10),
   },
   contracts: {
     npm: [
@@ -148,7 +149,8 @@ function loadCostWeights(): Record<string, number> | undefined {
 export function loadIndexerConfigFromEnv(overrides?: Partial<IndexerConfig>): IndexerConfig {
   const rps = parseInt(process.env.INDEXER_RPS || '6', 10);
   const concurrency = parseInt(process.env.INDEXER_CONCURRENCY || '6', 10);
-  const blockWindow = parseInt(process.env.INDEXER_BLOCK_WINDOW || '2000', 10);
+  // Flare RPC limit: 30 blocks max. Default to 25 for safety (matches BASE_CONFIG).
+  const blockWindow = parseInt(process.env.INDEXER_BLOCK_WINDOW || '25', 10);
   const creditPerUsd = parseInt(process.env.CREDIT_PER_USD || '10000000', 10);
   const allowlistPath = process.env.POOLS_ALLOWLIST || 'data/config/pools.allowlist.json';
   

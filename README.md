@@ -4,6 +4,15 @@
 
 ---
 
+## 🗂 Project State Layout
+
+- `PROJECT_STATE.md` now holds a 5-bullet snapshot, top 10 open actions, and the current day’s changelog only.
+- Full architecture, hosting, backlog, and history live under `docs/state/*` (see `docs/state/README.md` for the index).
+- When updating state, edit the relevant file in `docs/state/` first, then refresh the snapshot in `PROJECT_STATE.md`.
+- Run `npm run state:rotate` to archive changelog entries older than 14 days, trim open actions to the top 10, and keep the root file under 300 lines (`npm run state:check` for a dry run).
+
+---
+
 ## 💰 Pricing Configuration
 
 LiquiLab uses a Single Source of Truth for pricing configuration:

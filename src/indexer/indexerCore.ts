@@ -109,6 +109,7 @@ export class IndexerCore {
 
     // Scan all NFPM contracts
     let allLogs: any[] = [];
+    let scanErrors: string[] = [];
     for (const npmAddress of npmAddresses) {
       try {
         const scanResult = await this.scanner.scan({
@@ -121,9 +122,15 @@ export class IndexerCore {
         console.log(`[INDEXER] ✓ Found ${scanResult.logs.length} logs from ${npmAddress}`);
         allLogs = allLogs.concat(scanResult.logs);
       } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        scanErrors.push(`${npmAddress}: ${errorMsg}`);
         console.error(`[INDEXER] ❌ Error scanning ${npmAddress}:`, error);
         // Continue with other addresses
       }
+    }
+
+    if (scanErrors.length > 0) {
+      console.warn(`[INDEXER] ⚠ ${scanErrors.length} contract(s) failed: ${scanErrors.join('; ')}`);
     }
 
     console.log(`[INDEXER] ✓ Total logs found: ${allLogs.length}`);

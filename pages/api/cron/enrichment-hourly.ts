@@ -22,17 +22,20 @@ type CronResponse = {
 /**
  * Hourly Enrichment Cron Job
  * 
- * Runs enrichment scripts every hour:
- * 1. Pool Attribution (500 positions/hour)
- * 2. Fees USD Calculation (5000 events/hour with batch processing)
- * 3. Range Status (200 positions/hour)
- * 4. Position Snapshots (100 positions/hour)
- * 5. APR Calculation (100 pools/hour) - Fees + Total (with incentives + rFLR)
- * 6. Impermanent Loss (200 positions/hour) - With incentives + rFLR vested
- * 7. rFLR Vesting (200 positions/hour) - NEW
- * 8. Unclaimed Fees Tracking (100 positions/hour) - NEW
- * 9. Position Health Metrics (200 positions/hour) - NEW
- * 10. Pool Volume Metrics (50 pools/hour) - NEW
+ * Runs enrichment processes every hour:
+ * 1. Refresh Materialized Views (range status, position stats) - FAST, database-native
+ * 2. Pool Attribution (500 positions/hour) - Complex, requires RPC calls
+ * 3. Fees USD Calculation (5000 events/hour) - Complex, requires CoinGecko API
+ * 4. Position Snapshots (100 positions/hour) - Complex, requires calculations
+ * 5. APR Calculation (100 pools/hour) - Complex, requires multiple data sources
+ * 6. Impermanent Loss (200 positions/hour) - Complex, requires calculations
+ * 7. rFLR Vesting (200 positions/hour) - Complex, requires API calls
+ * 8. Unclaimed Fees Tracking (100 positions/hour) - Complex, requires RPC calls
+ * 9. Position Health Metrics (200 positions/hour) - Complex, requires calculations
+ * 10. Pool Volume Metrics (50 pools/hour) - Complex, requires aggregations
+ * 
+ * Note: Range Status is now handled via materialized view (mv_position_range_status)
+ * which is refreshed in step 1. This is much faster than the previous script-based approach.
  * 
  * Protected by CRON_SECRET environment variable
  * 
@@ -125,38 +128,36 @@ export default async function handler(
       console.error('[CRON] ❌ Fees USD calculation failed:', msg);
     }
 
-    // 3. Range Status (200 positions/hour)
+    // 3. Refresh Materialized Views (replaces range-status script)
+    // Range status is now calculated via materialized view mv_position_range_status
     try {
-      console.log('[CRON] Running range status (200 positions)...');
-      const { exec } = await import('child_process');
-      const { promisify } = await import('util');
-      const execAsync = promisify(exec);
+      console.log('[CRON] Refreshing materialized views...');
+      const { PrismaClient } = await import('@prisma/client');
+      const prisma = new PrismaClient();
       
-      const { stdout: rangeOutput } = await execAsync(
-        `npx tsx scripts/enrich-range-status.ts --limit=200 --concurrency=10`,
-        { timeout: 300000, maxBuffer: 10 * 1024 * 1024 } // 5 min timeout
-      );
-      
-      // Parse output
-      const calculatedMatch = rangeOutput.match(/Calculated: (\d+)/);
-      const failedMatch = rangeOutput.match(/Failed: (\d+)/);
-      const inRangeMatch = rangeOutput.match(/IN_RANGE: (\d+)/);
-      const outOfRangeMatch = rangeOutput.match(/OUT_OF_RANGE: (\d+)/);
-      
-      if (calculatedMatch || failedMatch) {
+      try {
+        const rangeStart = Date.now();
+        await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY "mv_position_range_status"`;
+        const rangeDuration = Date.now() - rangeStart;
+        
+        await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY "mv_pool_position_stats"`;
+        await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY "mv_position_latest_event"`;
+        
         results.rangeStatus = {
-          processed: 200,
-          calculated: calculatedMatch ? parseInt(calculatedMatch[1], 10) : 0,
-          failed: failedMatch ? parseInt(failedMatch[1], 10) : 0,
-          inRange: inRangeMatch ? parseInt(inRangeMatch[1], 10) : 0,
-          outOfRange: outOfRangeMatch ? parseInt(outOfRangeMatch[1], 10) : 0,
+          processed: 0, // Views refresh all data
+          calculated: 1,
+          failed: 0,
+          inRange: 0, // Stats available via view query
+          outOfRange: 0,
         };
+        console.log(`[CRON] ✅ Materialized views refreshed (${rangeDuration}ms)`);
+      } finally {
+        await prisma.$disconnect();
       }
-      console.log('[CRON] ✅ Range status complete');
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      errors.push(`Range status: ${msg}`);
-      console.error('[CRON] ❌ Range status failed:', msg);
+      errors.push(`View refresh: ${msg}`);
+      console.error('[CRON] ❌ View refresh failed:', msg);
     }
 
     // 4. Position Snapshots (100 positions/hour)

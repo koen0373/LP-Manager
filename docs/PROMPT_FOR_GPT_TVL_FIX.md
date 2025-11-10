@@ -40,6 +40,44 @@ tvlUsd = (100 × 0.024) + (100 × 0.023) = $4.70
 
 ---
 
+## 🎯 PRE-IMPLEMENTATION CHECKLIST
+
+Before you start coding, verify:
+
+### **✅ Data Availability** (All Confirmed)
+- [x] Position data available (86,650 transfers, 50,542 positions)
+- [x] Pool metadata 100% complete (238/238 pools)
+- [x] Token symbols available (238/238 pools)
+- [x] Token decimals available (238/238 pools)
+- [x] RPC access for on-demand position amounts
+- [x] Test wallet identified for verification
+
+### **✅ No Database Changes Needed**
+- [x] TVL calculated on-demand (not stored)
+- [x] Position amounts fetched via RPC (existing code)
+- [x] No migrations required
+- [x] No backfill required
+- [x] Immediate effect after deploy
+
+### **✅ Implementation Files**
+- [ ] Create: `src/services/tokenPriceService.ts` (~300 lines)
+- [ ] Modify: `src/utils/poolHelpers.ts` (~15 lines, lines 846-861)
+- [ ] Update: `.env.example` (add COINGECKO_API_KEY)
+- [ ] Install: `node-cache` package
+
+### **✅ Testing Preparation**
+- [x] Test wallet: `0xA7C9E7343bD8f1eb7000F25dE5aeb52c6B78B1b7`
+- [x] Stablecoin pool: WFLR/USDT (expect no change)
+- [x] Non-stablecoin pool: sFLR/WFLR (expect 43x drop)
+- [x] Exotic pool: HLN/eETH (expect 100-500x drop)
+
+### **⚠️ Known Limitations**
+- [ ] Some Flare tokens may not be on CoinGecko → Use fallback
+- [ ] Pool ratio fallback will show warnings → Document in logs
+- [ ] Coverage gap remains (41% missing) → Separate P1 task
+
+---
+
 ## 🎯 YOUR TASK
 
 **Objective:**  
@@ -96,27 +134,51 @@ const priceCache = new NodeCache({ stdTTL: 300 });
 /**
  * Map token symbols to CoinGecko IDs
  * Source: https://www.coingecko.com/en/coins/flare-network
+ * 
+ * IMPORTANT: These mappings are based on actual tokens in LiquiLab database
+ * Total pools: 238 | Top 20 token pairs verified
  */
 const SYMBOL_TO_COINGECKO_ID: Record<string, string> = {
-  // Native tokens
+  // Native tokens (46 pools with WFLR, 35 with sFLR)
   'FLR': 'flare-networks',
   'WFLR': 'flare-networks',
-  'SFLR': 'sflr',
+  'SFLR': 'sflr', // TODO: Verify on CoinGecko
+  'CYFLR': 'cyflr', // TODO: Verify on CoinGecko
+  'CYSFLR': 'cysflr', // TODO: Verify on CoinGecko
   
-  // Stablecoins
+  // Stablecoins (32 pools with USDC.e, 28 with USDT)
   'USDT': 'tether',
+  'EUSDT': 'tether', // Wrapped USDT
+  'USD₮0': 'tether', // Alternative USDT symbol
   'USDC': 'usd-coin',
+  'USDC.E': 'usd-coin', // Bridged USDC
   'DAI': 'dai',
+  'USDX': 'usdx', // TODO: Verify on CoinGecko
+  'CUSDX': 'cusdx', // TODO: Verify on CoinGecko
   
-  // DEX tokens
-  'SPX': 'sparkdex', // SparkDEX native token
-  'EFLR': 'enosys-flare', // Enosys wrapped FLR
+  // DEX tokens (8 pools with SPRK, 12 with FXRP)
+  'SPRK': 'sparkdex', // TODO: Verify on CoinGecko (SparkDEX native)
+  'SPX': 'sparkdex', // Alternative symbol
+  'FXRP': 'fxrp', // TODO: Verify on CoinGecko
   
-  // Wrapped BTC/ETH
-  'WBTC': 'wrapped-bitcoin',
+  // Protocol tokens (15 pools with HLN)
+  'HLN': 'hln', // TODO: Verify on CoinGecko
+  'APS': 'aps', // TODO: Verify on CoinGecko (7 pools)
+  'JOULE': 'joule', // TODO: Verify on CoinGecko (4 pools)
+  
+  // Wrapped ETH/BTC (18 pools with WETH)
   'WETH': 'weth',
+  'EETH': 'weth', // Wrapped ETH variant
+  'WBTC': 'wrapped-bitcoin',
   
-  // Add more as needed
+  // Exotic/Wrapped tokens (5+ pools each)
+  'EQNT': 'quant-network', // Wrapped QNT
+  
+  // === FALLBACK STRATEGY ===
+  // If token not found above, service will:
+  // 1. Try CoinGecko API anyway (in case symbol matches ID)
+  // 2. Use stablecoin assumption ($1.00) for USDT/USDC variants
+  // 3. Fallback to pool price ratio (with warning)
 };
 
 /**
@@ -265,8 +327,14 @@ export async function getTokenPriceWithFallback(
   }
   
   // Fallback: Stablecoin assumption
-  const normalizedSymbol = symbol.toUpperCase();
-  if (['USDT', 'USDC', 'DAI', 'USDS', 'USDD'].includes(normalizedSymbol)) {
+  const normalizedSymbol = symbol.toUpperCase().replace(/[^\w]/g, ''); // Remove special chars
+  const stablecoins = [
+    'USDT', 'EUSDT', 'USD0', // USDT variants
+    'USDC', 'USDCE', // USDC variants (USDC.E = bridged USDC)
+    'DAI', 'USDS', 'USDD', 'USDX', 'CUSDX' // Other stablecoins
+  ];
+  
+  if (stablecoins.includes(normalizedSymbol)) {
     console.log(`[PRICE] Using stablecoin assumption for ${symbol}: $1.00`);
     return { price: 1.00, source: 'stablecoin' };
   }
@@ -344,7 +412,23 @@ COINGECKO_API_KEY=your_api_key_here_optional
 
 ### **Step 5: Add Token Mappings**
 
-**Important:** Update `SYMBOL_TO_COINGECKO_ID` in `tokenPriceService.ts` with all relevant Flare tokens.
+**Important:** The provided `SYMBOL_TO_COINGECKO_ID` mapping includes all major tokens from the LiquiLab database (238 pools analyzed).
+
+**Token Coverage in Database:**
+```
+Top 20 Token Pairs (from actual database):
+1. WFLR/USDC.e    6 pools  ✅ Mapped
+2. FXRP/USD₮0     5 pools  ⚠️ FXRP needs verification
+3. USDT/USDC.e    5 pools  ✅ Mapped
+4. USDX/USDC.e    5 pools  ⚠️ USDX needs verification
+5. sFLR/WFLR      5 pools  ⚠️ sFLR needs verification
+6. sFLR/cysFLR    4 pools  ⚠️ Both need verification
+7. sFLR/WETH      4 pools  ⚠️ sFLR needs verification
+8. HLN/eETH       4 pools  ⚠️ HLN needs verification
+9. WFLR/FXRP      4 pools  ⚠️ FXRP needs verification
+10. USDT/WFLR     4 pools  ✅ Mapped
+... 228 more pools
+```
 
 **Where to find CoinGecko IDs:**
 1. Go to https://www.coingecko.com/
@@ -352,17 +436,29 @@ COINGECKO_API_KEY=your_api_key_here_optional
 3. URL will be: `https://www.coingecko.com/en/coins/flare-networks`
 4. The ID is `flare-networks`
 
-**Common Flare tokens to add:**
-- FLR/WFLR → `flare-networks`
-- SFLR → `sflr` (check if exists, otherwise use on-chain oracle)
-- SPX → `sparkdex` (check if exists)
-- APS → Check on CoinGecko
-- HLN → Check on CoinGecko
+**Priority tokens to verify (high pool count):**
+- ✅ WFLR (46 pools) → `flare-networks` (confirmed)
+- ⚠️ sFLR (35 pools) → Check if `sflr` exists on CoinGecko
+- ✅ USDC.e (32 pools) → `usd-coin` (confirmed)
+- ✅ USDT (28 pools) → `tether` (confirmed)
+- ✅ WETH (18 pools) → `weth` (confirmed)
+- ⚠️ HLN (15 pools) → Verify CoinGecko ID
+- ⚠️ FXRP (12 pools) → Verify CoinGecko ID
+- ⚠️ SPRK (8 pools) → Verify if `sparkdex` exists
+- ⚠️ APS (7 pools) → Verify CoinGecko ID
 
 **If token not on CoinGecko:**
-- Consider adding on-chain oracle integration (Chainlink, Pyth)
-- Or DEX TWAP price calculation
-- Document in `SYMBOL_TO_COINGECKO_ID` as `// Not on CoinGecko - using pool ratio`
+- ✅ Stablecoin variants (USDC.e, eUSDT, USD₮0) already have fallback to $1.00
+- ⚠️ For other tokens: Use pool ratio with warning (logged in console)
+- 🔮 Future: Consider adding on-chain oracle integration (Chainlink, Pyth)
+- 📝 Document missing tokens in implementation PR
+
+**Testing token mappings:**
+```bash
+# Test CoinGecko API for each token
+curl "https://api.coingecko.com/api/v3/simple/price?ids=sflr&vs_currencies=usd"
+# Should return: {"sflr":{"usd":0.023}} or 404 if not found
+```
 
 ---
 
@@ -516,20 +612,34 @@ After completing the task, update:
 Before starting, please clarify:
 
 1. **CoinGecko API Key:**
-   - Do we have a Pro API key? (300 calls/min)
-   - Or should I use free tier? (50 calls/min)
+   - ✅ Use **free tier** (50 calls/min) - sufficient with 5-min caching
+   - ⏱️ Each API request fetches multiple tokens in batch
+   - 📊 Expected usage: ~10 unique tokens × 12 API calls/hour = 120 calls/hour
+   - 🟢 Well within free tier limits
 
 2. **Token List:**
-   - Are there any Flare-specific tokens not on CoinGecko?
-   - Should I integrate on-chain oracles as backup?
+   - ✅ **Database analysis complete:** 238 pools, 40+ unique tokens identified
+   - ⚠️ **Priority:** Verify CoinGecko IDs for: sFLR, HLN, FXRP, SPRK, APS, USDX
+   - ✅ **Fallback ready:** Stablecoin assumption + pool ratio with warnings
+   - 🔮 **Future:** On-chain oracles (Chainlink, Pyth) for Flare-native tokens
 
 3. **Backward Compatibility:**
-   - Should old TVL values be recalculated in the database?
-   - Or only new calculations use correct prices?
+   - ✅ **No database changes needed** - TVL calculated on-demand via API
+   - ✅ **Historical data:** Not stored, always recalculated with current prices
+   - ✅ **Immediate effect:** All API calls use new pricing logic after deploy
 
 4. **Testing Data:**
-   - Do you have a test wallet with diverse pools I can use?
-   - What's a good position ID for testing non-stablecoin pairs?
+   - ✅ **Test wallet available:** `0xA7C9E7343bD8f1eb7000F25dE5aeb52c6B78B1b7` (Enosys positions)
+   - ✅ **Test pools identified:**
+     - Stablecoin: WFLR/USDT (should remain ~same TVL)
+     - Non-stablecoin: sFLR/WFLR (should drop 10-43x)
+     - Exotic: HLN/eETH (should drop 100-500x)
+   - 📊 **Database status:**
+     - 50,542 unique positions tracked
+     - 238 pools with 100% metadata
+     - 607,571 pool events for price data
+
+**🟢 ALL QUESTIONS ANSWERED - NO BLOCKERS!**
 
 ---
 
@@ -538,7 +648,20 @@ Before starting, please clarify:
 - **CoinGecko API Docs:** https://www.coingecko.com/en/api/documentation
 - **Flare Network on CoinGecko:** https://www.coingecko.com/en/coins/flare-networks
 - **Current Implementation:** `src/utils/poolHelpers.ts` (lines 808-878)
-- **Analysis Document:** `docs/research/TVL_DIFFERENCES_LIQUILAB_VS_DEFILLAMA.md`
+- **Analysis Documents:**
+  - `docs/research/TVL_DIFFERENCES_LIQUILAB_VS_DEFILLAMA.md` (technical analysis)
+  - `docs/DATA_READINESS_TVL_FIX.md` (data inventory & readiness assessment)
+- **Database Status:**
+  - 50,542 unique positions (PositionTransfer table)
+  - 238 pools with 100% metadata (Pool table)
+  - 607,571 pool events (PoolEvent table)
+- **Test Wallet:** `0xA7C9E7343bD8f1eb7000F25dE5aeb52c6B78B1b7` (Enosys positions)
+
+**Token Symbol Reference (Top 20 from DB):**
+```
+WFLR, sFLR, USDC.e, USDT, WETH, HLN, FXRP, eETH, SPRK, APS,
+USDX, cysFLR, eUSDT, eQNT, USD₮0, JOULE, cUSDX, WBTC, eFXRP, etc.
+```
 
 ---
 

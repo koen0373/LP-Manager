@@ -850,3 +850,35 @@ See archives in /docs/changelog/.
   ```
 - **WEEKLY REPORT FLOW:** generate-weekly-report.js → fetchLiquiLabTVL() → /api/analytics/tvl → tokenPriceService.ts (CoinGecko) → Markdown/HTML report with real TVL.
 - **COMMITS:** 02426ff (TVL API + report upgrade).
+
+## Changelog — 2025-11-10
+- **RAILWAY 502 DEBUGGING (3+ HOURS, UNRESOLVED)**
+- **PROBLEM:** LiquiLab main web service shows persistent 502 Bad Gateway after GitHub repository migration from `koen0373/LP-Manager` to `Liquilab/Liquilab`.
+- **SYMPTOMS:** Container starts, Prisma Client generates, then immediately stops. No Next.js server startup. Deploy logs show only "Starting Container → Prisma generate → Stopping Container" (~5 seconds total).
+- **ROOT CAUSE IDENTIFIED:** Railway uses Nixpacks auto-detect instead of Dockerfile. Nixpacks cannot execute shell scripts (./start.sh). Multiple configuration layers conflict (railway.toml, Custom Start Command, package.json, Dockerfile).
+- **ATTEMPTED FIXES (ALL FAILED):**
+  1. Enhanced start.sh with comprehensive logging (never executed)
+  2. Created railway.toml with builder="DOCKERFILE" (ignored by Railway)
+  3. Modified Dockerfile cache bust v0.1.6 → v0.1.7 (no effect)
+  4. Changed package.json start script to inline migrations: `"npx prisma migrate deploy && npx next start"` (overridden by railway.toml)
+  5. Updated railway.toml to use Nixpacks with no startCommand (deployment pending)
+- **CURRENT STATUS:** Last commit 9847e59 should fix the issue by removing railway.toml startCommand override. Deployment in progress.
+- **INDEXER FOLLOWER:** Successfully deployed with Dockerfile.worker, runs hourly via Cron (0 * * * *), uses Flare public RPC (free).
+- **FILES MODIFIED:**
+  - start.sh (enhanced logging, not working due to Nixpacks)
+  - Dockerfile (cache bust v0.1.7)
+  - Dockerfile.worker (npm install instead of npm ci, WORKING)
+  - package.json (start script: inline migrations)
+  - railway.toml (removed startCommand override)
+  - pages/api/analytics/tvl.ts.disabled (temporarily disabled due to deployment issues)
+  - scripts/generate-weekly-report.js (falls back to DefiLlama)
+  - RAILWAY_502_FIX_HANDOVER.md (NEW: comprehensive debugging documentation)
+- **NEXT STEPS FOR CHATGPT:**
+  1. Verify last deployment (9847e59) succeeded
+  2. Check Deploy Logs show Next.js "Ready" message
+  3. Test: curl https://app.liquilab.io/api/health (expect 200 OK)
+  4. If still 502: Consider manual Railway Settings override or contact Railway support
+  5. Re-enable /api/analytics/tvl endpoint once site is stable
+  6. Update weekly report to use LiquiLab TVL instead of DefiLlama
+- **COMMITS:** cbc8e5d (start.sh), d15d8f2 (logging), ed7b7e6 (worker fix), 906c483 (package.json), 9847e59 (railway.toml).
+- **DOCUMENTATION:** Complete root cause analysis and all attempted solutions documented in RAILWAY_502_FIX_HANDOVER.md.

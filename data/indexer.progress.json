@@ -1,18 +1,24 @@
 {
   "phase": "start",
-  "updatedAt": "2025-11-08T15:02:25.022Z",
-  "mode": "backfill",
+  "updatedAt": "2025-11-09T16:42:30.480Z",
+  "mode": "follower",
   "factory": "all",
-  "startSelected": 50294577,
+  "startSelected": 50355562,
   "reason": "checkpoint",
   "rpcBase": "https://rpc.ankr.com/flare/cee6b4f8866b7f8afa826f378953ae26eaa74fd174d1d282460e0fbad2b35b01",
   "streams": [
+    "nfpm",
+    "factories",
     "pools"
   ],
   "chosenChunk": 1000,
+  "factoryStarts": {
+    "enosys": 29837200,
+    "sparkdex": 30617263
+  },
   "poolCount": 404,
-  "rps": 10,
-  "concurrency": 5,
-  "blockWindow": 1000,
+  "rps": 6,
+  "concurrency": 6,
+  "blockWindow": 2000,
   "allowlistActive": false
 }

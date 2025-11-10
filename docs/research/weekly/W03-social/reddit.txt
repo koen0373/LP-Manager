@@ -1,0 +1,45 @@
+**[Research] LiquiLab Weekly Report: Cross-DEX LP Analysis on Flare Network (Week 3, November 2025)**
+
+Hey r/FlareNetwork! We just published our weekly deep-dive into V3 liquidity provider behavior across Enosys and SparkDEX. Here are the highlights:
+
+## 📊 Key Data Points
+
+* **Total Value Locked:** $59.3M
+* **Total Positions:** 50,542
+* **Active Wallets:** 4,889
+* **SparkDEX TVL:** $52.7M (88.9%)
+* **Enosys TVL:** $6.6M (11.1%)
+
+## 🔥 Most Interesting Finding
+
+Only **15.6%** of LPs actively use BOTH Enosys and SparkDEX, but these 765 wallets control approximately **16%** of all liquidity positions.
+
+**Why?** Multi-DEX strategies allow for:
+1. Incentive arbitrage (rFLR, SPX, APS rewards)
+2. Fee tier optimization
+3. Better risk diversification
+4. Earlier access to new pools
+
+Our analysis suggests cross-DEX users earn an estimated **30-50% higher APR** compared to single-DEX strategies.
+
+## 🏆 Top 10 Cross-DEX Power Users
+
+Combined TVL of top 10: **~$6.3M**
+
+Average positions per top wallet: **537**
+
+(Full wallet breakdown in the report)
+
+## 📥 Full Report
+
+You can download the complete analysis here: [LINK]
+
+We also track real-time position data at: https://app.liquilab.io
+
+## 🔔 Weekly Updates
+
+We publish these reports every Monday at 10:00 AM CET. Follow us for ongoing market insights!
+
+---
+
+*Disclaimer: This is for informational purposes only. DYOR. Not financial advice.*

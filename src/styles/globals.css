@@ -2,6 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .btn-ghost {
+    @apply inline-flex items-center justify-center rounded-2xl px-6 py-3 font-ui text-sm font-semibold text-white transition-colors border border-white/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+    background-color: transparent;
+    --tw-ring-offset-color: #0B1530;
+    --tw-ring-color: #60A5FA;
+  }
+
+  .btn-ghost:hover {
+    @apply bg-white/10;
+  }
+
+  .btn-ghost:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .rb-rail {
+    position: relative;
+    height: 10px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  .rb-range {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.32);
+  }
+
+  .rb-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 9999px;
+    background: #ffffff;
+    border: 3px solid #3B82F6;
+  }
+}
+
 @layer utilities {
   .hero-wave-bg {
     background-image: url('/media/hero-wave.svg');

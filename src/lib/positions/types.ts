@@ -25,58 +25,64 @@ export interface PositionTokenSide {
  * Do not add presentation-only fields here – instead compute them where needed
  * (or add to the API contract deliberately).
  */
+export interface PositionIncentiveToken {
+  symbol: string;
+  amountPerDay: string;
+  tokenAddress?: string;
+  decimals?: number;
+}
+
+export interface PositionClaimToken {
+  symbol: string;
+  amount: string;
+}
+
 export interface PositionRow {
-  /** Upstream provider slug (e.g. `enosys`, `sparkdex`). */
-  provider: string;
-  /** Provider specific market identifier (pool id, token id, etc.). */
-  marketId: string;
-  /** Optional opaque identifier used by legacy consumers (e.g. tokenId). */
-  tokenId?: string;
-  /** Optional provider-specific pool id (e.g. 22003). */
+  tokenId: string;
+  dex: 'enosys-v3' | 'sparkdex-v3';
+  poolAddress: string;
+  pair: { symbol0: string; symbol1: string; feeBps: number };
+  liquidity: string;
+  amountsUsd: { total: number | null; token0: number | null; token1: number | null };
+  fees24hUsd: number | null;
+  incentivesUsdPerDay: number | null;
+  incentivesTokens: PositionIncentiveToken[];
+  status: 'in' | 'near' | 'out' | 'unknown';
+  claim: { usd: number | null; tokens?: PositionClaimToken[] } | null;
+  entitlements: {
+    role: PositionEntitlementRole;
+    flags: {
+      premium: boolean;
+      analytics: boolean;
+    };
+  };
+  /** Legacy fields retained for backwards compatibility */
+  provider?: string;
+  marketId?: string;
   poolId?: string;
-  /** Pool fee tier expressed in basis points (e.g. 30 = 0.3%). */
-  poolFeeBps: number;
-  /** Current total value locked for this position. */
-  tvlUsd: number;
-  /** Outstanding/unrealised trading fees in USD. */
-  unclaimedFeesUsd: number;
-  /** Protocol incentives (rFLR/APS/…) accrued in USD. */
-  incentivesUsd: number;
-  /** Total rewards in USD (fees + incentives). */
-  rewardsUsd: number;
-  /** Whether the position is currently earning fees within range. */
-  isInRange: boolean;
-  /** Range proximity state for UI visuals. */
-  status: 'in' | 'near' | 'out';
-  /** Token metadata for the base asset. */
-  token0: PositionTokenSide;
-  /** Token metadata for the quote asset. */
-  token1: PositionTokenSide;
-  /** Optional APR/APY information when surfaced by the provider. */
+  poolFeeBps?: number;
+  tvlUsd?: number;
+  unclaimedFeesUsd?: number;
+  incentivesUsd?: number;
+  rewardsUsd?: number;
+  isInRange?: boolean;
+  token0?: PositionTokenSide;
+  token1?: PositionTokenSide;
   apr24h?: number;
   apy24h?: number;
-  /** Optional high-level categorisation (Active / Inactive / Ended). */
   category?: 'Active' | 'Inactive' | 'Ended';
-  /** Optional human readable DEX/venue name. */
   dexName?: string;
-  /** Optional alternative display id (used in demo cards). */
   displayId?: string;
-  /** Optional range data for UI visualisations. */
   rangeMin?: number;
   rangeMax?: number;
   currentPrice?: number;
-  /** Optional token artwork references. */
   token0Icon?: string;
   token1Icon?: string;
-  /** Optional incentive token metadata for display. */
   incentivesToken?: string;
   incentivesTokenAmount?: number;
-  /** Percentage ownership of the pool (0-100). */
   liquidityShare?: number;
-  /** Optional daily fee totals for APR calculations. */
   dailyFeesUsd?: number;
   dailyIncentivesUsd?: number;
-  /** Flag used by demo tables. */
   isDemo?: boolean;
 }
 
@@ -104,7 +110,7 @@ export interface PositionsResponse {
   success: boolean;
   data?: {
     positions: PositionRow[];
-    summary: {
+    summary?: {
       tvlUsd: number;
       fees24hUsd: number;
       incentivesUsd: number;
@@ -115,14 +121,29 @@ export interface PositionsResponse {
       ended?: number;
       entitlements?: PositionSummaryEntitlements;
     };
-    meta: {
+    meta?: {
       address: string;
       elapsedMs: number;
       deprecation?: boolean;
     };
+    warnings?: string[];
   };
-  /** Present when `success === false`. */
   error?: string;
-  /** Flag for placeholder data (e.g. degraded/deprecated endpoints). */
   placeholder?: boolean;
+}
+
+export interface PositionsSummaryPayload {
+  tvlTotalUsd: number;
+  fees24hUsd: number | null;
+  activeCount: number;
+  entitlements: {
+    role: PositionEntitlementRole;
+    flags: {
+      premium: boolean;
+      analytics: boolean;
+    };
+  };
+  meta?: {
+    warnings?: string[];
+  };
 }

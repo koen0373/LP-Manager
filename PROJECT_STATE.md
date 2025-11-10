@@ -738,3 +738,71 @@ See archives in /docs/changelog/.
 
 ## Changelog — 2025-11-09
 - pages/koen.tsx — Fixed entitlement fallback display from 'FREE' → 'VISITOR' to match new role model.
+
+## Changelog — 2025-11-09
+- prisma/migrations/20251109_pool_incentive_store/migration.sql — Added append-only pool_incentive table for per-pool USD/day + token payloads.
+- prisma/schema.prisma — Mapped PoolIncentiveSnapshot model onto the new pool_incentive table.
+- src/lib/incentives/schema.ts — Shared Zod parser for incentives payloads (addresses, tokens, usdPerDay).
+- scripts/data/import-incentives.ts — Append-only importer that upserts incentives JSON files and logs inserted/updated counts.
+- pages/api/incentives/index.ts — Single-pool incentives endpoint with cache headers and graceful 404/400 handling.
+- pages/api/incentives/bulk.ts — Bulk incentives fetch (≤50 pools) with ordered responses and identical caching.
+
+## Changelog — 2025-11-09
+- src/lib/providers/ankr.ts — Added Ankr NFT/price helpers with env validation and safe fallbacks.
+- src/lib/pricing/prices.ts — Added shared price loader (Ankr-first, DefiLlama fallback, stable overrides for USDTe/USDC.e).
+
+## Changelog — 2025-11-09
+- src/lib/positions/types.ts — Added shared summary payload contract for the KPI endpoint.
+- pages/api/positions/summary.ts — Introduced wallet summary API (NFPM enumerate via Ankr, on-chain tick heuristics, entitlements + caching).
+
+## Changelog — 2025-11-09
+- src/lib/positions/types.ts — Added premium grid fields (liquidity payload, incentives, claim) plus legacy compatibility notes.
+- pages/api/positions.ts — Replaced endpoint with Ankr-based NFPM reader, incentives lookup, caching, and entitlements-aware masking for the premium grid.
+
+## Changelog — 2025-11-09
+- src/lib/positions/types.ts — Extended summary payload type with optional warnings meta for safer fallback responses.
+- pages/api/positions/summary.ts — Added entitlements fallback + catch-all error handling to avoid 500s and always return calm payloads.
+
+## Changelog — 2025-11-09
+- src/components/pools/PoolCard.tsx — Added premium grid card with calm TVL/APR/incentives layout and RangeBand status dots.
+- src/components/pools/PoolsGrid.tsx — Added responsive grid + skeleton/empty states with Connect CTA for wallets.
+- pages/dashboard.tsx — Hooked premium grid data (positions/summary via React Query), entitlements-aware gating, and wallet-aware layout.
+
+## Changelog — 2025-11-09
+- src/components/pools/PoolsGrid.tsx — Added header row, responsive layout cues, and demo-aware rendering for the visitor experience.
+- src/components/pools/PoolCard.tsx — Polished currency formatting, RangeBand expansion, token breakdown, and premium masking logic.
+- pages/dashboard.tsx — Refreshed hero/CTA copy and wired the premium grid data + React Query fetching for visitor/premium flows.
+
+## Changelog — 2025-11-09
+- src/components/pools/PoolCard.tsx — Added defensive USD/amount formatting and masking fallbacks to prevent visitor crashes.
+- pages/dashboard.tsx — Wrapped entitlements in safe helper so visitor rendering never dereferences undefined flags.
+
+## Changelog — 2025-11-09
+- src/components/hero/Hero.tsx — Added centered visitor hero with Aqua USPs, RangeBand teaser, and dual CTAs.
+- src/components/demo/DemoPools.tsx — Added demo pools card with DB-backed list/grid toggle and connect CTA.
+- src/components/pools/PoolsGrid.tsx — Extended header/layout hooks for new hero/demo flow.
+- src/components/pools/PoolCard.tsx — Hardened currency/token formatting and masking logic for visitor demo data.
+- pages/dashboard.tsx — Wired new hero + demo components with safe entitlements fallback.
+
+## Changelog — 2025-11-09
+- src/components/rangeband/InlineMini.tsx — Added inline RangeBand™ mini visual for the visitor hero card.
+- src/components/hero/Hero.tsx — Updated hero layout to embed the inline mini visual and refreshed CTA buttons.
+- src/components/demo/DemoPools.tsx — Wired demo pools card with list/grid toggle and connect CTA for visitors.
+- src/components/pools/PoolCard.tsx — Hardened USD/token formatting and premium masking for visitor demo rendering.
+- src/components/pools/PoolsGrid.tsx — Added header scaffolding used by the hero/demo flow.
+- src/styles/globals.css — Added `.btn-ghost` utility for secondary hero CTA with branded focus states.
+- pages/dashboard.tsx — Layered wave background correctly and inserted new hero/demo components with safe entitlements.
+
+## Changelog — 2025-11-09
+- src/styles/globals.css — Added RangeBand rail/dot utility styles for the visitor hero mini visual.
+- src/components/rangeband/InlineReal.tsx — Implemented RangeBand™ semantics (live price polling, range segment, strategy toggle).
+- src/components/hero/Hero.tsx — Swapped inline mini for the semantic RangeBand component while preserving brand layout.
+
+## Changelog — 2025-11-09
+- src/components/utils/ScreenshotButton.tsx — Added reusable “Download PNG” button that captures the full page via html-to-image.
+- src/styles/globals.css — Extended .btn-ghost styles with disabled handling for the screenshot action.
+- pages/dashboard.tsx — Added screenshot button in the dashboard header so visitors can download a PNG snapshot.
+- pages/koen.tsx — Added the same screenshot download control to Koen’s wallet header.
+
+## Changelog — 2025-11-09
+- src/components/hero/Hero.tsx — Fixed RangeBand import to use InlineReal component after removing InlineMini.

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiquiLab Weekly Report - Cross-DEX Analysis</title>
+    
+    <!-- Google Fonts: Quicksand (headings) & Inter (body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --electric-blue: #00B8D4;
+            --aqua: #00E5FF;
+            --dark-navy: #0B1530;
+            --medium-navy: #1A2847;
+            --light-aqua: #E0F7FA;
+        }
+        
+        @page { margin: 0; size: A4; }
+        @media print {
+            .no-print { display: none !important; }
+            .cover { page-break-after: always; }
+            h1 { page-break-before: always; font-size: 18pt; }
+            h2 { page-break-after: avoid; }
+            table, pre { page-break-inside: avoid; }
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        /* Cover Page with Wave Hero */
+        .cover {
+            position: relative;
+            width: 100%;
+            min-height: 100vh;
+            background: linear-gradient(180deg, var(--dark-navy) 0%, var(--medium-navy) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .cover::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 400px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%2300B8D4" fill-opacity="0.15" d="M0,96L48,112C96,128,192,160,288,165.3C384,171,480,149,576,128C672,107,768,85,864,90.7C960,96,1056,128,1152,138.7C1248,149,1344,139,1392,133.3L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom center;
+            background-size: cover;
+        }
+        
+        .cover-logo {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 28pt;
+            font-weight: 700;
+            z-index: 10;
+        }
+        
+        .cover-logo .liqui { color: var(--aqua); }
+        .cover-logo .lab { color: white; font-weight: 400; }
+        
+        .cover-content {
+            position: relative;
+            z-index: 5;
+            text-align: center;
+            padding: 0 40px;
+            max-width: 900px;
+        }
+        
+        .cover h1 {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 700;
+            font-size: 48pt;
+            color: white;
+            margin-bottom: 20px;
+            letter-spacing: -0.02em;
+        }
+        
+        .cover h2 {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 500;
+            font-size: 24pt;
+            color: var(--aqua);
+            margin-bottom: 60px;
+        }
+        
+        .cover .meta {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14pt;
+            line-height: 1.8;
+        }
+        
+        /* Content Pages */
+        .content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+        
+        /* Headings use Quicksand */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        
+        h1 {
+            font-size: 32pt;
+            color: var(--electric-blue);
+            border-bottom: 3px solid var(--electric-blue);
+            padding-bottom: 12px;
+            margin-top: 40px;
+        }
+        
+        h2 {
+            font-size: 24pt;
+            color: var(--electric-blue);
+            border-bottom: 2px solid var(--light-aqua);
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        
+        h3 { font-size: 18pt; color: #00838F; margin-top: 24px; }
+        h4 { font-size: 14pt; color: #006064; margin-top: 20px; }
+        
+        /* Tables use Inter with tabular nums */
+        table {
+            font-family: 'Inter', sans-serif;
+            font-variant-numeric: tabular-nums;
+            border-collapse: collapse;
+            width: 100%;
+            margin: 24px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th {
+            background: linear-gradient(135deg, var(--electric-blue), #0097A7);
+            color: white;
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 11pt;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--light-aqua);
+            font-size: 10pt;
+        }
+        
+        tr:hover { background-color: rgba(0,184,212,0.04); }
+        tr:nth-child(even) { background-color: rgba(0,0,0,0.02); }
+        
+        code {
+            font-family: Monaco, monospace;
+            background-color: var(--light-aqua);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9pt;
+            color: #00838F;
+        }
+        
+        pre {
+            background-color: var(--dark-navy);
+            border-left: 4px solid var(--electric-blue);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        pre code {
+            background: none;
+            padding: 0;
+            color: var(--aqua);
+        }
+        
+        a {
+            color: var(--electric-blue);
+            text-decoration: none;
+        }
+        
+        a:hover {
+            color: var(--aqua);
+            text-decoration: underline;
+        }
+        
+        .footer {
+            margin-top: 80px;
+            padding: 40px;
+            background: var(--dark-navy);
+            color: rgba(255,255,255,0.8);
+            text-align: center;
+            font-size: 9pt;
+        }
+        
+        .footer strong { color: white; }
+        .footer a { color: var(--aqua); }
+        
+        .print-button {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: var(--electric-blue);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 8px;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 11pt;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,184,212,0.3);
+            z-index: 1000;
+        }
+        
+        .print-button:hover {
+            background: var(--aqua);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button no-print" onclick="window.print()">📄 Save as PDF</button>
+    
+    <!-- Cover Page -->
+    <div class="cover">
+        <div class="cover-logo">
+            <span class="liqui">Liqui</span><span class="lab">Lab</span>
+        </div>
+        
+        <div class="cover-content">
+            <h1>Cross-DEX Liquidity Provider Analysis</h1>
+            <h2>Flare Network V3 Ecosystem | Weekly Report</h2>
+            
+            <div class="meta">
+                <p><strong>LiquiLab Research Team</strong></p>
+                <p>Week 3, November 2025</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Content -->
+    <div class="content">
+<h1 id="liquilab-weekly-market-report">LiquiLab Weekly Market
+Report</h1>
+<h2 id="cross-dex-liquidity-provider-analysis">Cross-DEX Liquidity
+Provider Analysis</h2>
+<p><strong>Flare Network V3 Ecosystem | Week 3, November
+2025</strong></p>
+<hr />
+<h2 id="executive-summary">Executive Summary</h2>
+<p>This week’s report analyzes liquidity provider behavior across Flare
+Network’s two major V3 DEXes: <strong>Enosys</strong> and
+<strong>SparkDEX</strong>. Based on comprehensive on-chain data covering
+<strong>$59.3M in Total Value Locked (TVL)</strong>, <strong>50,542
+unique positions</strong> across <strong>4,889 unique wallets</strong>,
+we reveal patterns of cross-platform engagement and identify the
+network’s most active liquidity providers.</p>
+<h3 id="key-findings-week-3">Key Findings (Week 3)</h3>
+<ul>
+<li><strong>$59.3M</strong> in combined TVL across 238 active pools
+(SparkDEX: $52.7M, Enosys: $6.6M)</li>
+<li><strong>15.6%</strong> of liquidity providers use both Enosys and
+SparkDEX</li>
+<li>Cross-DEX users hold <strong>~15.6%</strong> of all liquidity
+positions</li>
+<li>Cross-DEX wallets average <strong>536.5 positions</strong>
+vs. <strong>10.3</strong> for single-DEX users</li>
+<li>Average position size: <strong>$1173</strong> (SparkDEX: $1043,
+Enosys: $269)</li>
+</ul>
+<hr />
+<h2 id="market-overview">Market Overview</h2>
+<h3 id="total-liquidity-ecosystem">Total Liquidity Ecosystem</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+<th>Change (vs. Last Week)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Total Value Locked (TVL)</strong></td>
+<td><strong>$59.3M</strong></td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>Total Unique Positions</strong></td>
+<td>50,542</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>Total Position Transfers</strong></td>
+<td>85,088</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>Total Active Pools</strong></td>
+<td>238</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>Unique Wallet Addresses</strong></td>
+<td>4,889</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>Report Date</strong></td>
+<td>2025-11-09</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dex-market-share">DEX Market Share</h3>
+<pre><code>┌─────────────┬────────────┬─────────────┬──────────────┬─────────────┐
+│ DEX         │ Positions  │ Transfers   │ Market Share │ TVL         │
+├─────────────┼────────────┼─────────────┼──────────────┼─────────────┤
+│ SparkDEX    │   50,542 │   60,736   │    100.0%     │  $52.7M     │
+│ Enosys      │   24,568 │   25,913   │    48.6%     │   $6.6M     │
+├─────────────┼────────────┼─────────────┼──────────────┼─────────────┤
+│ TOTAL       │   50,542 │   85,088   │    100%      │  $59.3M     │
+└─────────────┴────────────┴─────────────┴──────────────┴─────────────┘</code></pre>
+<p><strong>Analysis:</strong> SparkDEX dominates with 100.0% position
+share <strong>and 88.9% TVL share</strong>, indicating significantly
+deeper liquidity per position.</p>
+<hr />
+<h2 id="cross-dex-user-segmentation">Cross-DEX User Segmentation</h2>
+<h3 id="wallet-distribution">Wallet Distribution</h3>
+<table>
+<thead>
+<tr>
+<th>Segment</th>
+<th>Wallets</th>
+<th>Percentage</th>
+<th>Avg Positions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>🔥 Cross-DEX Users</strong></td>
+<td>765</td>
+<td>15.6%</td>
+<td>536.5</td>
+</tr>
+<tr>
+<td><strong>🟣 SparkDEX Only</strong></td>
+<td>6235</td>
+<td>~79%</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>🔵 Enosys Only</strong></td>
+<td>1608</td>
+<td>~21%</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>TOTAL</strong></td>
+<td><strong>4,889</strong></td>
+<td><strong>100%</strong></td>
+<td><strong>10.3</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="cross-dex-power-users">Cross-DEX Power Users</h3>
+<p><strong>765 wallets</strong> (15.6% of all LPs) actively use
+<strong>both</strong> Enosys and SparkDEX.</p>
+<p><strong>Estimated Metrics:</strong> - <strong>Total TVL:</strong>
+~$9.3M (15.6% of ecosystem) - <strong>Avg TVL per Wallet:</strong>
+~$12129 - <strong>Est. APR:</strong> 30-50% (vs 10-15% single-DEX)</p>
+<hr />
+<h2 id="top-10-cross-dex-liquidity-providers">Top 10 Cross-DEX Liquidity
+Providers</h2>
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Wallet Address</th>
+<th>Enosys</th>
+<th>SparkDEX</th>
+<th>Total</th>
+<th>Est. TVL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>🥇 1</td>
+<td>0xf406b4e9…710b</td>
+<td>948</td>
+<td>24</td>
+<td><strong>972</strong></td>
+<td><strong>~$1140K</strong></td>
+</tr>
+<tr>
+<td>🥈 2</td>
+<td>0xae6f7991…6528</td>
+<td>886</td>
+<td>47</td>
+<td><strong>933</strong></td>
+<td><strong>~$1094K</strong></td>
+</tr>
+<tr>
+<td>🥉 3</td>
+<td>0x00000000…dead</td>
+<td>505</td>
+<td>100</td>
+<td><strong>605</strong></td>
+<td><strong>~$710K</strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td>0x6e3e3271…d229</td>
+<td>573</td>
+<td>7</td>
+<td><strong>580</strong></td>
+<td><strong>~$680K</strong></td>
+</tr>
+<tr>
+<td>5</td>
+<td>0x1672a7db…dc0c</td>
+<td>402</td>
+<td>8</td>
+<td><strong>410</strong></td>
+<td><strong>~$481K</strong></td>
+</tr>
+<tr>
+<td>6</td>
+<td>0x81834cd7…1f4d</td>
+<td>399</td>
+<td>8</td>
+<td><strong>407</strong></td>
+<td><strong>~$477K</strong></td>
+</tr>
+<tr>
+<td>7</td>
+<td>0xf5228b56…1aaa</td>
+<td>337</td>
+<td>69</td>
+<td><strong>406</strong></td>
+<td><strong>~$476K</strong></td>
+</tr>
+<tr>
+<td>8</td>
+<td>0x9b77cc54…3792</td>
+<td>387</td>
+<td>2</td>
+<td><strong>389</strong></td>
+<td><strong>~$456K</strong></td>
+</tr>
+<tr>
+<td>9</td>
+<td>0xdad9178f…abd8</td>
+<td>302</td>
+<td>32</td>
+<td><strong>334</strong></td>
+<td><strong>~$392K</strong></td>
+</tr>
+<tr>
+<td>10</td>
+<td>0xb3ba88ee…abbb</td>
+<td>306</td>
+<td>23</td>
+<td><strong>329</strong></td>
+<td><strong>~$386K</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Observations:</strong> - Top 10 control an estimated
+<strong>$6.3M</strong> in TVL - Average positions per top wallet:
+<strong>537</strong> - Enosys preference: <strong>94.0%</strong>
+allocation</p>
+<hr />
+<h2 id="week-over-week-trends">Week-over-Week Trends</h2>
+<p><em>Note: Trend data will be available after week 2</em></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>This Week</th>
+<th>Last Week</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Total TVL</td>
+<td>$59.3M</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>Total Positions</td>
+<td>50,542</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>Cross-DEX Users</td>
+<td>765</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>Avg Position Size</td>
+<td>$1173</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="about-liquilab">About LiquiLab</h2>
+<p><strong>LiquiLab</strong> is Flare Network’s leading analytics
+platform for V3 liquidity providers. We provide: - Real-time position
+tracking across all Flare DEXes - RangeBand™ technology for position
+health monitoring - Cross-DEX analytics and portfolio management -
+Weekly market insights and trend analysis</p>
+<p><strong>Visit us:</strong> <a
+href="https://app.liquilab.io">app.liquilab.io</a></p>
+<hr />
+<p><strong>Report Generated:</strong> 2025-11-09T17:39:54.175Z<br />
+<strong>Data Source:</strong> Flare Network blockchain + DefiLlama
+API<br />
+<strong>Next Report:</strong> Week 4, 2025</p>
+<hr />
+<p>© 2025 LiquiLab. All rights reserved.</p>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        <p><strong>© 2025 LiquiLab.</strong> All rights reserved.</p>
+        <p>For real-time analytics, visit <a href="https://app.liquilab.io">app.liquilab.io</a></p>
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.2);margin:24px auto;width:50%;">
+        <p style="font-size:8pt;color:rgba(255,255,255,0.6);">
+            <strong>Disclaimer:</strong> Past performance does not guarantee future results. Cryptocurrency investments carry risk.
+        </p>
+    </div>
+    
+    <script>
+        document.querySelectorAll('.content h1').forEach(h1 => {
+            h1.style.pageBreakBefore = 'always';
+        });
+    </script>
+</body>
+</html>

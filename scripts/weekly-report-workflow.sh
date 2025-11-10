@@ -34,15 +34,28 @@ echo ""
 echo "✅ Social media content generated"
 echo ""
 
-# 3. Get week info for file paths
-WEEK=$(date +"%V")
-YEAR=$(date +"%Y")
-WEEK_PADDED=$(printf "%02d" $WEEK)
-MONTH_NAME=$(date +"%B")
+# 3. Get week info for file paths (find the actual generated report)
 REPORT_DIR="docs/research/weekly"
-REPORT_FILE="${REPORT_DIR}/Cross-DEX-Report-${YEAR}-W${WEEK_PADDED}.md"
+LATEST_REPORT=$(ls -t "${REPORT_DIR}"/Cross-DEX-Report-*.md 2>/dev/null | head -1)
+
+if [ -z "$LATEST_REPORT" ]; then
+  echo "❌ No report found in ${REPORT_DIR}"
+  exit 1
+fi
+
+# Extract week and year from filename (e.g. Cross-DEX-Report-2025-W03.md)
+FILENAME=$(basename "$LATEST_REPORT")
+YEAR=$(echo "$FILENAME" | grep -oE '[0-9]{4}')
+WEEK_PADDED=$(echo "$FILENAME" | grep -oE 'W[0-9]{2}' | cut -c2-)
+WEEK=$((10#$WEEK_PADDED))
+MONTH_NAME=$(date +"%B")
+
+REPORT_FILE="$LATEST_REPORT"
 HTML_FILE="${REPORT_DIR}/Cross-DEX-Report-${YEAR}-W${WEEK_PADDED}.html"
 SOCIAL_DIR="${REPORT_DIR}/W${WEEK_PADDED}-social"
+
+echo "📄 Found report: $REPORT_FILE"
+echo ""
 
 # 4. Convert markdown to HTML with LiquiLab branding
 echo "📄 Step 3: Converting to branded HTML..."

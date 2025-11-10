@@ -6,6 +6,7 @@ import { useRouter } from 'next/router';
 
 import Header from '@/components/Header';
 import PoolsTable, { type PoolsTableItem } from '@/components/pools/PoolsTable';
+import ScreenshotButton from '@/components/utils/ScreenshotButton';
 import type { PositionRow } from '@/lib/positions/types';
 import { fmtUsd } from '@/lib/format';
 
@@ -198,6 +199,9 @@ export default function KoenDashboard() {
       <div className="relative min-h-screen text-white">
         <div className="page-bg" aria-hidden="true" />
         <Header currentPage="koen" showTabs={false} />
+        <div className="flex justify-end px-6 pt-4">
+          <ScreenshotButton />
+        </div>
 
         <main className="relative z-10 mx-auto w-full max-w-6xl px-6 py-20 md:py-24">
           <div className="mb-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">

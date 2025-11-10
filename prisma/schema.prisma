@@ -173,6 +173,16 @@ model PoolIncentive {
   @@index([stakingContract])
 }
 
+model PoolIncentiveSnapshot {
+  poolAddress String  @id @map("pool_address")
+  provider    String
+  usdPerDay   Decimal  @map("usd_per_day") @db.Decimal(38, 18)
+  tokens      Json
+  updatedAt   DateTime @map("updated_at") @default(now()) @db.Timestamptz(6)
+
+  @@map("pool_incentive")
+}
+
 // Raw staking events (for on-chain incentives tracking)
 model StakingEvent {
   id              String   @id // txHash:logIndex

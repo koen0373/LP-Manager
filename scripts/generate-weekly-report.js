@@ -127,9 +127,45 @@ async function fetchCurrentData() {
   };
 }
 
-// Fetch TVL from DefiLlama
-async function fetchTVL() {
-  console.log('💰 Fetching TVL data from DefiLlama...\n');
+// Fetch TVL from our own API (uses CoinGecko prices)
+async function fetchLiquiLabTVL() {
+  console.log('💰 Fetching TVL from LiquiLab API (CoinGecko prices)...\n');
+  
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const res = await fetch(`${apiUrl}/api/analytics/tvl`);
+    
+    if (!res.ok) {
+      throw new Error(`API returned ${res.status}`);
+    }
+    
+    const json = await res.json();
+    
+    if (!json.success || !json.data) {
+      throw new Error('Invalid API response');
+    }
+    
+    console.log('✅ LiquiLab TVL fetched successfully');
+    console.log(`   Total: $${(json.data.totalTVL / 1e6).toFixed(2)}M`);
+    console.log(`   Enosys: $${(json.data.enosysTVL / 1e6).toFixed(2)}M (${json.data.positionCount.enosys} positions)`);
+    console.log(`   SparkDEX: $${(json.data.sparkdexTVL / 1e6).toFixed(2)}M (${json.data.positionCount.sparkdex} positions)\n`);
+    
+    return {
+      enosysTVL: json.data.enosysTVL,
+      sparkdexTVL: json.data.sparkdexTVL,
+      totalTVL: json.data.totalTVL,
+      priceSource: json.data.priceSource,
+    };
+  } catch (error) {
+    console.warn('⚠️  LiquiLab API failed, falling back to DefiLlama...');
+    console.warn(`   Error: ${error.message}\n`);
+    return await fetchDefiLlamaTVL();
+  }
+}
+
+// Fetch TVL from DefiLlama (fallback)
+async function fetchDefiLlamaTVL() {
+  console.log('💰 Fetching TVL from DefiLlama (fallback)...\n');
   
   try {
     const [enosysRes, sparkdexRes] = await Promise.all([
@@ -140,19 +176,28 @@ async function fetchTVL() {
     const enosysTVL = parseFloat(await enosysRes.text());
     const sparkdexTVL = parseFloat(await sparkdexRes.text());
     
+    console.log('✅ DefiLlama TVL fetched successfully\n');
+    
     return {
       enosysTVL,
       sparkdexTVL,
       totalTVL: enosysTVL + sparkdexTVL,
+      priceSource: 'DefiLlama API (fallback)',
     };
   } catch (error) {
-    console.warn('⚠️  TVL fetch failed, using cached values');
+    console.warn('⚠️  DefiLlama fetch failed, using cached values\n');
     return {
       enosysTVL: 6678235,
       sparkdexTVL: 52247677,
       totalTVL: 58925912,
+      priceSource: 'Cached (fallback)',
     };
   }
+}
+
+// Main TVL fetcher (tries LiquiLab first, then DefiLlama)
+async function fetchTVL() {
+  return await fetchLiquiLabTVL();
 }
 
 // Generate markdown report
@@ -306,8 +351,10 @@ ${topWallets.map((w, i) => {
 ---
 
 **Report Generated:** ${new Date().toISOString()}  
-**Data Source:** Flare Network blockchain + DefiLlama API  
+**Data Source:** Flare Network blockchain + ${tvl.priceSource || 'LiquiLab API (CoinGecko)'}  
 **Next Report:** Week ${weekInfo.week + 1}, ${weekInfo.year}
+
+**Note:** *TVL calculated using real-time CoinGecko token prices for maximum accuracy. Position data sourced from Flare Network blockchain via LiquiLab indexer.*
 
 ---
 
@@ -372,5 +419,5 @@ if (require.main === module) {
     });
 }
 
-module.exports = { main, generateReport, fetchCurrentData, fetchTVL };
+module.exports = { main, generateReport, fetchCurrentData, fetchTVL, fetchLiquiLabTVL, fetchDefiLlamaTVL };
 

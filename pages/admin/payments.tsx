@@ -117,7 +117,7 @@ export default function AdminPaymentsPage() {
     if (!value) return null;
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return null;
-    return date.toLocaleString();
+    return date.toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam', dateStyle: 'short', timeStyle: 'medium' }) + ' CET';
   };
 
   const handleInvoiceDownload = (payment: PaymentRow) => {

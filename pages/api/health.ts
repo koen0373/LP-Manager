@@ -1,70 +1,63 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-import { probeBlazeSwapPairs } from '@/lib/providers/blazeswapV2';
-import { getCachedPositionCounts } from '@/services/positionCountService';
-
-type ProviderHealth = {
-  configured: boolean;
-  ready: boolean;
-  totalPairs?: number | null;
-  totalPositions?: number;
-};
+import { dbHealthCheck } from '@/lib/db';
+import { rpcHealth } from '@/lib/rpc';
 
 type HealthResponse = {
-  ok: true;
-  service: 'liquilab';
-  ts: string;
-  positionCounts: {
-    enosys: number;
-    sparkdex: number;
-    total: number;
-    updatedAt: string | null;
+  uptime: number;
+  version: string;
+  commit: string;
+  checks: {
+    db: { ok: boolean };
+    rpc: { ok: boolean };
+    queue?: { ok: boolean };
   };
-  providers: {
-    enosys?: ProviderHealth;
-    sparkdex?: ProviderHealth;
-    blazeswap: ProviderHealth;
-  };
+  timestamp: string;
 };
 
-type ErrorResponse = {
-  ok: false;
-  error: string;
-};
+const startTime = Date.now();
 
 export default async function handler(
   _req: NextApiRequest,
-  res: NextApiResponse<HealthResponse | ErrorResponse>,
+  res: NextApiResponse<HealthResponse | { error: string }>,
 ) {
-  try {
-    // Fetch position counts and BlazeSwap pairs in parallel
-    const [positionCounts, blazeswap] = await Promise.all([
-      getCachedPositionCounts(),
-      probeBlazeSwapPairs(),
-    ]);
+  const checks = {
+    db: { ok: false },
+    rpc: { ok: false },
+    queue: { ok: true }, // Stub for now
+  };
 
-    return res.status(200).json({
-      ok: true,
-      service: 'liquilab',
-      ts: new Date().toISOString(),
-      positionCounts,
-      providers: {
-        enosys: {
-          configured: true,
-          ready: positionCounts.enosys > 0,
-          totalPositions: positionCounts.enosys,
-        },
-        sparkdex: {
-          configured: true,
-          ready: positionCounts.sparkdex > 0,
-          totalPositions: positionCounts.sparkdex,
-        },
-        blazeswap,
-      },
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('[api/health] failed to evaluate health', message);
-    return res.status(500).json({ ok: false, error: message });
+  // Run checks in parallel with individual timeouts
+  // DB check gets longer timeout (1000ms) for first connection
+  const [dbOk, rpcOk] = await Promise.all([
+    dbHealthCheck(1000).catch(() => false),
+    rpcHealth(1200).catch(() => false),
+  ]);
+
+  checks.db.ok = dbOk;
+  checks.rpc.ok = rpcOk;
+
+  const allPassed = checks.db.ok && checks.rpc.ok && (checks.queue?.ok ?? true);
+
+  const response: HealthResponse = {
+    uptime: Math.floor((Date.now() - startTime) / 1000),
+    version: process.env.npm_package_version || '0.1.3',
+    commit: process.env.RAILWAY_GIT_COMMIT_SHA?.substring(0, 7) || process.env.VERCEL_GIT_COMMIT_SHA?.substring(0, 7) || 'unknown',
+    checks,
+    timestamp: new Date().toISOString(),
+  };
+
+  if (!allPassed) {
+    // Find failing checks
+    const failing = Object.entries(checks)
+      .filter(([_, check]) => !check.ok)
+      .map(([key]) => key);
+
+    return res.status(500).json({
+      ...response,
+      error: `Health checks failed: ${failing.join(', ')}`,
+    } as HealthResponse & { error: string });
   }
+
+  return res.status(200).json(response);
 }

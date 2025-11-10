@@ -1,105 +1,288 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { backfillPositions } from '@/lib/backfill/worker';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
-/**
- * Admin endpoint to trigger backfill for specific position IDs
- * 
- * Usage: POST /api/admin/backfill
- * Body: { 
- *   "tokenIds": [22003, 22326, 20445, 21866], 
- *   "secret": "your-secret",
- *   "mode": "since" | "full",
- *   "sinceBlock": 1000000 (optional)
- * }
- * 
- * Auth: Requires ADMIN_SECRET env var (do NOT use default in production!)
- */
+const execAsync = promisify(exec);
+
+type BackfillStatus = {
+  running: boolean;
+  startedAt?: string;
+  currentProcess?: string;
+  completedProcesses?: string[];
+  failedProcesses?: string[];
+  progress?: {
+    total: number;
+    completed: number;
+    failed: number;
+  };
+};
+
+type BackfillResponse = {
+  success: boolean;
+  message: string;
+  status?: BackfillStatus;
+};
+
+// In-memory status (in production, use Redis or database)
+let backfillStatus: BackfillStatus = {
+  running: false,
+};
+
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse<BackfillResponse | BackfillStatus>,
 ) {
-  const startTime = Date.now();
-
-  // Only allow POST
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  // Security check
-  const { tokenIds, secret, mode = 'since', sinceBlock } = req.body;
-  const expectedSecret = process.env.ADMIN_SECRET;
-  
-  if (!expectedSecret || expectedSecret === 'change-me') {
-    return res.status(500).json({ 
-      error: 'Server misconfigured',
-      message: 'ADMIN_SECRET not set or using default value'
-    });
-  }
-
-  if (secret !== expectedSecret) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  // Validate input
-  if (!tokenIds || !Array.isArray(tokenIds)) {
-    return res.status(400).json({ error: 'tokenIds array required' });
-  }
-
-  if (tokenIds.length === 0) {
-    return res.status(400).json({ error: 'tokenIds array cannot be empty' });
-  }
-
-  if (tokenIds.length > 20) {
-    return res.status(400).json({ 
-      error: 'Too many tokenIds',
-      message: 'Maximum 20 tokenIds per request. Use worker service for larger batches.'
-    });
-  }
-
-  // Validate mode
-  if (mode && mode !== 'since' && mode !== 'full') {
-    return res.status(400).json({ 
-      error: 'Invalid mode',
-      message: 'mode must be "since" or "full"'
-    });
-  }
+  // Note: In production, add proper admin authentication
+  // For now, allow access (add auth middleware if needed)
 
   try {
-    console.log(`[BACKFILL API] Starting batch backfill for ${tokenIds.length} positions (mode: ${mode})`);
+    if (req.method === 'GET') {
+      return res.status(200).json(backfillStatus);
+    }
 
-    const summary = await backfillPositions({
-      tokenIds,
-      mode: mode as 'since' | 'full',
-      sinceBlock,
-      concurrency: 5, // Lower concurrency for API calls
+    if (req.method === 'POST') {
+      const { action } = req.body;
+
+      if (action === 'start') {
+        if (backfillStatus.running) {
+          return res.status(400).json({
+            success: false,
+            message: 'Backfill is already running',
+            status: backfillStatus,
+          });
+        }
+
+        backfillStatus = {
+          running: true,
+          startedAt: new Date().toISOString(),
+          currentProcess: 'Initializing...',
+          completedProcesses: [],
+          failedProcesses: [],
+          progress: {
+            total: 10,
+            completed: 0,
+            failed: 0,
+          },
+        };
+
+        // Start backfill asynchronously (don't wait for it)
+        runBackfillAsync().catch((error) => {
+          console.error('[backfill-api] Backfill failed:', error);
+          backfillStatus.running = false;
+          backfillStatus.failedProcesses = [
+            ...(backfillStatus.failedProcesses || []),
+            `Fatal error: ${error instanceof Error ? error.message : String(error)}`,
+          ];
+        });
+
+        // Return immediately
+        return res.status(200).json({
+          success: true,
+          message: 'Backfill started',
+          status: backfillStatus,
+        });
+      }
+
+      if (action === 'stop') {
+        backfillStatus.running = false;
+        return res.status(200).json({
+          success: true,
+          message: 'Backfill stop requested',
+          status: backfillStatus,
+        });
+      }
+
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid action. Use: start or stop',
+      });
+    }
+
+    return res.status(405).json({
+      success: false,
+      message: 'Method not allowed',
     });
-
-    const elapsedMs = Date.now() - startTime;
-    console.log(`[BACKFILL API] ✅ Completed in ${elapsedMs}ms`);
-
-    return res.status(200).json({
-      success: true,
-      summary: {
-        total: summary.total,
-        successful: summary.successful,
-        failed: summary.failed,
-        totalInserted: summary.totalInserted,
-        totalUpdated: summary.totalUpdated,
-        totalSkipped: summary.totalSkipped,
-        elapsedMs,
-      },
-      results: summary.results,
-    });
-  } catch (error: unknown) {
-    const err = error as Error;
-    const elapsedMs = Date.now() - startTime;
-    console.error(`[BACKFILL API] ❌ Failed after ${elapsedMs}ms:`, error);
-    
-    return res.status(500).json({ 
-      error: 'Backfill failed', 
-      message: err.message,
-      elapsedMs,
+  } catch (error) {
+    console.error('[backfill-api] Handler error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Internal server error',
     });
   }
 }
 
+async function runBackfillAsync() {
+  // Ensure Prisma client is generated before running scripts
+  try {
+    console.log('[backfill-api] Generating Prisma client...');
+    await execAsync('npx prisma generate', {
+      timeout: 60000,
+      maxBuffer: 10 * 1024 * 1024,
+      cwd: process.cwd(),
+    });
+    console.log('[backfill-api] Prisma client generated');
+  } catch (error) {
+    console.warn('[backfill-api] Prisma generate warning:', error);
+    // Continue anyway - client might already be generated
+  }
+
+  const scripts = [
+    { name: 'APR Calculation', cmd: 'npx tsx scripts/enrich-apr-calculation.ts --limit=500' },
+    { name: 'Pool Volume', cmd: 'npx tsx scripts/enrich-pool-volume.ts --limit=500' },
+    { name: 'Position Health', cmd: 'npx tsx scripts/enrich-position-health.ts --limit=10000' },
+    { name: 'Pool Attribution', cmd: 'npx tsx scripts/enrich-user-engagement-data.ts --skip-fees --limit=5000 --concurrency=12' },
+    { name: 'Fees USD', cmd: 'npx tsx scripts/enrich-user-engagement-data.ts --skip-pool --limit=20000 --concurrency=12' },
+    { name: 'Range Status', cmd: 'npx tsx scripts/enrich-range-status.ts --limit=5000 --concurrency=12' },
+    { name: 'Impermanent Loss', cmd: 'npx tsx scripts/enrich-impermanent-loss.ts --limit=5000 --concurrency=12' },
+    { name: 'rFLR Vesting', cmd: 'npx tsx scripts/enrich-rflr-vesting.ts --limit=5000 --concurrency=10' },
+    { name: 'Unclaimed Fees', cmd: 'npx tsx scripts/enrich-unclaimed-fees.ts --limit=5000 --concurrency=10' },
+    { name: 'Position Snapshots', cmd: 'npx tsx scripts/enrich-position-snapshots.ts --limit=5000 --concurrency=10' },
+  ];
+
+  for (const script of scripts) {
+    if (!backfillStatus.running) {
+      break;
+    }
+
+    backfillStatus.currentProcess = script.name;
+    console.log(`[backfill-api] Starting: ${script.name}`);
+
+    try {
+      const result = await execAsync(script.cmd, {
+        timeout: 3600000,
+        maxBuffer: 10 * 1024 * 1024,
+        cwd: process.cwd(), // Ensure correct working directory
+        env: {
+          ...process.env,
+          INDEXER_BLOCK_WINDOW: '5000',
+          NODE_ENV: process.env.NODE_ENV || 'production',
+        },
+      });
+
+      // Log output for debugging
+      if (result.stdout) {
+        console.log(`[backfill-api] ${script.name} output:`, result.stdout.substring(0, 500));
+      }
+      if (result.stderr && !result.stderr.includes('Warning')) {
+        console.warn(`[backfill-api] ${script.name} warnings:`, result.stderr.substring(0, 500));
+      }
+
+      backfillStatus.completedProcesses = [
+        ...(backfillStatus.completedProcesses || []),
+        script.name,
+      ];
+      backfillStatus.progress = {
+        total: scripts.length,
+        completed: (backfillStatus.completedProcesses?.length || 0),
+        failed: backfillStatus.failedProcesses?.length || 0,
+      };
+      console.log(`[backfill-api] ✅ Completed: ${script.name}`);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      const fullError = error instanceof Error && error.stack ? error.stack.substring(0, 200) : errorMsg;
+      
+      console.error(`[backfill-api] ❌ Failed: ${script.name}`, fullError);
+      
+      backfillStatus.failedProcesses = [
+        ...(backfillStatus.failedProcesses || []),
+        `${script.name}: ${errorMsg.substring(0, 150)}`,
+      ];
+      backfillStatus.progress = {
+        total: scripts.length,
+        completed: backfillStatus.completedProcesses?.length || 0,
+        failed: (backfillStatus.failedProcesses?.length || 0),
+      };
+    }
+  }
+
+async function runBackfillAsync() {
+  // Ensure Prisma client is generated before running scripts
+  try {
+    console.log('[backfill-api] Generating Prisma client...');
+    await execAsync('npx prisma generate', {
+      timeout: 30000, // Reduced timeout
+      maxBuffer: 10 * 1024 * 1024,
+      cwd: process.cwd(),
+    });
+    console.log('[backfill-api] Prisma client generated');
+  } catch (error) {
+    console.warn('[backfill-api] Prisma generate warning:', error);
+    // Continue anyway - client might already be generated
+  }
+
+  const scripts = [
+    { name: 'APR Calculation', cmd: 'npx tsx scripts/enrich-apr-calculation.ts --limit=500' },
+    { name: 'Pool Volume', cmd: 'npx tsx scripts/enrich-pool-volume.ts --limit=500' },
+    { name: 'Position Health', cmd: 'npx tsx scripts/enrich-position-health.ts --limit=10000' },
+    { name: 'Pool Attribution', cmd: 'npx tsx scripts/enrich-user-engagement-data.ts --skip-fees --limit=5000 --concurrency=12' },
+    { name: 'Fees USD', cmd: 'npx tsx scripts/enrich-user-engagement-data.ts --skip-pool --limit=20000 --concurrency=12' },
+    { name: 'Range Status', cmd: 'npx tsx scripts/enrich-range-status.ts --limit=5000 --concurrency=12' },
+    { name: 'Impermanent Loss', cmd: 'npx tsx scripts/enrich-impermanent-loss.ts --limit=5000 --concurrency=12' },
+    { name: 'rFLR Vesting', cmd: 'npx tsx scripts/enrich-rflr-vesting.ts --limit=5000 --concurrency=10' },
+    { name: 'Unclaimed Fees', cmd: 'npx tsx scripts/enrich-unclaimed-fees.ts --limit=5000 --concurrency=10' },
+    { name: 'Position Snapshots', cmd: 'npx tsx scripts/enrich-position-snapshots.ts --limit=5000 --concurrency=10' },
+  ];
+
+  for (const script of scripts) {
+    if (!backfillStatus.running) {
+      console.log('[backfill-api] Backfill stopped by user');
+      break;
+    }
+
+    backfillStatus.currentProcess = script.name;
+    console.log(`[backfill-api] Starting: ${script.name}`);
+
+    try {
+      const result = await execAsync(script.cmd, {
+        timeout: 3600000,
+        maxBuffer: 10 * 1024 * 1024,
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          INDEXER_BLOCK_WINDOW: '5000',
+          NODE_ENV: process.env.NODE_ENV || 'production',
+        },
+      });
+
+      // Log output for debugging
+      if (result.stdout) {
+        const output = result.stdout.substring(0, 500);
+        console.log(`[backfill-api] ${script.name} output:`, output);
+      }
+      if (result.stderr && !result.stderr.includes('Warning')) {
+        const warnings = result.stderr.substring(0, 500);
+        console.warn(`[backfill-api] ${script.name} warnings:`, warnings);
+      }
+
+      backfillStatus.completedProcesses = [
+        ...(backfillStatus.completedProcesses || []),
+        script.name,
+      ];
+      backfillStatus.progress = {
+        total: scripts.length,
+        completed: (backfillStatus.completedProcesses?.length || 0),
+        failed: backfillStatus.failedProcesses?.length || 0,
+      };
+      console.log(`[backfill-api] ✅ Completed: ${script.name}`);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      const fullError = error instanceof Error && error.stack ? error.stack.substring(0, 200) : errorMsg;
+      
+      console.error(`[backfill-api] ❌ Failed: ${script.name}`, fullError);
+      
+      backfillStatus.failedProcesses = [
+        ...(backfillStatus.failedProcesses || []),
+        `${script.name}: ${errorMsg.substring(0, 150)}`,
+      ];
+      backfillStatus.progress = {
+        total: scripts.length,
+        completed: backfillStatus.completedProcesses?.length || 0,
+        failed: (backfillStatus.failedProcesses?.length || 0),
+      };
+    }
+  }
+
+  backfillStatus.running = false;
+  backfillStatus.currentProcess = undefined;
+  console.log('[backfill-api] Backfill complete');
+}

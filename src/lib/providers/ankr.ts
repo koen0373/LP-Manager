@@ -3,10 +3,6 @@ import { getAddress, type Address } from 'viem';
 import { publicClient } from '@/lib/viemClient';
 
 const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
-const ANKR_URL = process.env.ANKR_URL;
-const ANKR_API_KEY = process.env.ANKR_API_KEY;
-
-type JsonRecord = Record<string, unknown>;
 
 type NfpmConfig = {
   address: Address;
@@ -61,45 +57,6 @@ const TRANSFER_EVENT = {
     { name: 'tokenId', type: 'uint256', indexed: true },
   ],
 } as const;
-
-async function ankrRequest<T>(method: string, params: JsonRecord): Promise<T | null> {
-  if (!ANKR_URL || !ANKR_API_KEY) return null;
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
-
-  const requestInit: RequestInit = {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-ankr-api-key': ANKR_API_KEY,
-    },
-    body: JSON.stringify({
-      jsonrpc: '2.0',
-      id: Date.now(),
-      method,
-      params,
-    }),
-    signal: controller.signal,
-  };
-
-  try {
-    const response = await fetch(ANKR_URL, requestInit);
-    if (!response.ok) {
-      return null;
-    }
-
-    const payload = await response.json().catch(() => null);
-    if (payload && typeof payload === 'object' && 'result' in payload) {
-      return (payload as { result: T }).result;
-    }
-    return null;
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
 
 export async function nftsByOwner(owner: string): Promise<bigint[]> {
   if (!ADDRESS_REGEX.test(owner) || !NFPM_CONFIGS.length) {
@@ -187,54 +144,4 @@ async function enumerateViaLogs(config: NfpmConfig, owner: Address): Promise<big
   }
 
   return Array.from(tokenIds);
-}
-
-function extractPrice(candidate: unknown): number | null {
-  if (typeof candidate === 'number' && Number.isFinite(candidate)) return candidate;
-  if (typeof candidate === 'string') {
-    const parsed = Number(candidate);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-}
-
-export async function ankrTokenPrice(address: string): Promise<number | null> {
-  if (!ADDRESS_REGEX.test(address)) return null;
-
-  const result = await ankrRequest<JsonRecord>('ankr_getTokenPrice', {
-    blockchain: 'flare',
-    contractAddress: address,
-  });
-
-  if (!result) return null;
-
-  const candidates: Array<unknown> = [
-    result.USD,
-    result.usd,
-    result.price,
-    result.priceUsd,
-    result.priceUSD,
-    result.tokenPrice,
-    result.tokenPriceUsd,
-    result.tokenPriceUSD,
-  ];
-
-  for (const candidate of candidates) {
-    if (candidate && typeof candidate === 'object' && 'USD' in (candidate as JsonRecord)) {
-      const price = extractPrice((candidate as JsonRecord).USD);
-      if (price !== null) return price;
-    }
-    const parsed = extractPrice(candidate);
-    if (parsed !== null) return parsed;
-  }
-
-  if (result.prices && typeof result.prices === 'object') {
-    const map = result.prices as JsonRecord;
-    for (const value of Object.values(map)) {
-      const parsed = extractPrice(value);
-      if (parsed !== null) return parsed;
-    }
-  }
-
-  return null;
 }

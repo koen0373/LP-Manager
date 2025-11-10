@@ -7,8 +7,10 @@ import type { PositionRow, PositionsResponse, PositionClaimToken } from '@/lib/p
 import { flare } from '@/lib/chainFlare';
 import { prisma } from '@/server/db';
 import { nftsByOwner } from '@/lib/providers/ankr';
-import { getPrices } from '@/lib/pricing/prices';
 import { getPoolAddress, getPoolState } from '@/utils/poolHelpers';
+import { getTokenPricesBatch } from '@/services/tokenPriceService';
+import { getRpcClient } from '@/lib/rpc';
+import { withTimeout } from '@/lib/httpTimeout';
 
 const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/i;
 const CACHE_TTL_MS = 120_000;
@@ -42,13 +44,8 @@ const POSITION_ABI = [
   },
 ] as const;
 
-const publicClient = createPublicClient({
-  chain: flare,
-  transport: fallback([
-    http(process.env.FLARE_RPC_URL ?? flare.rpcUrls.default.http[0], { batch: true }),
-    http('https://flare-api.flare.network/ext/C/rpc', { batch: true }),
-  ]),
-});
+// Use RPC client with rotation and timeout
+const publicClient = getRpcClient();
 
 const nfpmConfigs = [
   process.env.ENOSYS_NFPM && process.env.ENOSYS_V3_FACTORY
@@ -149,12 +146,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function buildPositions(wallet: string, role: 'VISITOR' | 'PREMIUM' | 'PRO', flags: { premium: boolean; analytics: boolean }): Promise<PositionRow[]> {
   if (!nfpmConfigs.length) return [];
-  const tokenIds = await nftsByOwner(wallet);
+  
+  // Wrap external calls with timeout
+  const tokenIds = await withTimeout(nftsByOwner(wallet), 5000).catch(() => []);
   if (!tokenIds.length) return [];
 
   const rawPositions: RawPosition[] = [];
   for (const tokenId of tokenIds) {
-    const raw = await readPositionAcrossManagers(tokenId);
+    const raw = await withTimeout(readPositionAcrossManagers(tokenId), 3000).catch(() => null);
     if (raw) rawPositions.push(raw);
   }
 
@@ -168,12 +167,48 @@ async function buildPositions(wallet: string, role: 'VISITOR' | 'PREMIUM' | 'PRO
     }, new Set<string>())
   );
 
-  const priceMap = await getPrices(priceAddresses);
+  const priceMap = await withTimeout(buildPriceMap(priceAddresses), 5000).catch(() => ({}));
   const positions = await Promise.all(
-    rawPositions.map(async (raw) => mapRawPosition(raw, role, flags, priceMap))
+    rawPositions.map(async (raw) => withTimeout(mapRawPosition(raw, role, flags, priceMap), 2000).catch(() => null))
   );
 
   return positions.filter(Boolean) as PositionRow[];
+}
+
+async function buildPriceMap(addresses: string[]): Promise<Record<string, number>> {
+  if (!addresses.length) return {};
+
+  const uniqueAddresses = Array.from(new Set(addresses));
+  const entries = await Promise.all(
+    uniqueAddresses.map(async (address) => {
+      const checksum = address as `0x${string}`;
+      const meta = await getTokenMetadata(checksum);
+      return {
+        address,
+        symbol: normalizeSymbol(meta.symbol),
+      };
+    }),
+  );
+
+  const symbols = Array.from(new Set(entries.map((entry) => entry.symbol).filter(Boolean)));
+  const symbolPrices = symbols.length ? await getTokenPricesBatch(symbols) : {};
+  const map: Record<string, number> = {};
+
+  entries.forEach(({ address, symbol }) => {
+    const price = symbolPrices[symbol];
+    if (typeof price === 'number' && Number.isFinite(price)) {
+      map[address] = price;
+    }
+  });
+
+  return map;
+}
+
+function normalizeSymbol(value: string) {
+  return value
+    .normalize('NFKD')
+    .replace(/[^0-9A-Za-z]/g, '')
+    .toUpperCase();
 }
 
 async function readPositionAcrossManagers(tokenId: bigint): Promise<RawPosition | null> {
@@ -221,12 +256,18 @@ async function readPositionAcrossManagers(tokenId: bigint): Promise<RawPosition 
 
 async function readPosition(nfpm: `0x${string}`, tokenId: bigint) {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    
     const result = await publicClient.readContract({
       address: nfpm,
       abi: POSITION_ABI,
       functionName: 'positions',
       args: [tokenId],
+      signal: controller.signal,
     });
+    
+    clearTimeout(timeoutId);
 
     const [, , token0, token1, fee, tickLower, tickUpper, liquidity, , , tokensOwed0, tokensOwed1] = result as [
       bigint,

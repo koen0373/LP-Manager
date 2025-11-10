@@ -19,7 +19,7 @@ type ApiResponse = {
   stale?: boolean;
 };
 
-const NEXT_CRON = '09:00 UTC daily';
+const NEXT_CRON = '09:00 CET daily';
 const STALE_MS = 24 * 60 * 60 * 1000;
 
 export default function AnkrDashboard() {
@@ -76,7 +76,7 @@ export default function AnkrDashboard() {
   }, [formattedHistory]);
 
   const lastUpdated = record?.lastUpdated ? new Date(record.lastUpdated) : null;
-  const lastUpdatedUtc = lastUpdated ? lastUpdated.toUTCString() : '—';
+  const lastUpdatedCET = lastUpdated ? lastUpdated.toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' }) : '—';
   const isStale = lastUpdated ? Date.now() - lastUpdated.getTime() > STALE_MS : true;
 
   return (
@@ -107,7 +107,7 @@ export default function AnkrDashboard() {
               <Metric label="Daily cost (USD)" value={record ? record.dayCostUsd.toFixed(2) : '—'} />
               <Metric label="Monthly cost (USD)" value={record ? record.monthCostUsd.toFixed(2) : '—'} />
               <Metric label="Total calls" value={record ? record.totalCalls.toLocaleString() : '—'} />
-              <Metric label="Last updated (UTC)" value={lastUpdatedUtc} />
+              <Metric label="Last updated (CET)" value={lastUpdatedCET} />
               <Metric label="Data freshness" value={stale ? 'STALE (cached)' : 'Fresh'} />
             </div>
             <div className="mt-6 flex gap-3">

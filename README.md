@@ -4,10 +4,66 @@
 
 ---
 
+## 💰 Pricing Configuration
+
+LiquiLab uses a Single Source of Truth for pricing configuration:
+
+- **Config File**: `config/pricing.json` - JSON schema with plans, bundles, and pricing rules
+- **Public API**: `/api/public/pricing` - Read-only endpoint (cached 1 hour)
+- **Helper Library**: `lib/pricing.ts` - TypeScript helpers for price calculations
+- **Visitor Context**: `lib/visitor.ts` - Server-side helper to build visitor context from session/wallet
+- **AI Context**: `ai-context/pricing.md` - Seed document for AI agents
+- **Verification**: `scripts/verify_pricing.mjs` - Validates pricing calculations against examples
+
+### Quick Links
+
+- **Pricing Config**: See `config/pricing.json` or `/api/public/pricing`
+- **AI Agents**: Load `ai-context/pricing.md` into prompts; always read `config/pricing.json` at runtime
+- **Visitor Context Schema**: `ai-context/visitor_context.schema.json`
+
+### Verify Pricing
+
+```bash
+node scripts/verify_pricing.mjs
+```
+
+---
+
 ## ⚙️ Deployment & Workers
 
 ### Infrastructure
 - [ANKR Integration (Advanced API)](docs/infra/ankr.md)
+
+### Environment Variables
+
+**Required:**
+- `DATABASE_URL` - PostgreSQL connection string (automatically set by Railway Postgres add-on)
+- `FLARE_RPC_URLS` - Comma-separated list of Flare RPC endpoints (e.g., `https://rpc1.example.com,https://rpc2.example.com`)
+  - Falls back to `FLARE_RPC_URL` if `FLARE_RPC_URLS` is not set
+
+**Optional:**
+- `DATABASE_SSL` - Set to `true` to enable SSL for database connections (default: `false`)
+- `RAILWAY_GIT_COMMIT_SHA` - Git commit SHA (automatically set by Railway)
+- `VERCEL_GIT_COMMIT_SHA` - Git commit SHA (automatically set by Vercel)
+
+### Health Checks
+
+**Health Endpoint:** `/api/health`
+
+Returns JSON with:
+- `uptime` - Server uptime in seconds
+- `version` - Package version
+- `commit` - Git commit SHA
+- `checks.db` - Database health check (300ms timeout)
+- `checks.rpc` - RPC health check (1200ms timeout, rotates over `FLARE_RPC_URLS`)
+- `checks.queue` - Queue health check (stub, always `ok: true`)
+
+**Railway Configuration:**
+Set Railway health check path to `/api/health` in service settings.
+
+**Status Codes:**
+- `200` - All checks passed
+- `500` - One or more checks failed (response includes `error` field with failing checks)
 
 ### Railway Deployment
 

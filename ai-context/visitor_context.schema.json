@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Visitor Context",
+  "description": "Schema for visitor context used by AI agents and pages",
+  "type": "object",
+  "properties": {
+    "visitor_id": {
+      "type": "string",
+      "description": "Unique identifier for the visitor (session ID or wallet address)"
+    },
+    "segment": {
+      "type": "string",
+      "enum": ["VISITOR", "PREMIUM", "PRO", "ENTERPRISE"],
+      "description": "Visitor segment based on subscription status"
+    },
+    "plan": {
+      "type": "string",
+      "enum": ["VISITOR", "PREMIUM", "PRO", "ENTERPRISE"],
+      "description": "Current subscription plan"
+    },
+    "pools_owned": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Number of pools the visitor owns/tracks"
+    },
+    "bundles_purchased": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Number of pool bundles purchased"
+    },
+    "alerts_bundles": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Number of alert bundles purchased"
+    },
+    "trial_active": {
+      "type": "boolean",
+      "description": "Whether the visitor is currently on a trial"
+    },
+    "trial_ends": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when trial ends, or null if no trial"
+    },
+    "locale": {
+      "type": "string",
+      "default": "en-US",
+      "description": "Locale code (e.g., en-US, nl-NL)"
+    },
+    "as_of": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when this context was generated"
+    },
+    "pricing_version": {
+      "type": "string",
+      "description": "Version of pricing config used (e.g., 2025-11-10)"
+    }
+  },
+  "required": [
+    "visitor_id",
+    "segment",
+    "plan",
+    "pools_owned",
+    "bundles_purchased",
+    "alerts_bundles",
+    "trial_active",
+    "locale",
+    "as_of",
+    "pricing_version"
+  ],
+  "additionalProperties": false
+}
+

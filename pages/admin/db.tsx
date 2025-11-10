@@ -18,7 +18,7 @@ type ApiResp = {
 function fmtDate(iso?: string) {
   if (!iso) return '—';
   const d = new Date(iso);
-  return d.toISOString().replace('T',' ').replace('Z',' UTC');
+  return d.toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam', dateStyle: 'short', timeStyle: 'medium' }) + ' CET';
 }
 
 function toCsv(columns: string[], rows: any[]) {

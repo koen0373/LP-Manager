@@ -110,22 +110,43 @@ export class IndexerCore {
     // Scan all NFPM contracts
     let allLogs: any[] = [];
     for (const npmAddress of npmAddresses) {
-      const scanResult = await this.scanner.scan({
-        fromBlock,
-        toBlock,
-        contractAddress: npmAddress,
-        tokenIds,
-        dryRun,
-      });
-      console.log(`[INDEXER] ✓ Found ${scanResult.logs.length} logs from ${npmAddress}`);
-      allLogs = allLogs.concat(scanResult.logs);
+      try {
+        const scanResult = await this.scanner.scan({
+          fromBlock,
+          toBlock,
+          contractAddress: npmAddress,
+          tokenIds,
+          dryRun,
+        });
+        console.log(`[INDEXER] ✓ Found ${scanResult.logs.length} logs from ${npmAddress}`);
+        allLogs = allLogs.concat(scanResult.logs);
+      } catch (error) {
+        console.error(`[INDEXER] ❌ Error scanning ${npmAddress}:`, error);
+        // Continue with other addresses
+      }
     }
 
     console.log(`[INDEXER] ✓ Total logs found: ${allLogs.length}`);
 
     // Decode events
-    const decodedEvents = this.decoder.decodeBatch(allLogs);
-    console.log(`[INDEXER] ✓ Decoded ${decodedEvents.length}/${allLogs.length} events`);
+    let decodedEvents: any[] = [];
+    try {
+      decodedEvents = this.decoder.decodeBatch(allLogs);
+      console.log(`[INDEXER] ✓ Decoded ${decodedEvents.length}/${allLogs.length} events`);
+    } catch (error) {
+      console.error(`[INDEXER] ❌ Error decoding events:`, error);
+      // Return partial result if decoding fails
+      return {
+        blocksScanned: toBlock - fromBlock + 1,
+        logsFound: allLogs.length,
+        eventsDecoded: 0,
+        eventsWritten: 0,
+        duplicates: 0,
+        errors: 1,
+        elapsedMs: Date.now() - startTime,
+        checkpointSaved: false,
+      };
+    }
 
     let writeStats = {
       transfersWritten: 0,
@@ -136,27 +157,36 @@ export class IndexerCore {
 
     // Write to database (unless dry run)
     if (!dryRun && decodedEvents.length > 0) {
-      // Get block timestamp for the middle of the range (approximation)
-      const midBlock = Math.floor((fromBlock + toBlock) / 2);
-      const timestamp = await this.scanner.getBlockTimestamp(midBlock);
+      try {
+        // Get block timestamp for the middle of the range (approximation)
+        const midBlock = Math.floor((fromBlock + toBlock) / 2);
+        const timestamp = await this.scanner.getBlockTimestamp(midBlock);
 
-      writeStats = await this.writer.write(decodedEvents, timestamp);
-      console.log(
-        `[INDEXER] ✓ Written ${writeStats.transfersWritten + writeStats.eventsWritten} events (${writeStats.duplicates} duplicates, ${writeStats.errors} errors)`
-      );
+        writeStats = await this.writer.write(decodedEvents, timestamp);
+        console.log(
+          `[INDEXER] ✓ Written ${writeStats.transfersWritten + writeStats.eventsWritten} events (${writeStats.duplicates} duplicates, ${writeStats.errors} errors)`
+        );
+      } catch (error) {
+        console.error(`[INDEXER] ❌ Error writing events:`, error);
+        writeStats.errors = decodedEvents.length;
+      }
     }
 
     // Save checkpoint
     let checkpointSaved = false;
     if (!dryRun) {
-      await this.checkpoints.upsert({
-        source: 'NPM',
-        key: checkpointKey,
-        lastBlock: toBlock,
-        eventsCount: writeStats.transfersWritten + writeStats.eventsWritten,
-      });
-      checkpointSaved = true;
-      console.log(`[INDEXER] ✓ Checkpoint saved: NPM:${checkpointKey} @ block ${toBlock}`);
+      try {
+        await this.checkpoints.upsert({
+          source: 'NPM',
+          key: checkpointKey,
+          lastBlock: toBlock,
+          eventsCount: writeStats.transfersWritten + writeStats.eventsWritten,
+        });
+        checkpointSaved = true;
+        console.log(`[INDEXER] ✓ Checkpoint saved: NPM:${checkpointKey} @ block ${toBlock}`);
+      } catch (error) {
+        console.error(`[INDEXER] ❌ Error saving checkpoint:`, error);
+      }
     }
 
     const elapsedMs = Date.now() - startTime;
@@ -168,7 +198,7 @@ export class IndexerCore {
 
     return {
       blocksScanned: toBlock - fromBlock + 1,
-      logsFound: scanResult.logs.length,
+      logsFound: allLogs.length,
       eventsDecoded: decodedEvents.length,
       eventsWritten: writeStats.transfersWritten + writeStats.eventsWritten,
       duplicates: writeStats.duplicates,

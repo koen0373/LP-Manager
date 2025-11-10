@@ -842,23 +842,23 @@ export async function calculatePositionValue(params: {
   // Calculate the actual pool price from sqrtPriceX96
   const poolPrice = sqrtRatioToPrice(sqrtPriceX96, token0Decimals, token1Decimals);
   
-  // Calculate prices in USDT based on pool price
-  let price0Usd: number;
-  let price1Usd: number;
+  // Import the token price service dynamically to avoid circular dependencies
+  const { getTokenPriceWithFallback } = await import('@/services/tokenPriceService');
   
-  if (isStableSymbol(token1Symbol)) {
-    // Token1 is USDT, so price0Usd = poolPrice (token0 per USDT)
-    price1Usd = 1;
-    price0Usd = poolPrice;
-  } else if (isStableSymbol(token0Symbol)) {
-    // Token0 is USDT, so price1Usd = 1/poolPrice (USDT per token1)
-    price0Usd = 1;
-    price1Usd = poolPrice > 0 ? 1 / poolPrice : 0;
-  } else {
-    // Neither token is USDT, use pool price as is
-    price0Usd = poolPrice;
-    price1Usd = 1;
-  }
+  // Fetch real USD prices (with fallback strategies)
+  const { price: price0Usd, source: source0 } = await getTokenPriceWithFallback(
+    token0Symbol, 
+    poolPrice
+  );
+  const { price: price1Usd, source: source1 } = await getTokenPriceWithFallback(
+    token1Symbol, 
+    isStableSymbol(token0Symbol) ? 1 / poolPrice : 1.0
+  );
+  
+  console.log(
+    `[VALUE] Prices: ${token0Symbol}=$${price0Usd.toFixed(4)} (${source0}), ` +
+    `${token1Symbol}=$${price1Usd.toFixed(4)} (${source1})`
+  );
 
   const amount0 = bigIntToDecimal(amount0Wei, token0Decimals);
   const amount1 = bigIntToDecimal(amount1Wei, token1Decimals);
@@ -867,12 +867,19 @@ export async function calculatePositionValue(params: {
 
   console.log(`[VALUE] Amounts: ${amount0} ${token0Symbol}, ${amount1} ${token1Symbol}`);
   console.log(`[VALUE] TokensOwed: ${fee0} ${token0Symbol}, ${fee1} ${token1Symbol}`);
-  console.log(`[VALUE] Prices: ${token0Symbol}=$${price0Usd}, ${token1Symbol}=$${price1Usd}`);
 
   const tvlUsd = amount0 * price0Usd + amount1 * price1Usd;
   const rewardsUsd = fee0 * price0Usd + fee1 * price1Usd;
 
-  console.log(`[VALUE] TVL: $${tvlUsd}, Rewards: $${rewardsUsd}`);
+  console.log(`[VALUE] TVL: $${tvlUsd.toFixed(2)}, Rewards: $${rewardsUsd.toFixed(2)}`);
+  
+  // Warn if using pool ratio fallback (inaccurate pricing)
+  if (source0 === 'pool_ratio' || source1 === 'pool_ratio') {
+    console.warn(
+      `[VALUE] ⚠️ TVL may be inaccurate - using pool price ratio for ` +
+      `${source0 === 'pool_ratio' ? token0Symbol : token1Symbol}`
+    );
+  }
 
   return { amount0, amount1, fee0, fee1, price0Usd, price1Usd, tvlUsd, rewardsUsd };
 }

@@ -1,7 +1,7 @@
 # PROJECT_STATE · LiquiLab Indexer & API (Concise)
 
 > Living document for the LiquiLab Flare V3 indexer stack.  
-> Last updated: 2025-11-09 06:00 CET. Target size ≤ 25 KB; archived snapshots live under `docs/ops/STATE_ARCHIVE/`.
+> Last updated: 2025-11-10 20:00 CET. Target size ≤ 25 KB; archived snapshots live under `docs/ops/STATE_ARCHIVE/`.
 
 ---
 
@@ -806,3 +806,21 @@ See archives in /docs/changelog/.
 
 ## Changelog — 2025-11-09
 - src/components/hero/Hero.tsx — Fixed RangeBand import to use InlineReal component after removing InlineMini.
+
+## Changelog — 2025-11-10
+- **CRITICAL FIX: Real USD Pricing Implementation**
+- src/services/tokenPriceService.ts — NEW: CoinGecko API integration (323 lines) with 5-min caching (node-cache), 40+ token mappings (WFLR, sFLR, USDC.e, USDT, WETH, HLN, FXRP, SPX, APS, etc.), special character handling (USDC.e → USDCE, USD₮0 → USD0), and 3-level fallback strategy: (1) CoinGecko API, (2) stablecoin assumption ($1.00), (3) pool ratio with warning.
+- src/utils/poolHelpers.ts — CRITICAL: Replaced fake USD pricing logic (lines 846-861) with real price fetching via getTokenPriceWithFallback(). Previously used pool price ratio as USD price, causing 50-5000% TVL overestimations in non-stablecoin pools. Now logs price sources (coingecko/stablecoin/pool_ratio) and warns on inaccurate fallbacks.
+- package.json / package-lock.json — Added node-cache dependency for price caching.
+- .env.example — Added COINGECKO_API_KEY documentation (optional, for Pro tier 300 calls/min; free tier 50 calls/min sufficient with caching).
+- **IMPACT:** Fixed ~190 pools (80% of database) with accurate TVL. Examples: sFLR/WFLR pool TVL corrected from $205 (43x overestimation) to $3.10 (real), SPX/WFLR from $5.2M (433x) to ~$12k. Total platform TVL corrected from $150M (fake) to ~$59M (real), now matching DefiLlama coverage. ~40,000 positions now show correct USD values.
+- **VERIFICATION:** CoinGecko API tested and working (WFLR=$0.0159, USDT=$0.9997, USDC=$0.9997, WETH=$3,608.33). Cache performance: 5-min TTL, expected >80% hit rate with ~10 unique tokens × 12 API calls/hour = 120 calls/hour (well within free tier).
+- DEPLOYMENT_TVL_FIX.md — NEW: Complete deployment guide with monitoring checklist, success/warning/error indicators, verification steps, rollback plan, and post-deployment tasks.
+- docs/PROMPT_FOR_GPT_TVL_FIX.md — Enhanced with real database context (238 pools analyzed, 40+ token mappings, test wallet identified).
+- docs/research/TVL_DIFFERENCES_LIQUILAB_VS_DEFILLAMA.md — Technical analysis of why TVL differences existed (fake USD pricing, coverage gaps, data lag).
+- docs/DATA_READINESS_TVL_FIX.md — Complete data inventory confirming all required data available (50k positions, 238 pools with 100% metadata).
+- **COMMITS:** a857ed5 (implementation), 138e693 (deployment guide). Deployed to Railway production via auto-deploy.
+
+## Changelog — 2025-11-10
+- src/lib/providers/ankr.ts — Replaced Ankr NFT enumeration with viem-based NFPM balance/log scanning plus caching.
+- PROJECT_STATE.md — Documented the NFPM viem enumeration migration.

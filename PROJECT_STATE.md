@@ -824,3 +824,29 @@ See archives in /docs/changelog/.
 ## Changelog — 2025-11-10
 - src/lib/providers/ankr.ts — Replaced Ankr NFT enumeration with viem-based NFPM balance/log scanning plus caching.
 - PROJECT_STATE.md — Documented the NFPM viem enumeration migration.
+
+## Changelog — 2025-11-10
+- src/services/positionCountService.ts — Rebuilt NFPM position counting with viem log scans and persistent caching in `position_counts`.
+
+## Changelog — 2025-11-10
+- **WEEKLY REPORT + TVL API INTEGRATION**
+- pages/api/analytics/tvl.ts — NEW: Aggregated TVL endpoint (173 lines) that sums all positions from database using CoinGecko prices via tokenPriceService.ts. Groups by pool for efficiency, returns Enosys/SparkDEX breakdown, position counts, and avg values. Response includes calculated timestamp and price source.
+- scripts/generate-weekly-report.js — UPGRADED: Now fetches TVL from /api/analytics/tvl (LiquiLab CoinGecko) with triple-layer fallback: (1) LiquiLab API, (2) DefiLlama, (3) cached values. Replaced hardcoded DefiLlama-only logic. Footer now shows dynamic price source.
+- **IMPACT:** Weekly reports now use same accurate TVL calculation as the app (CoinGecko + pool ratios), ensuring consistency across all user-facing surfaces. No more DefiLlama vs LiquiLab discrepancies in reports.
+- **API RESPONSE FORMAT:**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "totalTVL": 59300000,
+      "enosysTVL": 6600000,
+      "sparkdexTVL": 52700000,
+      "positionCount": { "total": 50542, "enosys": 24568, "sparkdex": 25974 },
+      "avgPositionValue": { "total": 1173, "enosys": 270, "sparkdex": 2030 },
+      "calculatedAt": "2025-11-10T...",
+      "priceSource": "CoinGecko API + pool ratios"
+    }
+  }
+  ```
+- **WEEKLY REPORT FLOW:** generate-weekly-report.js → fetchLiquiLabTVL() → /api/analytics/tvl → tokenPriceService.ts (CoinGecko) → Markdown/HTML report with real TVL.
+- **COMMITS:** 02426ff (TVL API + report upgrade).

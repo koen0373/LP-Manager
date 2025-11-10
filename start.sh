@@ -39,5 +39,6 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # Start Next.js (use exec to replace shell process)
-exec npx next start -p "${PORT:-3000}"
+# -H 0.0.0.0 is required for Railway to bind to all interfaces
+exec npx next start -H 0.0.0.0 -p "${PORT:-3000}"
 

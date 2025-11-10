@@ -1,5 +1,5 @@
 # Lightweight worker Dockerfile for Indexer (NO Next.js build)
-# Cache bust: 2025-11-08-v2
+# Cache bust: 2025-11-10-v3
 FROM node:20-alpine
 
 WORKDIR /app
@@ -10,8 +10,8 @@ COPY package*.json ./
 # Copy Prisma schema (needed for prisma generate)
 COPY prisma ./prisma
 
-# Install ALL dependencies (including tsx)
-RUN npm ci
+# Install ALL dependencies (use install instead of ci to handle lock file sync)
+RUN npm install
 
 # Copy source code and scripts
 COPY scripts ./scripts

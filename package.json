@@ -19,7 +19,7 @@
     "indexer:backfill": "tsx scripts/indexer-backfill.ts",
     "indexer:backfill:railway": "tsx scripts/indexer-backfill.ts --stream=nfpm --rps=2 --concurrency=2 --blockWindow=25",
     "indexer:follow": "tsx scripts/indexer-follower.ts",
-    "indexer:follow:railway": "tsx scripts/indexer-follower.ts --stream=nfpm",
+    "indexer:follow:railway": "node --loader tsx -r tsconfig-paths/register scripts/indexer/hourly.mjs",
     "indexer:staking": "tsx scripts/indexer-staking.mts",
     "indexer:incentives": "tsx scripts/compute-incentives.mts",
     "indexer:incentives:api": "tsx scripts/fetch-api-incentives.mts",
@@ -82,7 +82,8 @@
     "tsconfig-paths": "^4.2.0",
     "viem": "2.38.5",
     "wagmi": "2.19.2",
-    "zod": "^4.1.12"
+    "zod": "^4.1.12",
+    "tsx": "^4.20.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -103,7 +104,6 @@
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
     "tsc-alias": "^1.8.16",
-    "tsx": "^4.20.6",
     "typescript": "^5",
     "vitest": "^4.0.7"
   },

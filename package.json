@@ -19,7 +19,7 @@
     "indexer:backfill": "tsx scripts/indexer-backfill.ts",
     "indexer:backfill:railway": "tsx scripts/indexer-backfill.ts --stream=nfpm --rps=2 --concurrency=2 --blockWindow=25",
     "indexer:follow": "tsx scripts/indexer-follower.ts",
-    "indexer:follow:railway": "node --loader tsx -r tsconfig-paths/register scripts/indexer/hourly.mjs",
+    "indexer:follow:railway": "node --import tsx -r tsconfig-paths/register scripts/indexer/hourly.mjs",
     "indexer:staking": "tsx scripts/indexer-staking.mts",
     "indexer:incentives": "tsx scripts/compute-incentives.mts",
     "indexer:incentives:api": "tsx scripts/fetch-api-incentives.mts",

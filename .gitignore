@@ -75,3 +75,16 @@ storybook-static/
 # Respect gitkeep scaffolding
 !.gitkeep
 /Documentatie/API Key.txt
+# ignore accidental backups / heavy outputs
+node_modules
+node_modules.*
+node_modules.bak*
+.next
+dist
+out
+coverage
+tmp
+backups
+.DS_Store
+*.log
+**/*.tsbuildinfo

@@ -88,3 +88,4 @@ backups
 .DS_Store
 *.log
 **/*.tsbuildinfo
+node_modules.bak*

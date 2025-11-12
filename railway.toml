@@ -1,7 +1,0 @@
-[build]
-builder = "NIXPACKS"
-
-[deploy]
-# Let Nixpacks use npm start from package.json
-# startCommand is intentionally not set
-

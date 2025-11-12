@@ -22,6 +22,11 @@
 
 ---
 
+## Working Agreements
+- Always add an 'Advies' line when a better option exists (see `docs/PROMPTING_STANDARD.md`).
+
+---
+
 ## 2. Key Components
 - **CLI entrypoints:**  
   - `scripts/indexer-backfill.ts` — orchestrates batch runs, stream selection (factories, nfpm, pools), structured start logs. When `--streams=pools` is passed, now invokes `IndexerCore.indexPoolEvents`.  
@@ -882,3 +887,8 @@ See archives in /docs/changelog/.
   6. Update weekly report to use LiquiLab TVL instead of DefiLlama
 - **COMMITS:** cbc8e5d (start.sh), d15d8f2 (logging), ed7b7e6 (worker fix), 906c483 (package.json), 9847e59 (railway.toml).
 - **DOCUMENTATION:** Complete root cause analysis and all attempted solutions documented in RAILWAY_502_FIX_HANDOVER.md.
+
+## Changelog — 2025-11-12
+- docs/PROMPTING_STANDARD.md — Created prompting standard document with Advisory Requirement section; mandated 'Advies' line in responses and 'Advisory/next_suggested_step' in [PASTE BLOCK — RESULTS FOR GPT].
+- PROJECT_STATE.md — Added Working Agreements section with bullet: Always add an 'Advies' line when a better option exists (see docs/PROMPTING_STANDARD.md).
+- docs/PR_BODY_ROLLBACK.md — Created PR body template for rolling back to UI snapshot `ui-2025-11-10-1000` (commit `0ab99aa2f4250b1bbd5ea39e724513d23800a564`). Plan: merge rollback via PR; no force-push to main. Local WIP stashed on backup branch.

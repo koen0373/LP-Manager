@@ -7,7 +7,7 @@
     "build": "prisma generate && next build",
     "build:worker": "prisma migrate deploy && prisma generate && tsc --project tsconfig.worker.json && tsc-alias -p tsconfig.worker.json",
     "build:worker:local": "prisma generate && tsc --project tsconfig.worker.json && tsc-alias -p tsconfig.worker.json",
-    "start": "npx prisma migrate deploy && npx next start -p ${PORT:-3000}",
+    "start": "prisma migrate deploy && node server.js",
     "lint": "eslint",
     "postinstall": "prisma generate",
     "backfill:run": "node ./dist/scripts/backfillLedger.js",

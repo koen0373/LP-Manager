@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { PoolDetailVM } from './types';
@@ -7,6 +6,7 @@ import Header from '@/components/Header';
 import { WaterSpinner } from '@/components/WaterSpinner';
 import { formatDateShort } from '@/lib/formatDate';
 import { TimeRange } from '@/lib/utils/time';
+import { TokenIcon } from '@/components/TokenIcon';
 
 // Dynamic import - pure client-side (no SSR)
 const EChartsRangeChart = dynamic(
@@ -33,23 +33,6 @@ interface PoolPairDetailProps {
   activeTab?: 'active' | 'inactive' | 'all';
   onWalletConnected?: (address: string) => void;
   onWalletDisconnected?: () => void;
-}
-
-function getTokenIconPath(symbol?: string): string {
-  if (!symbol) return '/icons/default-token.webp';
-  
-  const iconMap: Record<string, string> = {
-    'WFLR': '/icons/flr.webp',
-    'FLR': '/icons/flr.webp',
-    'USD₮0': '/icons/usd0.webp',
-    'eUSDT': '/icons/eusdt.webp',
-    'USDT': '/icons/eusdt.webp',
-    'FXRP': '/icons/fxrp.webp',
-    'APS': '/icons/aps.webp',
-    'RFLR': '/icons/flr.webp',
-  };
-  
-  return iconMap[symbol] || '/icons/default-token.webp';
 }
 
 function formatUsd(value: number): string {
@@ -161,20 +144,18 @@ export function PoolPairDetail({
           
           {/* Token Icons and Pair */}
           <div className="flex items-center gap-8 mb-4">
-            <div className="flex items-center -space-x-2">
-              <Image
-                src={getTokenIconPath(vm.token0?.symbol)}
-                alt={vm.token0?.symbol || 'Token 0'}
-                width={32}
-                height={32}
-                className="rounded-full"
+            <div className="flex items-center [&>*:not(:first-child)]:-ml-2">
+              <TokenIcon
+                symbol={vm.token0?.symbol}
+                address={vm.token0?.address}
+                size={36}
+                className="ring-2 ring-[#0B1530]"
               />
-              <Image
-                src={getTokenIconPath(vm.token1?.symbol)}
-                alt={vm.token1?.symbol || 'Token 1'}
-                width={32}
-                height={32}
-                className="rounded-full"
+              <TokenIcon
+                symbol={vm.token1?.symbol}
+                address={vm.token1?.address}
+                size={36}
+                className="ring-2 ring-[#0B1530]"
               />
             </div>
             <div className="text-lg font-medium">
@@ -214,12 +195,11 @@ export function PoolPairDetail({
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                  <Image
-                    src={getTokenIconPath(vm.token0?.symbol)}
-                    alt={vm.token0?.symbol || 'Token 0'}
-                    width={16}
-                    height={16}
-                    className="rounded-full"
+                  <TokenIcon
+                    symbol={vm.token0?.symbol}
+                    address={vm.token0?.address}
+                    size={20}
+                    className="border-transparent"
                   />
                   <span className="text-liqui-subtext">{vm.token0?.symbol}</span>
                 </div>
@@ -227,12 +207,11 @@ export function PoolPairDetail({
               </div>
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                  <Image
-                    src={getTokenIconPath(vm.token1?.symbol)}
-                    alt={vm.token1?.symbol || 'Token 1'}
-                    width={16}
-                    height={16}
-                    className="rounded-full"
+                  <TokenIcon
+                    symbol={vm.token1?.symbol}
+                    address={vm.token1?.address}
+                    size={20}
+                    className="border-transparent"
                   />
                   <span className="text-liqui-subtext">{vm.token1?.symbol}</span>
                 </div>

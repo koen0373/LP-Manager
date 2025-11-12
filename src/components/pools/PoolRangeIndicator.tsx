@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 export type RangeStatus = 'in' | 'near' | 'out';
 
@@ -565,8 +566,8 @@ export function RangeBand({
         {/* Left: Powered by */}
         <div className="flex items-center gap-1.5 text-[#9CA3AF] opacity-70">
           <span className="font-ui text-[10px]">Powered by</span>
-          <img
-            src="/icons/RangeBand-icon.svg"
+          <Image
+            src="/media/icons/rangeband.svg"
             alt=""
             width={18}
             height={18}

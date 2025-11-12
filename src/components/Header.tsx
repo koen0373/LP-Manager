@@ -80,7 +80,7 @@ export default function Header({
               title="Learn about RangeBand™"
             >
               <Image
-                src="/icons/RangeBand-icon.svg"
+                src="/media/icons/rangeband.svg"
                 alt=""
                 width={20}
                 height={20}

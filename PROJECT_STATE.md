@@ -496,6 +496,7 @@ Next (accuracy): when NFPM address is stored per event/transfer, replace the fir
 - Pool contract events (Swap/Mint/Burn/Collect) not yet appearing in database despite indexer scanning them
 - Pool enrichment script will fetch metadata for 404 pools (~40 minutes with rate limiting)
 - `poolCount: 0` in progress file suggests pool registry may not be populated yet
+- Enrichment readiness is now tracked via `src/lib/enrich/registry.ts` (`npm run verify:enrichment` reports all required views/APIs present), but the new view stubs still need to be executed inside Postgres and refreshed via `/api/enrich/refresh-views` or cron.
 
 ---
 
@@ -899,3 +900,33 @@ See archives in /docs/changelog/.
 - scripts/verify-web/port-and-health.mjs — Added an automated check ensuring the start script and health endpoint stay compliant.
 - package.json — Added tsconfig-paths dependency required by verify:web script.
 - 2025-11-12: pages/api/enrich/price.ts — Swapped deprecated enrichmentCache/tokenPriceService imports for the CoinGecko-backed helpers from services/tokenPriceService; build no longer fails resolving modules.
+- 2025-11-12: package.json — Normalized `build` to `next build` so the web service uses the standard Next.js lifecycle; confirmed existing health endpoint remains lightweight.
+
+## Changelog — 2025-11-12 (Web Ready)
+- (docs) package.json — Verified `build`=`next build` and `start`=`next start -p $PORT -H 0.0.0.0`; no edits required.
+- (docs) pages/api/health.ts — Confirmed lightweight JSON handler in place for deploy health checks.
+- 2025-11-12: scripts/verify-web/pid-hold.mjs — Added a PID hold verifier to prove the web process stays alive (no pre/poststart prisma hooks needed).
+
+## Changelog — 2025-11-12 (scanResult fix)
+- src/lib/indexer/scan.ts — Added normalize helper so scan consumers always get scoped events/nextFrom data.
+- src/indexer/indexerCore.ts — Replaced free scanResult usage with normalized locals and guarded error handling.
+- scripts/verify-indexer/scan.mjs — Added dry-scan verifier checking start script + presence of indexer core.
+- .eslintrc.json — Enforced no-undef across src/scripts to prevent undeclared variables.
+- package.json — Added verify:indexer script for the new dry-scan check.
+
+## Changelog — 2025-11-12 (ANKR backfill runner)
+- src/indexer/indexerCore.ts — Added explicit chunk next-from logging and guarded pool scan fallbacks so scanResult can never be undefined mid-run.
+- scripts/indexer/backfill-ankr.mjs — New windowed ANKR PAYG runner that bundles IndexerCore via esbuild, enforces ANKR-first RPC ordering, and checkpoint-logs every window.
+- scripts/verify-indexer/backfill-plan.mjs — Plan verifier emitting JSON (start/head/target/windows) so ops can review the window schedule before execution.
+- package.json — Added `indexer:backfill:ankr` and `verify:indexer:plan` scripts for the new tooling.
+- Ops — Backfill plan: `windowSize=10k` blocks, `headMargin=50k`, `maxRetries=3` with 5→20s backoff, checkpoint key = `ankr-payg`.
+
+## Changelog — 2025-11-12 (enrichment registry + icon unification)
+- src/lib/enrich/registry.ts — Added filesystem detector for required MVs + `/api/enrich/*` so dashboards can check readiness programmatically.
+- scripts/verify-enrichment/registry.mjs — Bundles the registry via esbuild and exits non-zero when any enrichment component is missing; wired into `npm run verify`.
+- scripts/verify-enrichment/icons.mjs — Scans `src/` & `pages/` to ensure no legacy `/icons/` paths remain (allows `/media/icons/`).
+- db/views/mv_*.sql — Minimal CREATE MATERIALIZED VIEW stubs for pool state, 24h fees, latest events, range status, and pool stats (safe to `psql -f` before scheduling refresh jobs).
+- public/media/** — Moved all token (webp/svg) assets into `/media/tokens`, wallet logos into `/media/wallets`, and added brand-safe RangeBand + fallback SVGs under `/media/icons`.
+- src/lib/icons/tokenIcon.tsx & src/components/TokenIcon.tsx — Centralized resolver now emits `/media/tokens/${symbol}.webp` + remote fallback; components import the shared helper.
+- src/services/tokenIconService.ts, pools & pricing UI — Updated to new `/media` paths; Pool detail, wallet connect, demo tables, headers, and range indicator now use `TokenIcon` or `/media/icons/*`.
+- package.json — Added `verify`, `verify:enrichment`, `verify:icons`, and `lint:ci` scripts so `npm run verify && npm run lint:ci && npm run build` succeeds locally.

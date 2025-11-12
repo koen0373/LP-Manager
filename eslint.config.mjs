@@ -14,6 +14,7 @@ const eslintConfig = [
   {
     ignores: [
       "node_modules/**",
+      "node_modules.bak*/**",
       ".next/**",
       "out/**",
       "build/**",
@@ -32,6 +33,7 @@ const eslintConfig = [
           varsIgnorePattern: "^_",
           argsIgnorePattern: "^_",
           ignoreRestSiblings: true,
+          caughtErrorsIgnorePattern: "^_",
         },
       ],
     },

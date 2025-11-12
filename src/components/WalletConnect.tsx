@@ -26,7 +26,7 @@ const WALLET_OPTIONS: WalletOption[] = [
     description: 'Browser extension on Chrome, Brave, Edge, and Firefox.',
     type: 'connector',
     connectorId: 'injected',
-    icon: '/icons/Metamask icon.svg',
+    icon: '/media/wallets/metamask.svg',
   },
   {
     id: 'phantom',
@@ -34,7 +34,7 @@ const WALLET_OPTIONS: WalletOption[] = [
     description: 'Multi-chain wallet with browser extension and mobile app.',
     type: 'connector',
     connectorId: 'injected',
-    icon: '/icons/phantom icon.png',
+    icon: '/media/wallets/phantom.png',
   },
   {
     id: 'okx',
@@ -42,7 +42,7 @@ const WALLET_OPTIONS: WalletOption[] = [
     description: 'Built-in wallet from OKX exchange with multi-chain support.',
     type: 'connector',
     connectorId: 'injected',
-    icon: '/icons/OKX icon.webp',
+    icon: '/media/wallets/okx.webp',
   },
   {
     id: 'brave',
@@ -50,7 +50,7 @@ const WALLET_OPTIONS: WalletOption[] = [
     description: 'Built-in wallet in Brave browser with native Web3 support.',
     type: 'connector',
     connectorId: 'injected',
-    icon: '/icons/brave icon.webp',
+    icon: '/media/wallets/brave.webp',
   },
   {
     id: 'bifrost',
@@ -58,7 +58,7 @@ const WALLET_OPTIONS: WalletOption[] = [
     description: 'Flare network wallet with QR code support.',
     type: 'external',
     href: 'https://www.bifrostwallet.com/',
-    icon: '/icons/bifrost.webp',
+    icon: '/media/wallets/bifrost.svg',
   },
   {
     id: 'rabby',
@@ -66,7 +66,7 @@ const WALLET_OPTIONS: WalletOption[] = [
     description: 'Flare-ready DeFi wallet with automatic network switching.',
     type: 'connector',
     connectorId: 'injected',
-    icon: '/icons/rabby.webp',
+    icon: '/media/wallets/rabby.svg',
   },
   {
     id: 'walletconnect',
@@ -74,7 +74,7 @@ const WALLET_OPTIONS: WalletOption[] = [
     description: 'Connect via QR code with any WalletConnect-compatible mobile wallet.',
     type: 'walletconnect',
     connectorId: 'walletConnect',
-    icon: '/icons/wallet connect icon.webp',
+    icon: '/media/wallets/walletconnect.webp',
   },
 ];
 

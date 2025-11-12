@@ -9,7 +9,8 @@ const cache = new Map<Address, IconCacheEntry>();
 const symbolCache = new Map<string, string>();
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour
 
-export const UNKNOWN_TOKEN_ICON = '/icons/unknown.webp';
+const TOKEN_MEDIA_BASE = '/media/tokens';
+export const UNKNOWN_TOKEN_ICON = '/media/icons/token-default.svg';
 
 function normalizeSymbol(symbol: string): string {
   return symbol
@@ -19,12 +20,12 @@ function normalizeSymbol(symbol: string): string {
 }
 
 const LOCAL_SYMBOL_ICON_MAP: Record<string, string> = {
-  FXRP: '/icons/fxrp.webp',
-  WFLR: '/icons/flr.webp',
-  FLR: '/icons/flr.webp',
-  SFLR: '/icons/sflr.webp',
-  USDT0: '/icons/usd0.webp',
-  USD0: '/icons/usd0.webp',
+  FXRP: `${TOKEN_MEDIA_BASE}/fxrp.webp`,
+  WFLR: `${TOKEN_MEDIA_BASE}/flr.webp`,
+  FLR: `${TOKEN_MEDIA_BASE}/flr.webp`,
+  SFLR: `${TOKEN_MEDIA_BASE}/sflr.webp`,
+  USDT0: `${TOKEN_MEDIA_BASE}/usd0.webp`,
+  USD0: `${TOKEN_MEDIA_BASE}/usd0.webp`,
 };
 
 // Well-known token addresses on Flare for remote fallback

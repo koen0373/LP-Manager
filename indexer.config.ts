@@ -5,7 +5,7 @@
  * Supports RPS throttling, adaptive concurrency, ANKR cost tracking.
  */
 
-import { promises as fs } from 'fs';
+import * as fs from 'fs';
 import path from 'path';
 
 export interface IndexerConfig {
@@ -133,14 +133,12 @@ function loadCostWeights(): Record<string, number> | undefined {
     if (json.startsWith('{')) {
       return JSON.parse(json);
     }
-    
-    const fs = require('fs');
     if (fs.existsSync(json)) {
       return JSON.parse(fs.readFileSync(json, 'utf8'));
     }
     
     return JSON.parse(json);
-  } catch (error) {
+  } catch (_error) {
     console.warn('[config] Invalid COST_WEIGHTS_JSON, using defaults');
     return undefined;
   }
@@ -156,13 +154,7 @@ export function loadIndexerConfigFromEnv(overrides?: Partial<IndexerConfig>): In
   
   const costWeights = loadCostWeights();
   
-  let allowlistEnabled = false;
-  try {
-    const fs = require('fs');
-    allowlistEnabled = fs.existsSync(path.join(process.cwd(), allowlistPath));
-  } catch {
-    // Ignore
-  }
+  const allowlistEnabled = fs.existsSync(path.join(process.cwd(), allowlistPath));
 
   const config: IndexerConfig = {
     ...BASE_CONFIG,

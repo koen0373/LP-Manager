@@ -7,7 +7,7 @@
     "build": "prisma generate && next build",
     "build:worker": "prisma migrate deploy && prisma generate && tsc --project tsconfig.worker.json && tsc-alias -p tsconfig.worker.json",
     "build:worker:local": "prisma generate && tsc --project tsconfig.worker.json && tsc-alias -p tsconfig.worker.json",
-    "start": "npx prisma migrate deploy && npx next start -H 0.0.0.0 -p ${PORT:-3000}",
+    "start": "next start -p $PORT -H 0.0.0.0",
     "lint": "eslint",
     "postinstall": "prisma generate",
     "backfill:run": "node ./dist/scripts/backfillLedger.js",
@@ -44,7 +44,8 @@
     "docs:ui": "open http://localhost:3000/docs",
     "report:weekly": "node scripts/generate-weekly-report.js",
     "report:social": "node scripts/generate-social-media.js",
-    "report:all": "bash scripts/weekly-report-workflow.sh"
+    "report:all": "bash scripts/weekly-report-workflow.sh",
+    "verify:web": "node -r tsconfig-paths/register scripts/verify-web/port-and-health.mjs"
   },
   "dependencies": {
     "@ankr.com/ankr.js": "^0.6.1",
@@ -73,6 +74,7 @@
     "resend": "^6.3.0-canary.4",
     "swr": "^2.3.6",
     "tailwind-merge": "^3.3.1",
+    "tsconfig-paths": "^4.2.0",
     "viem": "2.38.5",
     "wagmi": "2.19.2",
     "zod": "^4.1.12"

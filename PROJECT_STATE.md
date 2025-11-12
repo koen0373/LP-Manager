@@ -892,3 +892,10 @@ See archives in /docs/changelog/.
 - docs/PROMPTING_STANDARD.md — Created prompting standard document with Advisory Requirement section; mandated 'Advies' line in responses and 'Advisory/next_suggested_step' in [PASTE BLOCK — RESULTS FOR GPT].
 - PROJECT_STATE.md — Added Working Agreements section with bullet: Always add an 'Advies' line when a better option exists (see docs/PROMPTING_STANDARD.md).
 - docs/PR_BODY_ROLLBACK.md — Created PR body template for rolling back to UI snapshot `ui-2025-11-10-1000` (commit `0ab99aa2f4250b1bbd5ea39e724513d23800a564`). Plan: merge rollback via PR; no force-push to main. Local WIP stashed on backup branch.
+
+## Changelog — 2025-11-12
+- pages/api/health.ts — Simplified the health handler to a static JSON response so the web service health check stays lightweight.
+- package.json — Normalized the start script to `next start -p $PORT -H 0.0.0.0` and added `verify:web` for port/health verification.
+- scripts/verify-web/port-and-health.mjs — Added an automated check ensuring the start script and health endpoint stay compliant.
+- package.json — Added tsconfig-paths dependency required by verify:web script.
+- 2025-11-12: pages/api/enrich/price.ts — Swapped deprecated enrichmentCache/tokenPriceService imports for the CoinGecko-backed helpers from services/tokenPriceService; build no longer fails resolving modules.

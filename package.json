@@ -52,7 +52,12 @@
     "verify:indexer:plan": "node -r tsconfig-paths/register scripts/verify-indexer/backfill-plan.mjs",
     "verify:enrichment": "node scripts/verify-enrichment/registry.mjs",
     "verify:icons": "node scripts/verify-enrichment/icons.mjs",
-    "verify": "npm run verify:web && npm run verify:indexer && npm run verify:enrichment && npm run verify:icons"
+    "verify:icons:local": "node scripts/verify-icons/no-remote-icons.mjs",
+    "verify": "npm run verify:web && npm run verify:indexer && npm run verify:enrichment && npm run verify:icons",
+    "icons:collect": "node scripts/icons/collect-flare-dex-tokens.mjs",
+    "icons:fetch": "node scripts/icons/fetch-dex-icons.mjs",
+    "icons:probe": "node scripts/verify-icons/remote-probe.mjs",
+    "icons:test:topic": "node scripts/verify-icons/topic-matches.mjs --rpc=$FLARE_RPC_PRIMARY --factory=$FACT --from=$FROM --to=$TO"
   },
   "dependencies": {
     "@ankr.com/ankr.js": "^0.6.1",

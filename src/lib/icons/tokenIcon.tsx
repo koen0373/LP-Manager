@@ -1,66 +1,73 @@
-import Image from 'next/image';
 import React from 'react';
 import type { Address } from 'viem';
 
-import { buildTokenIconUrls, isRemoteIcon } from './dexscreener';
 import { canonicalSymbol } from './symbolMap';
 
 export type TokenIconProps = {
   symbol?: string;
   address?: Address | string | null;
-  chain?: string;
   size?: number;
   className?: string;
   alt?: string;
-  priority?: boolean;
 };
+
+function buildLocalIconCandidates(symbol?: string | null, address?: string | null): string[] {
+  const candidates: string[] = [];
+  const canonical = canonicalSymbol(symbol);
+  
+  if (canonical) {
+    candidates.push(`/media/tokens/${canonical}.png`);
+    candidates.push(`/media/tokens/${canonical}.webp`);
+    candidates.push(`/media/tokens/${canonical}.svg`);
+  }
+  
+  if (address) {
+    const normalizedAddress = address.toLowerCase().startsWith('0x') 
+      ? address.toLowerCase() 
+      : `0x${address.toLowerCase()}`;
+    candidates.push(`/media/tokens/by-address/${normalizedAddress}.png`);
+  }
+  
+  candidates.push('/media/icons/token-default.svg');
+  
+  return candidates;
+}
 
 export function TokenIcon({
   symbol,
   address,
-  chain = 'flare',
   size = 20,
   className = '',
   alt: altLabel,
-  priority = false,
 }: TokenIconProps): JSX.Element {
-  const sources = React.useMemo(
-    () =>
-      buildTokenIconUrls({
-        symbol,
-        address: address ? String(address) : undefined,
-        chain,
-      }),
-    [symbol, address, chain],
+  const candidates = React.useMemo(
+    () => buildLocalIconCandidates(symbol, address),
+    [symbol, address],
   );
 
   const [index, setIndex] = React.useState(0);
+  const currentSrc = candidates[index];
+  const label = altLabel || (canonicalSymbol(symbol) || symbol || 'token').toUpperCase();
 
   React.useEffect(() => {
     setIndex(0);
-  }, [sources]);
-
-  const currentSrc = sources[index];
-  const label = altLabel || (canonicalSymbol(symbol) || symbol || 'token').toUpperCase();
-  const remote = isRemoteIcon(currentSrc);
+  }, [symbol, address]);
 
   const handleError = React.useCallback(() => {
     setIndex((previous) => {
-      if (previous + 1 >= sources.length) {
+      if (previous + 1 >= candidates.length) {
         return previous;
       }
       return previous + 1;
     });
-  }, [sources.length]);
+  }, [candidates.length]);
 
   return (
-    <Image
+    <img
       src={currentSrc}
       alt={label}
       width={size}
       height={size}
-      unoptimized={remote}
-      priority={priority}
       className={`rounded-full border border-[rgba(30,144,255,0.25)] bg-[#0B1530] object-contain ${className}`}
       style={{
         width: size,

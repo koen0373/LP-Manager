@@ -8,6 +8,7 @@ const ALIAS_MAP: Record<string, string> = {
   usdc: 'usdce',
   usdt0: 'usd0',
   'usdt₀': 'usd0',
+  xusd: 'usd0',
   joule: 'joule',
 };
 
@@ -23,9 +24,9 @@ export function canonicalSymbol(input?: string | null): string {
   if (!normalized) return '';
 
   const alias = ALIAS_MAP[normalized];
-  if (alias) return alias;
-
-  return normalized.replace(/\./g, '');
+  const result = alias || normalized.replace(/\./g, '');
+  
+  return result.toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
 export function iconCandidates(symbol?: string | null): string[] {

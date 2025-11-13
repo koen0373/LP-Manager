@@ -1,49 +1,22 @@
-import { iconCandidates, DEFAULT_ICON } from './symbolMap';
-
-export const DEXS_HOST = 'static.dexscreener.com';
-
-const DEFAULT_CHAIN_SLUG = 'flare';
-const CHAIN_SLUG_MAP: Record<string, string> = {
-  flare: 'flare',
-  songbird: 'songbird',
-  coston: 'coston',
-  coston2: 'coston2',
-};
-
-function normalizeAddress(address?: string | null): string | null {
-  if (!address) return null;
-  const lower = address.toLowerCase();
-  return lower.startsWith('0x') ? lower : null;
-}
+// Stub: Dexscreener integration removed; local-only icons enforced.
+// This file is kept for backwards compatibility but exports no-op functions.
 
 export function resolveChainSlug(chain?: string | null): string {
-  if (!chain) return DEFAULT_CHAIN_SLUG;
-  const key = chain.trim().toLowerCase();
-  return CHAIN_SLUG_MAP[key] ?? DEFAULT_CHAIN_SLUG;
+  return 'flare';
 }
 
-function buildRemoteIconUrls(address?: string | null, chain?: string | null): string[] {
-  const normalizedAddress = normalizeAddress(address);
-  if (!normalizedAddress) return [];
-
-  const primarySlug = resolveChainSlug(chain);
-  const slugs = Array.from(new Set([primarySlug, DEFAULT_CHAIN_SLUG]));
-
-  return slugs.map((slug) => `https://${DEXS_HOST}/token-icons/${slug}/${normalizedAddress}.png`);
-}
-
-export function buildTokenIconUrls(opts: {
+export function buildTokenIconUrls(_opts: {
   symbol?: string | null;
   address?: string | null;
   chain?: string | null;
 }): string[] {
-  const localSources = iconCandidates(opts.symbol);
-  const remoteSources = buildRemoteIconUrls(opts.address, opts.chain);
-  return [...localSources, ...remoteSources, DEFAULT_ICON];
+  return [];
 }
 
-const HTTP_PATTERN = /^https?:\/\//i;
+export function isRemoteIcon(_source: string): boolean {
+  return false;
+}
 
-export function isRemoteIcon(source: string): boolean {
-  return HTTP_PATTERN.test(source);
+export function iconUrlForToken(_symbol?: string | null, _address?: string | null): string | null {
+  return null;
 }

@@ -917,6 +917,94 @@ See archives in /docs/changelog/.
 - scripts/verify-static/icons-paths.mjs, scripts/verify-icons/remote-probe.sh — Added static file+remote icon verifiers so CI can confirm local assets exist and Dexscreener endpoints respond before deploy.
 
 ### Changelog — 2025-11-13
-- package.json, package-lock.json — Added `html-to-image` as a runtime dependency so the ScreenshotButton’s lazy import no longer fails at build time.
+- package.json, package-lock.json — Added `html-to-image` as a runtime dependency so the ScreenshotButton's lazy import no longer fails at build time.
 - pages/api/positions.ts, pages/api/wallet/summary.ts — Exposed canonical position helpers and updated the wallet summary route to consume them via alias paths, fixing the missing exports while keeping responses role-aware.
 - .eslintrc.json — Extended the `no-undef` rule to TSX files to ensure client components stay fully typed.
+- src/features/pools/PoolRow.tsx — Added `address` field to `PoolRowToken` interface and passed token addresses to `TokenIcon` component for improved Dexscreener fallback resolution.
+- src/lib/icons/tokenIcon.tsx — Verified local-first icon resolution (webp→png→svg) with Dexscreener address-based fallback and default icon final fallback.
+- src/lib/icons/symbolMap.ts — Verified symbol normalization (WFLR→flr, USDC.e→usdce, USDT₀→usd0) and canonical path generation.
+- src/lib/icons/dexscreener.ts — Verified Dexscreener URL builder uses lowercased 0x addresses and correct chain slug ("flare"); requests .png (not .webp) from Dexscreener.
+- next.config.js — Verified `images.remotePatterns` includes static.dexscreener.com/token-icons/** for remote icon support.
+- scripts/verify-static/icons-paths.mjs — Verified icon verifier checks both /media/tokens and legacy /icons directories for required symbols (flr, usd0, usdce, fxrp, joule).
+
+## Changelog — 2025-11-12
+
+### Icon Discovery & Fetching Pipeline
+
+**Problem:** Need automated discovery of token addresses from Enosys/SparkDEX factories and fetching of token icons from Dexscreener CDN.
+
+**Solution:**
+- Created `scripts/icons/collect-flare-dex-tokens.mjs` — RPC-based token discovery via `eth_getLogs` scanning PoolCreated events from factory contracts. Extracts token0/token1 addresses, resolves symbols via `eth_call`, normalizes via `config/token-aliases.flare.json`. Outputs `data/flare.tokens.json` manifest.
+- Created `scripts/icons/fetch-dex-icons.mjs` — Downloads icons from Dexscreener (`https://static.dexscreener.com/token-icons/flare/{address}.png`). Saves to `public/media/tokens/{SYMBOL}.png` and `public/media/tokens/by-address/{address}.png`. Supports `--only-missing` flag and concurrency control (default 8). Writes `data/flare.icons.manifest.json` with statuses.
+- Created `scripts/verify-icons/remote-probe.mjs` — Probes Dexscreener URLs via HEAD requests and reports availability statistics (200/404/other counts).
+- Created `config/token-aliases.flare.json` — Static symbol/address canonicalization (WFLR→FLR, USDC.e→USDCE, USDT₀→USD0, etc.).
+- Updated `package.json` — Added `@noble/hashes` dependency (keccak256 for event topic hashing) and npm scripts: `icons:collect`, `icons:fetch`, `icons:probe`.
+
+**Environment Variables:**
+- `FLARE_RPC_URLS` (comma-separated; first used as HTTP RPC)
+- `ENOSYS_V3_FACTORY` (default: `0x17AA157AC8C54034381b840Cb8f6bf7Fc355f0de`)
+- `ENOSYS_FACTORY_START` (default: `29925441`)
+- `SPARKDEX_V3_FACTORY` (default: `0x8A2578d23d4C532cC9A98FaD91C0523f5efDE652`)
+- `SPARKDEX_FACTORY_START` (default: `30717263`)
+- `CHAIN_SLUG` (default: `flare`)
+
+**Usage:**
+```bash
+# 1. Discover tokens
+npm run icons:collect -- --rpc=https://flare-api.flare.network/ext/bc/C/rpc
+
+# 2. Probe availability (optional)
+npm run icons:probe -- --limit=200
+
+# 3. Fetch icons
+npm run icons:fetch -- --only-missing --concurrency=8
+```
+
+**Icon Resolution Order (UI):**
+1. Local: `/media/tokens/{symbol}.webp` → `.png` → `.svg`
+2. Dexscreener: `https://static.dexscreener.com/token-icons/flare/{address}.png` (200-gated)
+3. Default: `/media/icons/token-default.svg`
+
+**Files changed:**
+- `scripts/icons/collect-flare-dex-tokens.mjs` — New token discovery script
+- `scripts/icons/fetch-dex-icons.mjs` — New icon fetcher script
+- `scripts/verify-icons/remote-probe.mjs` — New probe script
+- `config/token-aliases.flare.json` — New aliases config
+- `package.json` — Added `@noble/hashes` dependency and npm scripts
+
+**Result:** ✅ Automated token icon discovery and fetching pipeline; no app runtime changes; icons saved to `public/media/tokens/` for UI consumption.
+
+---
+
+## Changelog — 2025-11-13
+
+**Icon Collector Fix:**
+- Fixed `scripts/icons/collect-flare-dex-tokens.mjs` — Removed invalid `@noble/hashes/sha3.js` import (ERR_PACKAGE_PATH_NOT_EXPORTED); replaced keccak256 computation with hard-coded UniswapV3 PoolCreated topic constant (`0x783cca1c0412dd0d695e784568c96da2e9c22ff989357a2e8b1d9b2b4e6b7118`).
+- Updated `decodeTokenAddresses()` — Simplified to extract addresses directly from topics[1] and topics[2] using `.slice(26)` (addresses are in last 20 bytes of 32-byte indexed topics).
+- Added `scripts/verify-icons/topic-matches.mjs` — RPC smoke-test script for verifying PoolCreated event logs; CLI: `--rpc <url> --factory <addr> --from <bn> --to <bn>`; outputs JSON with count.
+- Updated `package.json` — Added `icons:test:topic` npm script; removed `@noble/hashes` from direct dependencies (still available transitively via wagmi/viem).
+- **No app runtime changes** — Scripts-only fix; `npm run build` unaffected.
+
+**Files changed:**
+- `scripts/icons/collect-flare-dex-tokens.mjs` — Removed @noble/hashes imports, hard-coded topic
+- `scripts/verify-icons/topic-matches.mjs` — New smoke-test script
+- `package.json` — Added `icons:test:topic` script, removed `@noble/hashes` dependency
+
+---
+
+## Changelog — 2025-11-13
+
+**Local-Only Icon Rendering:**
+- Replaced `src/lib/icons/tokenIcon.tsx` — Removed Next/Image and Dexscreener dependencies; now uses native `<img>` with local-only candidate list (PNG→WEBP→SVG by symbol, then by-address, then default fallback).
+- Updated `src/lib/icons/symbolMap.ts` — Enhanced `canonicalSymbol()` to return uppercase A–Z0–9 only; added XUSD→USD0 alias mapping.
+- Stubbed `src/lib/icons/dexscreener.ts` — Exports no-op functions for backwards compatibility; removed `DEXS_HOST` constant to prevent bundling; no runtime Dexscreener calls.
+- Added `scripts/verify-icons/no-remote-icons.mjs` — Post-build verifier that scans `.next/static` and `public/` for `static.dexscreener.com` references and legacy `/icons/` paths (excluding `/media/icons/` fallback); exits 1 if found.
+- Updated `package.json` — Added `verify:icons:local` script.
+- **No remote icon fetches** — All components use `@lib/icons/tokenIcon` which only resolves local assets; `npm run build` and `npm run verify:icons:local` pass.
+
+**Files changed:**
+- `src/lib/icons/tokenIcon.tsx` — Local-only icon resolver with fallback chain
+- `src/lib/icons/symbolMap.ts` — Enhanced canonicalization with XUSD alias
+- `src/lib/icons/dexscreener.ts` — Stubbed (no-op exports)
+- `scripts/verify-icons/no-remote-icons.mjs` — New verifier script
+- `package.json` — Added `verify:icons:local` script

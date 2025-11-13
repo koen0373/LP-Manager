@@ -22,6 +22,7 @@
     "indexer:backfill:railway": "tsx scripts/indexer-backfill.ts --stream=nfpm --rps=2 --concurrency=2 --blockWindow=25",
     "indexer:follow": "tsx scripts/indexer-follower.ts",
     "indexer:follow:railway": "tsx scripts/indexer-follower.ts --stream=nfpm",
+    "indexer:follow:continuous": "node -r tsconfig-paths/register scripts/indexer/continuous.mjs",
     "indexer:staking": "tsx scripts/indexer-staking.mts",
     "indexer:incentives": "tsx scripts/compute-incentives.mts",
     "indexer:incentives:api": "tsx scripts/fetch-api-incentives.mts",
@@ -50,6 +51,7 @@
     "verify:web": "node -r tsconfig-paths/register scripts/verify-web/port-and-health.mjs",
     "verify:indexer": "node scripts/verify-indexer/scan.mjs",
     "verify:indexer:plan": "node -r tsconfig-paths/register scripts/verify-indexer/backfill-plan.mjs",
+    "verify:indexer:continuous": "MAX_LOOPS=1 FOLLOW_INTERVAL_SEC=1 node -r tsconfig-paths/register scripts/verify-indexer/continuous-selftest.mjs",
     "verify:enrichment": "node scripts/verify-enrichment/registry.mjs",
     "verify:icons": "node scripts/verify-enrichment/icons.mjs",
     "verify": "npm run verify:web && npm run verify:indexer && npm run verify:enrichment && npm run verify:icons"

@@ -930,3 +930,8 @@ See archives in /docs/changelog/.
 - src/lib/icons/tokenIcon.tsx & src/components/TokenIcon.tsx — Centralized resolver now emits `/media/tokens/${symbol}.webp` + remote fallback; components import the shared helper.
 - src/services/tokenIconService.ts, pools & pricing UI — Updated to new `/media` paths; Pool detail, wallet connect, demo tables, headers, and range indicator now use `TokenIcon` or `/media/icons/*`.
 - package.json — Added `verify`, `verify:enrichment`, `verify:icons`, and `lint:ci` scripts so `npm run verify && npm run lint:ci && npm run build` succeeds locally.
+
+## Changelog — 2025-11-13
+- scripts/indexer/continuous.mjs — Added continuous follower loop with env-driven cadence, optional factory/pool refresh, graceful SIGINT/SIGTERM shutdown, and `MAX_LOOPS` test mode.
+- scripts/verify-indexer/continuous-selftest.mjs — Runs the continuous follower for a single iteration (`MAX_LOOPS=1`) to validate worker readiness.
+- package.json — Added `indexer:follow:continuous` and `verify:indexer:continuous`; update Railway (Flare Indexer) Custom Start to `npm run indexer:follow:continuous` and disable the hourly Cron.

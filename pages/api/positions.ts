@@ -3,12 +3,18 @@ import { createPublicClient, fallback, getAddress, http } from 'viem';
 import type { Prisma } from '@prisma/client';
 
 import { resolveRole, roleFlags } from '@/lib/entitlements/resolveRole';
-import type { PositionRow, PositionsResponse, PositionClaimToken } from '@/lib/positions/types';
+import type {
+  PositionRow,
+  PositionsResponse,
+  PositionClaimToken,
+  PositionSummaryEntitlements,
+} from '@/lib/positions/types';
 import { flare } from '@/lib/chainFlare';
 import { prisma } from '@/server/db';
 import { nftsByOwner } from '@/lib/providers/ankr';
 import { getPrices } from '@/lib/pricing/prices';
 import { getPoolAddress, getPoolState } from '@/utils/poolHelpers';
+import type { ResolvedRole, RoleResolution } from '@/lib/entitlements/resolveRole';
 
 const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/i;
 const CACHE_TTL_MS = 120_000;
@@ -70,6 +76,18 @@ const nfpmConfigs = [
 const cache = new Map<string, { expires: number; payload: PositionsResponse }>();
 const tokenMetaCache = new Map<string, { symbol: string; decimals: number }>();
 const incentivesCache = new Map<string, IncentiveInfo | null>();
+
+type RoleFlags = ReturnType<typeof roleFlags>;
+type PositionsDataPayload = NonNullable<PositionsResponse['data']>;
+type CanonicalSummary = NonNullable<PositionsDataPayload['summary']>;
+
+export type CanonicalPositionInput = {
+  address: string;
+  role?: ResolvedRole;
+  network?: string;
+};
+
+export type CanonicalPositionResult = PositionsDataPayload;
 
 interface RawPosition {
   tokenId: bigint;
@@ -441,4 +459,98 @@ function formatTokenAmount(amount: bigint, decimals: number): string {
 
 function sortAddresses(a: `0x${string}`, b: `0x${string}`): [`0x${string}`, `0x${string}`] {
   return a.toLowerCase() < b.toLowerCase() ? [a, b] : [b, a];
+}
+
+function normalizeWalletAddress(address: string): `0x${string}` {
+  const normalized = address.toLowerCase();
+  if (!ADDRESS_REGEX.test(normalized)) {
+    throw new Error('Invalid address');
+  }
+  return normalized as `0x${string}`;
+}
+
+function coerceUsd(value: number | null | undefined): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  return 0;
+}
+
+function buildPositionsSummary(positions: PositionRow[], role: ResolvedRole, flags: RoleFlags): CanonicalSummary {
+  let tvlUsd = 0;
+  let fees24hUsd = 0;
+  let incentivesUsd = 0;
+  let rewardsUsd = 0;
+  let active = 0;
+  let inactive = 0;
+  let ended = 0;
+
+  for (const position of positions) {
+    tvlUsd += coerceUsd(position.tvlUsd);
+    fees24hUsd += coerceUsd(position.fees24hUsd);
+    const incentivesValue =
+      position.incentivesUsd ??
+      position.incentivesUsdPerDay ??
+      (position.dailyIncentivesUsd ?? 0);
+    incentivesUsd += coerceUsd(incentivesValue);
+    rewardsUsd += coerceUsd(position.rewardsUsd);
+
+    if (position.category === 'Active') active += 1;
+    else if (position.category === 'Inactive') inactive += 1;
+    else if (position.category === 'Ended') ended += 1;
+  }
+
+  const entitlements: PositionSummaryEntitlements = {
+    role,
+    source: 'session',
+    flags,
+  };
+
+  return {
+    tvlUsd,
+    fees24hUsd,
+    incentivesUsd,
+    rewardsUsd,
+    count: positions.length,
+    active: active || undefined,
+    inactive: inactive || undefined,
+    ended: ended || undefined,
+    entitlements,
+  };
+}
+
+export async function fetchCanonicalPositionData(input: CanonicalPositionInput): Promise<CanonicalPositionResult> {
+  const normalizedAddress = normalizeWalletAddress(input.address);
+  const role = input.role ?? 'VISITOR';
+  const flags = roleFlags(role);
+  const positions = await buildPositions(normalizedAddress, role, flags);
+  const summary = buildPositionsSummary(positions, role, flags);
+
+  return {
+    positions,
+    summary,
+    meta: {
+      address: normalizedAddress,
+      network: input.network ?? 'flare',
+    },
+  };
+}
+
+export function buildRoleAwareData(
+  data: PositionsDataPayload,
+  role?: RoleResolution | ResolvedRole,
+): PositionsDataPayload {
+  const resolvedRole = typeof role === 'string' ? role : role?.role ?? 'VISITOR';
+  if (resolvedRole === 'VISITOR' && data.positions.length > 25) {
+    return {
+      ...data,
+      positions: data.positions.slice(0, 25),
+      meta: {
+        ...(data.meta ?? {}),
+        truncated: true,
+      },
+    };
+  }
+
+  return data;
 }

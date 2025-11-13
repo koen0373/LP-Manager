@@ -1,7 +1,7 @@
 {
   "overrides": [
     {
-      "files": ["src/**/*.ts", "scripts/**/*.ts", "scripts/**/*.mjs"],
+      "files": ["src/**/*.ts", "src/**/*.tsx", "scripts/**/*.ts", "scripts/**/*.mjs"],
       "rules": {
         "no-undef": "error"
       }

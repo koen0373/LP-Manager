@@ -861,6 +861,10 @@ See archives in /docs/changelog/.
 - docs/PROMPTING_STANDARD.md — Created prompting standard document with Advisory Requirement section; mandated 'Advies' line in responses and 'Advisory/next_suggested_step' in [PASTE BLOCK — RESULTS FOR GPT].
 - PROJECT_STATE.md — Added Working Agreements section with bullet: Always add an 'Advies' line when a better option exists (see docs/PROMPTING_STANDARD.md).
 - docs/PR_BODY_ROLLBACK.md — Created PR body template for rolling back to UI snapshot `ui-2025-11-10-1000` (commit `0ab99aa2f4250b1bbd5ea39e724513d23800a564`). Plan: merge rollback via PR; no force-push to main. Local WIP stashed on backup branch.
+- src/components/utils/ScreenshotButton.tsx — Added browser guards (`isBrowser` check) and improved dynamic import of html-to-image with `cacheBust` and `devicePixelRatio`; early return null if not in browser.
+- package.json — Verified html-to-image is in dependencies (already present).
+- pages/api/positions.ts — Verified exports `fetchCanonicalPositionData` and `buildRoleAwareData` (already present).
+- .eslintrc.json — Verified no-undef rule is enforced (already present).
 
 ## Changelog — 2025-11-12
 - pages/api/health.ts — Simplified the health handler to a static JSON response so the web service health check stays lightweight.
@@ -907,3 +911,12 @@ See archives in /docs/changelog/.
 - next.config.js — Added rewrite so `/media/tokens/*` requests can fall back to legacy `/icons/*` assets in production.
 - scripts/verify-static/icons-paths.mjs — Local verifier checks that either media or legacy icon trees contain files for flr/usd0/fxrp before deploy.
 - public/media/icons/token-default.svg — Confirmed brand-safe default icon is packaged for final fallback rendering.
+- src/lib/icons/symbolMap.ts — Introduced canonicalSymbol + alias map (WFLR→FLR, USDC.e→USDCE, USDT₀→USD0, JOULE) to resolve local filenames consistently.
+- src/lib/icons/tokenIcon.tsx — TokenIcon now iterates canonical local candidates (.webp/.png/.svg) before remote fallback, rendered via plain `<img>` to avoid Next/Image 404s in lists.
+- src/lib/icons/dexscreener.ts, src/lib/icons/tokenIcon.tsx, src/lib/icons/symbolMap.ts — Added shared builder that outputs local-extension list + Dexscreener URLs (with chain slug map) and a Next/Image-based TokenIcon that marks remote sources unoptimized.
+- scripts/verify-static/icons-paths.mjs, scripts/verify-icons/remote-probe.sh — Added static file+remote icon verifiers so CI can confirm local assets exist and Dexscreener endpoints respond before deploy.
+
+### Changelog — 2025-11-13
+- package.json, package-lock.json — Added `html-to-image` as a runtime dependency so the ScreenshotButton’s lazy import no longer fails at build time.
+- pages/api/positions.ts, pages/api/wallet/summary.ts — Exposed canonical position helpers and updated the wallet summary route to consume them via alias paths, fixing the missing exports while keeping responses role-aware.
+- .eslintrc.json — Extended the `no-undef` rule to TSX files to ensure client components stay fully typed.

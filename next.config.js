@@ -1,6 +1,14 @@
 /** @type {import('next').NextConfig} */
 /* eslint-disable @typescript-eslint/no-require-imports */
 const path = require('path');
+const TOKEN_ICON_REMOTE_PATTERNS = [
+  {
+    protocol: 'https',
+    hostname: 'static.dexscreener.com',
+    pathname: '/token-icons/**',
+  },
+];
+
 const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
@@ -13,13 +21,7 @@ const nextConfig = {
     ];
   },
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'static.dexscreener.com',
-        pathname: '/token-icons/**',
-      },
-    ],
+    remotePatterns: TOKEN_ICON_REMOTE_PATTERNS,
   },
   webpack: (config) => {
     config.resolve = config.resolve || {};

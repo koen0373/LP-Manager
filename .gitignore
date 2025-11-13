@@ -42,6 +42,10 @@ logs/
 .AppleDouble
 .LSOverride
 Icon?
+!src/lib/icons/
+!src/lib/icons/tokenIcon.tsx
+!src/lib/icons/tokenicon.tsx
+!src/lib/icons/dexscreener.ts
 ._*
 
 # Editor / tooling

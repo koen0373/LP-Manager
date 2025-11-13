@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-import { fetchCanonicalPositionData, buildRoleAwareData } from '../positions';
+import { fetchCanonicalPositionData, buildRoleAwareData } from '@/pages/api/positions';
 import type { PositionsResponse } from '@/lib/positions/types';
 import { resolveRole } from '@/lib/entitlements/resolveRole';
 
@@ -60,11 +60,14 @@ export default async function handler(
   const startedAt = Date.now();
 
   try {
-    const { positions, summary } = await fetchCanonicalPositionData(normalizedAddress);
+    const canonicalResult = await fetchCanonicalPositionData({
+      address: normalizedAddress,
+      role: roleResolution.role,
+    });
     const canonicalData = {
-      positions,
-      summary,
+      ...canonicalResult,
       meta: {
+        ...(canonicalResult.meta ?? {}),
         address: normalizedAddress,
         elapsedMs: Date.now() - startedAt,
         deprecation: true,

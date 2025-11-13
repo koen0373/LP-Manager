@@ -16,8 +16,9 @@ function buildLocalIconCandidates(symbol?: string | null, address?: string | nul
   const canonical = canonicalSymbol(symbol);
   
   if (canonical) {
-    candidates.push(`/media/tokens/${canonical}.png`);
+    // Try WEBP first (most common format), then PNG, then SVG
     candidates.push(`/media/tokens/${canonical}.webp`);
+    candidates.push(`/media/tokens/${canonical}.png`);
     candidates.push(`/media/tokens/${canonical}.svg`);
   }
   
@@ -25,6 +26,8 @@ function buildLocalIconCandidates(symbol?: string | null, address?: string | nul
     const normalizedAddress = address.toLowerCase().startsWith('0x') 
       ? address.toLowerCase() 
       : `0x${address.toLowerCase()}`;
+    // Try both webp and png for by-address
+    candidates.push(`/media/tokens/by-address/${normalizedAddress}.webp`);
     candidates.push(`/media/tokens/by-address/${normalizedAddress}.png`);
   }
   

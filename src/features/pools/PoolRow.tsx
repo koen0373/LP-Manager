@@ -9,6 +9,7 @@ import { calcApr24h } from '@/lib/metrics';
 
 interface PoolRowToken {
   symbol: string;
+  address?: string | null;
   iconSrc?: string;
   name?: string;
 }
@@ -94,7 +95,7 @@ function coerceNumeric(value: string | number | null | undefined): number | unde
 }
 
 function TokenStack({ token, tokenKey }: { token: PoolRowToken; tokenKey: string }) {
-  const { symbol, iconSrc, name } = token;
+  const { symbol, address, iconSrc, name } = token;
   const alt = `${symbol} token`;
 
   if (iconSrc) {
@@ -125,6 +126,7 @@ function TokenStack({ token, tokenKey }: { token: PoolRowToken; tokenKey: string
       <TokenIcon
         key={`${tokenKey}-desktop`}
         symbol={symbol}
+        address={address}
         size={28}
         alt={name ?? alt}
         className="hidden md:block"
@@ -132,6 +134,7 @@ function TokenStack({ token, tokenKey }: { token: PoolRowToken; tokenKey: string
       <TokenIcon
         key={`${tokenKey}-mobile`}
         symbol={symbol}
+        address={address}
         size={20}
         alt={name ?? alt}
         className="md:hidden"

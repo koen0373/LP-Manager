@@ -1008,3 +1008,22 @@ npm run icons:fetch -- --only-missing --concurrency=8
 - `src/lib/icons/dexscreener.ts` — Stubbed (no-op exports)
 - `scripts/verify-icons/no-remote-icons.mjs` — New verifier script
 - `package.json` — Added `verify:icons:local` script
+
+---
+
+## Changelog — 2025-11-13
+
+### Homepage UI Restore from d9030cc2
+
+**Problem:** Need to restore the historical homepage layout from commit d9030cc2 that had a working hero section with proposition + trial CTA and live demo section.
+
+**Solution:**
+- Restored `pages/index.tsx` from commit d9030cc2 — Unified hero section with proposition, feature list, and "Connect wallet — start free" CTA; includes DemoSection component for live proof-of-concept.
+- Adapted imports to use alias paths (`@/components/...`, `@/lib/...`) instead of relative imports.
+- Ensured all icon usage goes through local-only `TokenIcon` resolver (no remote Dexscreener requests).
+- Maintained brand guardrails: dark-blue cards (`rgba(10, 15, 26, 0.88)`), Electric Blue primary (`#3B82F6`), Aqua accents (`#1BE8D2`), tabular-nums for pricing.
+
+**Files changed:**
+- `pages/index.tsx` — Restored historical homepage structure from d9030cc2 with adapted imports
+
+**Result:** ✅ Homepage restored with working hero and demo sections; `npm run build` passes; no remote icon requests; UI matches historical d9030cc2 layout.

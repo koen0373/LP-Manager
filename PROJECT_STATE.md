@@ -898,3 +898,12 @@ See archives in /docs/changelog/.
 - src/lib/icons/tokenIcon.tsx & src/components/TokenIcon.tsx — Centralized resolver now emits `/media/tokens/${symbol}.webp` + remote fallback; components import the shared helper.
 - src/services/tokenIconService.ts, pools & pricing UI — Updated to new `/media` paths; Pool detail, wallet connect, demo tables, headers, and range indicator now use `TokenIcon` or `/media/icons/*`.
 - package.json — Added `verify`, `verify:enrichment`, `verify:icons`, and `lint:ci` scripts so `npm run verify && npm run lint:ci && npm run build` succeeds locally.
+
+### Changelog — 2025-11-13
+- src/lib/icons/tokenIcon.tsx — Local-first resolver walks /media/tokens (.webp→.png→.svg) before Dexscreener, ending on token-default if every source fails.
+- src/lib/icons/dexscreener.ts — Shared helpers expose normalized symbol fallback plus static.dexscreener URL builder for optional remote use.
+- next.config.js — Allowed static.dexscreener.com token icons via `images.remotePatterns` so Next/Image can render optional remote files.
+- PROJECT_STATE.md — Logged the icon strategy and reminded contributors that /public/media/tokens filenames must be lowercase symbols.
+- next.config.js — Added rewrite so `/media/tokens/*` requests can fall back to legacy `/icons/*` assets in production.
+- scripts/verify-static/icons-paths.mjs — Local verifier checks that either media or legacy icon trees contain files for flr/usd0/fxrp before deploy.
+- public/media/icons/token-default.svg — Confirmed brand-safe default icon is packaged for final fallback rendering.

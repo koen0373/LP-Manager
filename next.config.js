@@ -4,6 +4,23 @@ const path = require('path');
 const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
+  async rewrites() {
+    return [
+      {
+        source: '/media/tokens/:path*',
+        destination: '/icons/:path*',
+      },
+    ];
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'static.dexscreener.com',
+        pathname: '/token-icons/**',
+      },
+    ],
+  },
   webpack: (config) => {
     config.resolve = config.resolve || {};
     config.resolve.alias = {

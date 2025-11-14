@@ -132,3 +132,4 @@ for (const finding of findings) {
 console.error(`[scan:prices] Found ${findings.length} violation(s)`);
 console.error('[scan:prices] Replace with: /api/prices/current?symbols=SYMBOL1,SYMBOL2');
 process.exit(1);
+

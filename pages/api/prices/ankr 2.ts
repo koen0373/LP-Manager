@@ -4,7 +4,6 @@ type DeprecatedResponse = {
   ok: false;
   reason: 'deprecated';
   use: string;
-  message: string;
 };
 
 export default function handler(
@@ -15,6 +14,5 @@ export default function handler(
     ok: false,
     reason: 'deprecated',
     use: '/api/prices/current',
-    message: 'This endpoint has been deprecated. Use /api/prices/current?symbols=SYMBOL1,SYMBOL2 instead. All price data is now sourced via CoinGecko (Flare-only policy).'
   });
 }

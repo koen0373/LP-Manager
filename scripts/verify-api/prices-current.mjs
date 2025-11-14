@@ -12,7 +12,7 @@
  * - 200 OK status
  * - JSON response with { ok: true, ts, prices: [{symbol, priceUsd, source}] }
  * - At least 2 numeric prices returned (allows 1 missing)
- * - Logs warnings if symbols are unavailable
+ * - Logs warnings but does not fail because of FXRP→XRP
  */
 
 const BASE_URL = process.env.VERIFY_BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
@@ -84,7 +84,7 @@ async function verifyEndpoint() {
       console.log(`  ⚠️  Warnings: ${data.warnings.join('; ')}`);
     }
     
-    // Check for specific expected symbols
+    // Check for specific expected symbols (informational only)
     const expectedSymbols = ['FXRP', 'USDT0', 'WFLR'];
     const missing = expectedSymbols.filter(s => !returnedSymbols.includes(s));
     if (missing.length > 0) {

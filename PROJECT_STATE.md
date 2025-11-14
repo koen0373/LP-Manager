@@ -1259,5 +1259,25 @@ npm run icons:fetch -- --only-missing --concurrency=8
 
 **Notes:** Config now bundled at build time (no runtime fs reads); addresses lowercase; FXRP/USDT0 address mapping preserved; verifiers tightened; Flare-only reaffirmed.
 
+---
+
+## Changelog — 2025-11-14
+
+### Price Config Bundling + Verifier Hardening
+
+**Files changed:**
+- `config/token-price.aliases.ts` — TS module (symbol → CoinGecko ID: USDT0→tether, USDCE→usd-coin, USD0→tether, WFLR/FLR→flare-networks, FXRP→ripple)
+- `config/token-price.addresses.ts` — TS module (Flare addresses → CoinGecko IDs: USDT0 0x96b4...→tether, FXRP 0xad55...→ripple)
+- `src/lib/prices/tokenPriceService.ts` — import-based config (no fs), `normalise()` function, address-first resolution
+- `pages/api/prices/current.ts` — uses `normalise()` from service
+- `pages/api/enrich/price.ts` — uses `normalise()` from service
+- `pages/api/prices/ankr.ts` — 410 Gone (deprecated)
+- `pages/api/prices/ankr 2.ts` — 410 Gone (deprecated)
+- `scripts/verify-api/prices-current.mjs` — PORT env var, ≥2 prices required, warnings logged
+- `scripts/scan/prices-sources.mjs` — blocks /api/prices/ankr imports/require/fetch
+- `package.json` — verify script includes scan:prices + verify:api:prices
+
+**Notes:** (a) Price alias+address map bundled to TS (no runtime fs); (b) ANKR price routes return 410; (c) Verifiers tightened + wired into `npm run verify`; (d) Flare-only re-affirmed; (e) MV-refresh telemetry TODO stub added.
+
 <!-- CHANGELOG_ARCHIVE_INDEX -->
 See archives in /docs/changelog/.

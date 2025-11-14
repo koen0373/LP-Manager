@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getTokenPriceUsd, getTokenPricesBatch } from '@/lib/prices/tokenPriceService';
+import { getTokenPriceUsd, getTokenPricesBatch, normalise } from '@/lib/prices/tokenPriceService';
 
 type PriceResponse = {
   prices: Record<string, number>;
@@ -44,14 +44,15 @@ export default async function handler(
     if (symbols.length === 1) {
       const price = await getTokenPriceUsd(symbols[0]);
       if (typeof price === 'number') {
-        response[symbols[0]] = price;
+        const normalised = normalise(symbols[0]);
+        response[normalised] = price;
       }
     } else if (symbols.length > 1) {
       const batch = await getTokenPricesBatch(symbols);
       for (const sym of symbols) {
-        const canonical = sym.toUpperCase();
-        if (typeof batch[canonical] === 'number') {
-          response[sym] = batch[canonical];
+        const normalised = normalise(sym);
+        if (typeof batch[normalised] === 'number') {
+          response[normalised] = batch[normalised];
         }
       }
     }

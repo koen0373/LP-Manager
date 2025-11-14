@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getTokenPricesBatch, canonicalSymbol } from '@/lib/prices/tokenPriceService';
+import { getTokenPricesBatch, normalise } from '@/lib/prices/tokenPriceService';
 
 type PriceEntry = {
   symbol: string;
@@ -39,13 +39,13 @@ export default async function handler(
     }
 
     const inputSymbols = symbolsParam.split(',').map(s => s.trim()).filter(Boolean);
-    const symbols = inputSymbols.map(canonicalSymbol);
+    const normalisedSymbols = inputSymbols.map(normalise);
     
-    if (symbols.length === 0) {
+    if (normalisedSymbols.length === 0) {
       return res.status(400).json({ ok: false, error: 'No valid symbols provided' });
     }
 
-    if (symbols.length > MAX_SYMBOLS) {
+    if (normalisedSymbols.length > MAX_SYMBOLS) {
       return res.status(400).json({ 
         ok: false, 
         error: `Too many symbols (max ${MAX_SYMBOLS})` 
@@ -54,7 +54,7 @@ export default async function handler(
 
     // Check cache (simple single-slot cache for common multi-symbol queries)
     const now = Date.now();
-    const cacheKey = [...symbols].sort().join(',');
+    const cacheKey = [...normalisedSymbols].sort().join(',');
     
     if (cache && cache.expires > now) {
       const cachedSymbols = cache.data.prices.map(p => p.symbol).sort().join(',');
@@ -73,13 +73,13 @@ export default async function handler(
 
     for (let i = 0; i < inputSymbols.length; i++) {
       const inputSymbol = inputSymbols[i];
-      const canonical = symbols[i];
-      const price = priceMap[canonical];
+      const normalised = normalisedSymbols[i];
+      const price = priceMap[normalised];
       
       if (typeof price === 'number') {
-        prices.push({ symbol: canonical, priceUsd: price, source: 'coingecko' });
+        prices.push({ symbol: normalised, priceUsd: price, source: 'coingecko' });
       } else {
-        warnings.push(`Price not available for ${inputSymbol} (normalized: ${canonical})`);
+        warnings.push(`Price not available for ${inputSymbol} (normalized: ${normalised})`);
       }
     }
 
@@ -111,4 +111,3 @@ export default async function handler(
     });
   }
 }
-

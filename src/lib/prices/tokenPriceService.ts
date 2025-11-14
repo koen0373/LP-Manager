@@ -8,88 +8,51 @@
  */
 
 import NodeCache from 'node-cache';
-import ALIASES from '@/config/token-price.aliases';
-import ADDRESS_MAP from '@/config/token-price.addresses';
+import aliases from '@/config/token-price.aliases';
+import addressMap from '@/config/token-price.addresses';
 
 // Cache prices for 60 seconds (TTL for MVP)
 const priceCache = new NodeCache({ stdTTL: 60 });
 
-// Build reverse map: symbol → address (for known Flare tokens)
-const SYMBOL_TO_ADDRESS: Record<string, string> = {
-  USDT0: '0x96b41289d90444b8add57e6f265db5ae8651df29',
-  FXRP: '0xad552a648c74d49e10027ab8a618a3ad4901c5be',
-};
-
 /**
- * Normalize symbol: uppercase A-Z0-9 only
+ * Normalise symbol: uppercase A-Z0-9 only
  * Handles special characters: ₮→T, ₀→0, .→(removed)
  */
-export function canonicalSymbol(symbol: string): string {
-  return symbol
+export function normalise(symbol: string): string {
+  const normalized = symbol
     .toUpperCase()
     .replace(/₮/g, 'T')
     .replace(/₀/g, '0')
     .replace(/\./g, '')
     .replace(/[^A-Z0-9]/g, '');
+  
+  // Apply alias map
+  return (aliases as Record<string, string>)[normalized] || normalized;
 }
 
 /**
- * Resolve symbol to CoinGecko ID via alias map and hardcoded mappings
+ * Resolve CoinGecko ID from symbol or address
  */
-function resolveSymbolToCoinGeckoId(symbol: string): string | null {
-  const canonical = canonicalSymbol(symbol);
+function resolveCoinGeckoId(symbol: string, address?: string, chain = 'flare'): string | null {
+  // Try address-based lookup first if provided
+  if (address) {
+    const normalizedAddr = address.toLowerCase();
+    const addrId = (addressMap as Record<string, Record<string, string>>)[chain]?.[normalizedAddr];
+    if (addrId) {
+      return addrId;
+    }
+  }
   
-  // Check alias map first
-  const aliased = (ALIASES as Record<string, string>)[canonical] || canonical;
+  // Normalise symbol and check alias map
+  const normalised = normalise(symbol);
   
-  // Hardcoded base mappings (CoinGecko IDs)
-  const BASE_MAPPINGS: Record<string, string> = {
-    // Native tokens
-    'FLR': 'flare-networks',
-    'WFLR': 'flare-networks',
-    'SFLR': 'sflr',
-    
-    // Stablecoins
-    'USDT': 'tether',
-    'USDC': 'usd-coin',
-    'DAI': 'dai',
-    'USDX': 'usdx',
-    
-    // DEX tokens
-    'SPRK': 'sparkdex',
-    'XRP': 'ripple', // FXRP aliases to XRP
-    'FXRP': 'ripple', // FXRP is wrapped XRP on Flare
-    
-    // Protocol tokens
-    'HLN': 'helion',
-    'APS': 'aps-token',
-    'JOULE': 'joule-token',
-    
-    // Wrapped major assets
-    'ETH': 'ethereum',
-    'WETH': 'weth',
-    'BTC': 'bitcoin',
-    'WBTC': 'wrapped-bitcoin',
-    'QNT': 'quant-network',
-  };
+  // If normalised symbol is in aliases, use that CoinGecko ID
+  if ((aliases as Record<string, string>)[normalised]) {
+    return (aliases as Record<string, string>)[normalised];
+  }
   
-  return BASE_MAPPINGS[aliased] || null;
-}
-
-/**
- * Resolve token address to CoinGecko ID via address map
- */
-function resolveAddressToCoinGeckoId(address: string, chain = 'flare'): string | null {
-  const normalized = address.toLowerCase();
-  return (ADDRESS_MAP as Record<string, Record<string, string>>)[chain]?.[normalized] || null;
-}
-
-/**
- * Get address for a symbol if known on Flare
- */
-function getAddressForSymbol(symbol: string): string | null {
-  const canonical = canonicalSymbol(symbol);
-  return SYMBOL_TO_ADDRESS[canonical] || null;
+  // Fallback: use normalised symbol as CoinGecko ID (may not exist)
+  return normalised;
 }
 
 /**
@@ -103,31 +66,18 @@ export async function getTokenPriceUsd(
   symbol: string,
   address?: string
 ): Promise<number | null> {
-  const canonical = canonicalSymbol(symbol);
+  const normalised = normalise(symbol);
   
-  // Check cache first (keyed by canonical symbol)
-  const cached = priceCache.get<number>(canonical);
+  // Check cache first (keyed by normalised symbol)
+  const cached = priceCache.get<number>(normalised);
   if (cached !== undefined) {
     return cached;
   }
   
-  // Try address-based lookup first if provided, or if symbol resolves to known address
-  let coingeckoId: string | null = null;
-  const resolvedAddress = address || getAddressForSymbol(symbol);
-  if (resolvedAddress) {
-    coingeckoId = resolveAddressToCoinGeckoId(resolvedAddress);
-    if (coingeckoId) {
-      console.log(`[PRICE] Resolved ${canonical} via address ${resolvedAddress} → ${coingeckoId}`);
-    }
-  }
-  
-  // Fallback to symbol-based lookup
+  // Resolve CoinGecko ID
+  const coingeckoId = resolveCoinGeckoId(symbol, address);
   if (!coingeckoId) {
-    coingeckoId = resolveSymbolToCoinGeckoId(symbol);
-  }
-  
-  if (!coingeckoId) {
-    console.warn(`[PRICE] No CoinGecko ID mapping for ${canonical}`);
+    console.warn(`[PRICE] No CoinGecko ID mapping for ${normalised}`);
     return null;
   }
   
@@ -154,13 +104,13 @@ export async function getTokenPriceUsd(
       throw new Error(`Invalid price data for ${coingeckoId}`);
     }
     
-    // Cache the result (keyed by canonical symbol, TTL 60s)
-    priceCache.set(canonical, price);
-    console.log(`[PRICE] Fetched ${canonical}: $${price} (CoinGecko ID: ${coingeckoId})`);
+    // Cache the result (keyed by normalised symbol, TTL 60s)
+    priceCache.set(normalised, price);
+    console.log(`[PRICE] Fetched ${normalised}: $${price} (CoinGecko ID: ${coingeckoId})`);
     
     return price;
   } catch (error) {
-    console.error(`[PRICE] Error fetching price for ${canonical}:`, error);
+    console.error(`[PRICE] Error fetching price for ${normalised}:`, error);
     return null;
   }
 }
@@ -170,20 +120,20 @@ export async function getTokenPriceUsd(
  * More efficient than calling getTokenPriceUsd() multiple times
  * 
  * @param symbols - Array of token symbols (e.g., ["WFLR", "USDT0", "FXRP"])
- * @returns Record of canonical symbol → USD price
+ * @returns Record of normalised symbol → USD price
  */
 export async function getTokenPricesBatch(symbols: string[]): Promise<Record<string, number>> {
-  const canonicalSymbols = symbols.map(canonicalSymbol);
+  const normalisedSymbols = symbols.map(normalise);
   const uncachedSymbols: string[] = [];
   const result: Record<string, number> = {};
   
   // Check cache first
-  for (const canonical of canonicalSymbols) {
-    const cached = priceCache.get<number>(canonical);
+  for (const normalised of normalisedSymbols) {
+    const cached = priceCache.get<number>(normalised);
     if (cached !== undefined) {
-      result[canonical] = cached;
+      result[normalised] = cached;
     } else {
-      uncachedSymbols.push(canonical);
+      uncachedSymbols.push(normalised);
     }
   }
   
@@ -192,24 +142,15 @@ export async function getTokenPricesBatch(symbols: string[]): Promise<Record<str
     return result;
   }
   
-  // Resolve CoinGecko IDs for uncached symbols (try address map first, then symbol)
+  // Resolve CoinGecko IDs for uncached symbols
   const idMap = new Map<string, string>();
-  for (const canonical of uncachedSymbols) {
-    // Try address-based lookup first
-    const address = getAddressForSymbol(canonical);
-    let coingeckoId: string | null = null;
-    
-    if (address) {
-      coingeckoId = resolveAddressToCoinGeckoId(address);
-    }
-    
-    // Fallback to symbol-based lookup
-    if (!coingeckoId) {
-      coingeckoId = resolveSymbolToCoinGeckoId(canonical);
-    }
+  for (let i = 0; i < symbols.length; i++) {
+    const symbol = symbols[i];
+    const normalised = normalisedSymbols[i];
+    const coingeckoId = resolveCoinGeckoId(symbol);
     
     if (coingeckoId) {
-      idMap.set(canonical, coingeckoId);
+      idMap.set(normalised, coingeckoId);
     }
   }
   
@@ -239,12 +180,12 @@ export async function getTokenPricesBatch(symbols: string[]): Promise<Record<str
     const data = await response.json();
     
     // Map CoinGecko IDs back to symbols
-    for (const [canonical, coingeckoId] of idMap.entries()) {
+    for (const [normalised, coingeckoId] of idMap.entries()) {
       const price = data[coingeckoId]?.usd;
       
       if (typeof price === 'number') {
-        result[canonical] = price;
-        priceCache.set(canonical, price);
+        result[normalised] = price;
+        priceCache.set(normalised, price);
       }
     }
     
@@ -281,21 +222,21 @@ export async function getTokenPriceWithFallback(
   }
   
   // Fallback: Stablecoin assumption
-  const canonical = canonicalSymbol(symbol);
+  const normalised = normalise(symbol);
   const stablecoins = [
     'USDT', 'USDT0', 'USD0', 'EUSDT',
     'USDC', 'USDCE',
     'DAI', 'USDS', 'USDD', 'USDX', 'CUSDX'
   ];
   
-  if (stablecoins.includes(canonical)) {
-    console.log(`[PRICE] Using stablecoin assumption for ${canonical}: $1.00`);
+  if (stablecoins.includes(normalised)) {
+    console.log(`[PRICE] Using stablecoin assumption for ${normalised}: $1.00`);
     return { price: 1.00, source: 'stablecoin' };
   }
   
   // Fallback: Use pool ratio (NOT ACCURATE)
   console.warn(
-    `[PRICE] ⚠️ WARNING: Using pool price ratio for ${canonical}: ${poolPriceRatio}. ` +
+    `[PRICE] ⚠️ WARNING: Using pool price ratio for ${normalised}: ${poolPriceRatio}. ` +
     `This is NOT a real USD price and may be inaccurate!`
   );
   return { price: poolPriceRatio, source: 'pool_ratio' };

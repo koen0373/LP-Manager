@@ -62,3 +62,4 @@ next_suggested_step: <one-line action with rationale>
 
 - 2025-11-12 — Added Advisory Requirement section; mandated 'Advisory/next_suggested_step' in results blocks.
 
+

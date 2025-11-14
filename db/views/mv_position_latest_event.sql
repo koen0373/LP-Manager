@@ -4,7 +4,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS "mv_position_latest_event" AS
 SELECT DISTINCT ON (pe."tokenId")
        pe."tokenId",
        pe."pool",
-       pe."eventName",
+       pe."eventType",
        pe."blockNumber",
        pe."timestamp"
 FROM "PositionEvent" pe

@@ -1,4 +1,5 @@
 import type { Address } from 'viem';
+import { TOKEN_ASSETS } from '@/lib/assets';
 
 type IconCacheEntry = {
   url: string | null;
@@ -10,7 +11,7 @@ const symbolCache = new Map<string, string>();
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour
 
 const TOKEN_MEDIA_BASE = '/media/tokens';
-export const UNKNOWN_TOKEN_ICON = '/media/icons/token-default.svg';
+export const UNKNOWN_TOKEN_ICON = TOKEN_ASSETS.default;
 
 function normalizeSymbol(symbol: string): string {
   return symbol

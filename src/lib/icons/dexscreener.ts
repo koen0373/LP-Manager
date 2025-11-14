@@ -1,7 +1,7 @@
 // Stub: Dexscreener integration removed; local-only icons enforced.
 // This file is kept for backwards compatibility but exports no-op functions.
 
-export function resolveChainSlug(chain?: string | null): string {
+export function resolveChainSlug(_chain?: string | null): string {
   return 'flare';
 }
 

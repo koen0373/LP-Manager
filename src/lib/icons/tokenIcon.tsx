@@ -1,7 +1,9 @@
 import React from 'react';
+import Image from 'next/image';
 import type { Address } from 'viem';
 
 import { canonicalSymbol } from './symbolMap';
+import { TOKEN_ASSETS } from '@/lib/assets';
 
 export type TokenIconProps = {
   symbol?: string;
@@ -31,7 +33,7 @@ function buildLocalIconCandidates(symbol?: string | null, address?: string | nul
     candidates.push(`/media/tokens/by-address/${normalizedAddress}.png`);
   }
   
-  candidates.push('/media/icons/token-default.svg');
+  candidates.push(TOKEN_ASSETS.default);
   
   return candidates;
 }
@@ -66,11 +68,12 @@ export function TokenIcon({
   }, [candidates.length]);
 
   return (
-    <img
+    <Image
       src={currentSrc}
       alt={label}
       width={size}
       height={size}
+      unoptimized
       className={`rounded-full border border-[rgba(30,144,255,0.25)] bg-[#0B1530] object-contain ${className}`}
       style={{
         width: size,

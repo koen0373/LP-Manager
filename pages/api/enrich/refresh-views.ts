@@ -34,52 +34,35 @@ export default async function handler(
   const results: Record<string, { success: boolean; duration: number; error?: string }> = {};
 
   try {
-    // Refresh range status view
-    try {
-      const rangeStart = Date.now();
-      await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY "mv_position_range_status"`;
-      results.rangeStatus = {
-        success: true,
-        duration: Date.now() - rangeStart,
-      };
-    } catch (error) {
-      results.rangeStatus = {
-        success: false,
-        duration: 0,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    // Refresh in safe order (dependencies first)
+    const refreshOrder = [
+      { name: 'poolLatestState', mv: 'mv_pool_latest_state' },
+      { name: 'poolFees24h', mv: 'mv_pool_fees_24h' },
+      { name: 'rangeStatus', mv: 'mv_position_range_status' },
+      { name: 'positionStats', mv: 'mv_pool_position_stats' },
+      { name: 'latestEvent', mv: 'mv_position_latest_event' },
+      { name: 'poolVolume7d', mv: 'mv_pool_volume_7d' },
+      { name: 'poolFees7d', mv: 'mv_pool_fees_7d' },
+      { name: 'positionsActive7d', mv: 'mv_positions_active_7d' },
+      { name: 'walletLp7d', mv: 'mv_wallet_lp_7d' },
+      { name: 'poolChanges7d', mv: 'mv_pool_changes_7d' },
+    ];
 
-    // Refresh position stats view
-    try {
-      const statsStart = Date.now();
-      await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY "mv_pool_position_stats"`;
-      results.positionStats = {
-        success: true,
-        duration: Date.now() - statsStart,
-      };
-    } catch (error) {
-      results.positionStats = {
-        success: false,
-        duration: 0,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-
-    // Refresh latest event view
-    try {
-      const latestStart = Date.now();
-      await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY "mv_position_latest_event"`;
-      results.latestEvent = {
-        success: true,
-        duration: Date.now() - latestStart,
-      };
-    } catch (error) {
-      results.latestEvent = {
-        success: false,
-        duration: 0,
-        error: error instanceof Error ? error.message : String(error),
-      };
+    for (const { name, mv } of refreshOrder) {
+      try {
+        const start = Date.now();
+        await prisma.$executeRawUnsafe(`REFRESH MATERIALIZED VIEW CONCURRENTLY "${mv}"`);
+        results[name] = {
+          success: true,
+          duration: Date.now() - start,
+        };
+      } catch (error) {
+        results[name] = {
+          success: false,
+          duration: 0,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
     }
 
     const totalDuration = Date.now() - startTime;

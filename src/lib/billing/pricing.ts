@@ -15,7 +15,7 @@ const PLAN_ID = (process.env.LL_PRICING_PLAN || 'A').trim().toUpperCase();
 const PLAN_A: PlanConfig = {
   BASE5: 14.95,
   EXTRA_SLOT: 1.99,
-  ALERTS_PACK5: 2.45,
+  ALERTS_PACK5: 2.49,
   UI_PACK_COPY: '+5 pools = +$9.95',
 };
 

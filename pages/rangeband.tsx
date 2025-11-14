@@ -17,13 +17,11 @@ export default function RangeBandPage() {
   React.useEffect(() => {
     const fetchFXRPPrice = async () => {
       try {
-        // Correct FXRP token address: 0xAd552A648C74D49E10027AB8a618A3ad4901c5bE
-        const res = await fetch('https://api.dexscreener.com/latest/dex/tokens/0xAd552A648C74D49E10027AB8a618A3ad4901c5bE');
+        const res = await fetch('/api/prices/current?symbols=FXRP');
         if (res.ok) {
           const data = await res.json();
-          // Get the first pair's priceUsd
-          if (data.pairs && data.pairs.length > 0) {
-            const price = parseFloat(data.pairs[0].priceUsd || '2.46');
+          if (data.ok && data.prices && data.prices.length > 0) {
+            const price = data.prices[0].priceUsd;
             setLivePrice(price);
           } else {
             setLivePrice(2.46); // fallback

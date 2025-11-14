@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import WalletConnect from './WalletConnect';
 import { LiquiLabLogo } from './LiquiLabLogo';
+import { getBrandAsset } from '@/lib/assets';
 
 const BLAZESWAP_ENABLED =
   (process.env.NEXT_PUBLIC_ENABLE_BLAZESWAP ?? process.env.ENABLE_BLAZESWAP ?? '').toLowerCase() === 'true';
@@ -80,7 +81,7 @@ export default function Header({
               title="Learn about RangeBand™"
             >
               <Image
-                src="/media/icons/rangeband.svg"
+                src={getBrandAsset('rangeband')}
                 alt=""
                 width={20}
                 height={20}

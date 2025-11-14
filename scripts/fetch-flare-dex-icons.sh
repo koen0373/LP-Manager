@@ -62,3 +62,4 @@ railway logs -s "$RW_WEB" --lines 120 || true
 
 setopt BANG_HIST
 
+

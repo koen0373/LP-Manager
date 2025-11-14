@@ -1027,3 +1027,322 @@ npm run icons:fetch -- --only-missing --concurrency=8
 - `pages/index.tsx` — Restored historical homepage structure from d9030cc2 with adapted imports
 
 **Result:** ✅ Homepage restored with working hero and demo sections; `npm run build` passes; no remote icon requests; UI matches historical d9030cc2 layout.
+
+---
+
+## Changelog — 2025-11-13
+
+### Local Dev Stabilization & Wagmi Auto-Modal Fix
+
+**Problem:** Wagmi auto-connect causing modal loops; brand images scattered; dev scripts need cleanup.
+
+**Solution:**
+- Created `src/lib/web3/wagmiConfig.ts` — Centralized wagmi config with `autoConnect: false` to prevent modal loops; uses Flare chain, cookieStorage, injected + WalletConnect connectors.
+- Updated `src/providers/wagmi.tsx` — Uses centralized config from `@/lib/web3/wagmiConfig`; single WagmiProvider + QueryClientProvider.
+- Fixed `src/components/WalletConnect.tsx` — Added mount guard; connect button only enabled when `status === 'disconnected'`; removed auto-triggers.
+- Fixed `src/components/onboarding/ConnectWalletModal.tsx` — Added mount guard; connect functions check `status === 'disconnected' && !isConnected` before connecting.
+- Updated `scripts/verify-enrichment/icons.mjs` — Extended to detect legacy `/icons/` and `./icons/` paths (excluding `/media/icons/`); checks for brand assets in `/public/media/brand/`.
+- Updated `package.json` — Changed `dev` script to `next dev -p 3000 -H 0.0.0.0` (removed turbopack); added `dev:clean` script.
+
+**Files changed:**
+- `src/lib/web3/wagmiConfig.ts` — New centralized wagmi config (autoConnect: false)
+- `src/providers/wagmi.tsx` — Updated to use centralized config
+- `src/components/WalletConnect.tsx` — Added mount guard and status checks
+- `src/components/onboarding/ConnectWalletModal.tsx` — Added mount guard and status checks
+- `scripts/verify-enrichment/icons.mjs` — Extended verifier for legacy paths and brand assets
+- `package.json` — Updated dev scripts
+
+**Result:** ✅ Wagmi auto-connect disabled; no modal loops; single provider; brand images normalized under `/media/brand/`; dev scripts cleaned; `npm run build` passes.
+
+---
+
+## Changelog — 2025-11-13
+
+### Fix DemoPoolsTable Runtime Error
+
+**Problem:** Runtime TypeError in `DemoPoolsTable.tsx` line 236: `Cannot read properties of undefined (reading 'toUpperCase')` when `token0Symbol` or `token1Symbol` is undefined.
+
+**Solution:**
+- Fixed `src/components/demo/DemoPoolsTable.tsx` — Added null-safe handling for `token0Symbol` and `token1Symbol` in `selectDemoPools` function; uses `(item.token0Symbol || '').toUpperCase()` to prevent undefined access.
+
+**Files changed:**
+- `src/components/demo/DemoPoolsTable.tsx` — Added null-safe token symbol handling
+
+**Result:** ✅ Demo pools table no longer crashes when token symbols are undefined; handles missing data gracefully.
+
+---
+
+## Changelog — 2025-11-13
+
+### Fix DemoPoolsTable pairLabel Runtime Error
+
+**Problem:** Runtime TypeError in `DemoPoolsTable.tsx` line 252: `Cannot read properties of undefined (reading 'toLowerCase')` when `pairLabel` is undefined.
+
+**Solution:**
+- Fixed `src/components/demo/DemoPoolsTable.tsx` — Added null-safe handling for `pairLabel` in `isFlaro` check; uses `(item.pairLabel && item.pairLabel.toLowerCase().includes('flaro.org')) || false` to prevent undefined access.
+
+**Files changed:**
+- `src/components/demo/DemoPoolsTable.tsx` — Added null-safe pairLabel handling
+
+**Result:** ✅ Demo pools table no longer crashes when pairLabel is undefined; handles missing pairLabel gracefully.
+
+---
+
+## Changelog — 2025-11-13
+
+### Wallet Connect Modal Stabilization & Single Wagmi Config
+
+**Problem:** Wallet connect modal auto-opens or stays stuck after connect; duplicate Wagmi configs; no debug visibility into wallet state.
+
+**Solution:**
+- Updated `src/lib/web3/wagmiConfig.ts` — Set `autoConnect: true` (was `false`); consolidated single Wagmi config with Flare chain, cookieStorage, injected + WalletConnect connectors.
+- Removed duplicate configs — `src/lib/wagmi.ts` and `src/lib 2/wagmi.ts` are legacy (not imported); single source of truth is `src/lib/web3/wagmiConfig.ts`.
+- Created `src/lib/web3/useWalletDebug.ts` — Dev-only debug hook that logs wallet state changes when `NEXT_PUBLIC_DEBUG_WALLET_STATE=true`; logs address, isConnected, status, chainId.
+- Created `src/components/WalletButton.tsx` — Simple wrapper around `WalletConnect` with mount guard and debug logging; single entry point for wallet connect UI.
+- Fixed `src/components/WalletConnect.tsx` — Added `isConnected` check; connect functions guard against `status !== 'disconnected' || isConnected` to prevent duplicate connects; modal closes automatically when `address` is set.
+- Fixed `src/components/onboarding/ConnectWalletModal.tsx` — Connect functions already guard against `status !== 'disconnected' && !isConnected`; no auto-triggers found.
+- Wallet icons — Already configured under `/public/media/wallets/*` (metamask.svg, phantom.png, okx.webp, brave.webp, rabby.svg, walletconnect.webp, bifrost.svg); WalletConnect component uses these paths.
+
+**Files changed:**
+- `src/lib/web3/wagmiConfig.ts` — Set autoConnect: true; single consolidated config
+- `src/lib/web3/useWalletDebug.ts` — New debug hook for wallet state logging
+- `src/components/WalletButton.tsx` — New wallet button component with debug logging
+- `src/components/WalletConnect.tsx` — Added isConnected guard; prevent duplicate connects
+- `PROJECT_STATE.md` — Added changelog entry
+
+**Result:** ✅ Single Wagmi config/provider; no auto-modal popups; modal closes after successful connect; debug logging available; wallet icons load from `/media/wallets/*`.
+
+---
+
+## Changelog — 2025-11-13
+
+### Data Enrichment Consolidation & Analytics Endpoints
+
+**Problem:** Need consolidated enrichment MVs, analytics endpoints with TTL & degrade-mode, and weekly report generator.
+
+**Solution:**
+- Created 7d MVs — Added `db/views/mv_pool_volume_7d.sql`, `mv_pool_fees_7d.sql`, `mv_positions_active_7d.sql`, `mv_wallet_lp_7d.sql`, `mv_pool_changes_7d.sql` for weekly analytics.
+- Created `scripts/enrich/refresh-views.mjs` — Refresh orchestrator that refreshes all MVs in safe order (dependencies first); logs timings and handles missing MVs gracefully.
+- Updated `pages/api/enrich/refresh-views.ts` — Extended to refresh all 10 MVs (5 core + 5 7d) in safe order.
+- Created `src/lib/analytics/db.ts` — Read-only analytics adapter with degrade-mode support; checks MV existence and `DB_DISABLE` flag; returns `{ok, degrade, ts, data, reason}` responses.
+- Created `pages/api/analytics/summary.ts` — Network KPIs endpoint (pools_total, tvl_estimate, positions_total, fees_24h, fees_7d) with 30s TTL cache and degrade-mode.
+- Created `pages/api/analytics/pool/[id].ts` — Pool-specific analytics endpoint (fees_24h/7d, positions_count, volume_7d) with 30s TTL cache and degrade-mode.
+- Created `scripts/reports/weekly-liquidity-pool-report.mjs` — Weekly report generator; accepts `--week YYYY-WW` or `--week auto`; generates report.md + 3 CSV files (top-pools, top-wallets, pool-changes); handles degrade-mode gracefully.
+- Created `scripts/verify-enrichment/mv-health.mjs` — MV health checker; verifies existence, row counts, and refresh status for all MVs.
+- Created `scripts/verify-report/weekly.mjs` — Weekly report verifier; runs generator and asserts report.md + CSV files exist and are non-empty.
+- Updated `package.json` — Added `verify:mv`, `verify:report`, updated `report:weekly` script.
+
+**Files changed:**
+- `db/views/mv_pool_volume_7d.sql` — New 7d volume MV
+- `db/views/mv_pool_fees_7d.sql` — New 7d fees MV
+- `db/views/mv_positions_active_7d.sql` — New 7d active positions MV
+- `db/views/mv_wallet_lp_7d.sql` — New 7d wallet LP MV
+- `db/views/mv_pool_changes_7d.sql` — New 7d pool changes MV
+- `scripts/enrich/refresh-views.mjs` — New refresh orchestrator
+- `pages/api/enrich/refresh-views.ts` — Extended to refresh all 10 MVs
+- `src/lib/analytics/db.ts` — New analytics DB adapter
+- `pages/api/analytics/summary.ts` — New network KPIs endpoint
+- `pages/api/analytics/pool/[id].ts` — New pool analytics endpoint
+- `scripts/reports/weekly-liquidity-pool-report.mjs` — New weekly report generator
+- `scripts/verify-enrichment/mv-health.mjs` — New MV health checker
+- `scripts/verify-report/weekly.mjs` — New report verifier
+- `package.json` — Added verify:mv, verify:report scripts; updated report:weekly
+
+**Result:** ✅ Enrichment MVs consolidated; refresh orchestrator added; analytics endpoints (TTL + degrade) implemented; weekly report generator + verifiers added; CI/build pass.
+
+---
+
+## Changelog — 2025-11-13
+
+### Lint Fixes: Icon & Verification Scripts
+
+**Problem:** Lint errors and warnings preventing clean `npm run lint:ci` pass.
+
+**Solution:**
+- Fixed `src/lib/icons/dexscreener.ts` — Renamed unused `chain` parameter to `_chain` in `resolveChainSlug()` to satisfy `@typescript-eslint/no-unused-vars` rule.
+- Fixed `scripts/verify-enrichment/icons.mjs` — Renamed unused `e` catch variable to `_e` to remove warning.
+- Fixed `src/lib/icons/tokenIcon.tsx` — Added scoped ESLint disable comment for `<img>` element (Next.js prefers `<Image />` but dynamic `src` with fallback chain requires native `<img>`).
+
+**Files changed:**
+- `src/lib/icons/dexscreener.ts` — Renamed unused parameter
+- `scripts/verify-enrichment/icons.mjs` — Renamed unused catch variable
+- `src/lib/icons/tokenIcon.tsx` — Added ESLint disable comment
+- `PROJECT_STATE.md` — Added changelog entry
+
+**Result:** ✅ Lint errors resolved; warnings handled; verify/lint/build pass without behavioural changes to icons.
+
+---
+
+## Changelog — 2025-11-13
+
+### Final Lint Cleanup: Zero Warnings
+
+**Problem:** Remaining ESLint warnings preventing clean `npm run lint:ci` pass with 0 warnings.
+
+**Solution:**
+- Fixed `scripts/verify-enrichment/icons.mjs` — Removed unused `_e` catch variable; use empty catch block instead.
+- Fixed `scripts/verify-enrichment/mv-health.mjs` — Incorporated `extendedOk` into output summary and exit code logic; now used meaningfully.
+- Fixed `src/lib/icons/tokenIcon.tsx` — Converted `<img>` to `next/image` with `unoptimized` flag to preserve dynamic src fallback chain; removed unused eslint-disable directive.
+
+**Files changed:**
+- `scripts/verify-enrichment/icons.mjs` — Removed unused catch variable
+- `scripts/verify-enrichment/mv-health.mjs` — Used extendedOk in output and exit logic
+- `src/lib/icons/tokenIcon.tsx` — Converted to next/image, removed eslint-disable
+- `PROJECT_STATE.md` — Added changelog entry
+
+**Result:** ✅ All ESLint warnings eliminated; `npm run lint:ci` passes with 0 errors and 0 warnings; verify/lint/build all pass.
+
+---
+
+## Changelog — 2025-11-13
+
+### Dev/Start Scripts Normalization & Documentation
+
+**Problem:** Need to clarify the difference between `npm run build` (builds only) vs `npm run dev`/`npm start` (serves the app).
+
+**Solution:**
+- Normalized `package.json` scripts — `dev` script: `"next dev -p 3000 -H 0.0.0.0"` (local dev); `start` script: `"next start -p $PORT"` (production/Railway).
+- Documented run commands — Added clarification in PROJECT_STATE.md:
+  - `npm run build` — Builds the app only (does not start a server).
+  - `npm run dev` — Starts development server at http://localhost:3000.
+  - `PORT=3000 npm start` — Starts production server locally (for testing prod build).
+
+**Files changed:**
+- `package.json` — Normalized start script to `"next start -p $PORT"` (removed redundant `-H 0.0.0.0`).
+- `PROJECT_STATE.md` — Added changelog entry documenting build vs serve distinction.
+
+**Result:** ✅ Scripts normalized; clear documentation on how to run the app locally (dev) and in production (Railway); `npm run build` builds only, `npm run dev` or `npm start` serve the app.
+
+## Changelog — 2025-11-14
+
+### Homepage Restoration: RangeBand™ Hero + Demo Pools Table/Grid Toggle
+
+**Problem:** Homepage needed to be restored to a visitor-friendly marketing page with:
+1. Integrated RangeBand™ interactive explainer in the hero section
+2. Demo pools section with table/grid view toggle
+3. No forced wallet-connect screen on initial load
+
+**Solution:**
+- Restored `pages/index.tsx` with integrated hero featuring `InlineReal` RangeBand interactive component.
+- Added demo pools section with table/grid view toggle (buttons to switch between `DemoPoolsTable` and `PoolsGrid` components).
+- Removed auto-open wallet modal; replaced with `WalletConnect` button that user must explicitly click.
+- Updated `DemoPoolsTable` to support `onPositionsChange` callback prop to sync positions with grid view.
+- Modified `PoolsGrid` to accept `PositionData[]` and support `demoMode` prop (defaults to true), removing wallet gating for demo content.
+
+**Files changed:**
+- `pages/index.tsx` — Restored marketing-first homepage with RangeBand hero + demo pools table/grid toggle.
+- `src/components/demo/DemoPoolsTable.tsx` — Added `onPositionsChange` callback prop to notify parent of position updates.
+- `src/components/pools/PoolsGrid.tsx` — Updated to accept `PositionData[]` and support `demoMode` prop; wallet gate only active when `demoMode=false`.
+
+**Result:** ✅ Homepage is a public marketing page with integrated RangeBand explainer and demo pools table/grid toggle; no forced wallet-connect on load; wallet connect only triggered by explicit user action.
+
+### Demo Selection Build Guard
+- `pages/api/demo/selection.ts` — parallelized wallet/pool seed resolution, capped batch sizes, and lowered internal fetch timeouts (4s) with graceful warnings so demo data always resolves (or degrades) quickly during `next build`.
+
+---
+
+## Changelog — 2025-11-13
+
+### Media Asset Canonicalization & Verifier
+
+**Problem:** Static assets referenced legacy `/icons` paths, causing 404s (e.g. `/media/icons/rangeband.svg`) and inconsistent wallet logos.
+
+**Solution:**
+- Added `config/assets.json` + `src/lib/assets.ts` as the canonical asset map (brand, wallets, token fallback) and wired Header, PoolRangeIndicator, WalletConnect, and demo tables to the helper.
+- Created dedicated assets (`public/media/brand/rangeband.svg`, `public/media/tokens/token-default.svg`) and updated token icon fallbacks (`src/lib/icons/tokenIcon.tsx`, `src/lib/icons/symbolMap.ts`, `src/services/tokenIconService.ts`, demo table) to rely on the shared helpers.
+- Extended `scripts/verify-enrichment/icons.mjs` to fail on any `/icons/` references and to ensure every asset declared in the map exists on disk.
+
+**Files changed:**
+- `config/assets.json` — canonical asset registry (brand, wallets, tokens)
+- `src/lib/assets.ts` — helper exports (`getBrandAsset`, `getWalletIcon`, `getTokenAsset`)
+- `public/media/brand/rangeband.svg`, `public/media/tokens/token-default.svg` — ensured canonical assets exist
+- `src/components/Header.tsx`, `src/components/pools/PoolRangeIndicator.tsx`, `src/components/WalletConnect.tsx`, `src/components/demo/DemoPoolsTable.tsx` — switched to helper-driven asset paths
+- `src/lib/icons/tokenIcon.tsx`, `src/lib/icons/symbolMap.ts`, `src/services/tokenIconService.ts` — token fallback icons now use `/media/tokens/token-default.svg`
+- `scripts/verify-enrichment/icons.mjs` — now blocks `/icons/` references and validates all assets from the map
+
+**Result:** ✅ All `/media/icons` usages removed, wallet/brand assets pull from `/media/brand` or `/media/wallets`, and the enhanced verifier prevents future regressions.
+
+---
+
+## Changelog — 2025-11-14
+
+### Flare-Only Price Unification: /api/prices/current
+
+**Problem:** Client components fetching prices from DexScreener API directly and legacy `/api/prices/ankr` endpoint, violating Flare-only provider policy.
+
+**Solution:**
+- Created `/api/prices/current` (multi-symbol, TTL 60s) powered by existing CoinGecko `tokenPriceService` (323 lines, 5-min cache, 40+ token mappings).
+- Replaced client-side price calls in `InlineReal.tsx` (homepage hero RangeBand) and `rangeband.tsx` (explainer page) from DexScreener/ANKR to `/api/prices/current?symbols=WFLR,FXRP`.
+- Added verifiers: `scripts/verify-api/prices-current.mjs` (asserts 200 OK + numeric prices) and `scripts/scan/prices-sources.mjs` (fails build if DexScreener or `/api/prices/ankr` found in `src/`).
+- Updated `package.json` scripts: `verify:api:prices`, `scan:prices`.
+- **Note:** `tokenIconService.ts` DexScreener usage retained — **icon metadata only**, not price data.
+
+**Files changed:**
+- `pages/api/prices/current.ts` — new multi-symbol price endpoint (CoinGecko-backed, 60s TTL)
+- `src/components/rangeband/InlineReal.tsx` — replaced `/api/prices/ankr` with `/api/prices/current?symbols=WFLR`
+- `pages/rangeband.tsx` — replaced DexScreener direct call with `/api/prices/current?symbols=FXRP`
+- `scripts/verify-api/prices-current.mjs` — new API endpoint verifier
+- `scripts/scan/prices-sources.mjs` — new source scanner (blocks DexScreener price calls + ANKR endpoint)
+- `package.json` — added `verify:api:prices`, `scan:prices` scripts
+
+**Policy reaffirmation:**
+- ✅ Flare-only: All price data now sourced via CoinGecko (Flare token IDs) through unified `/api/prices/current`.
+- ✅ No DexScreener price calls in runtime code (icon fallbacks allowed in `tokenIconService.ts`).
+- ✅ Legacy `/api/prices/ankr` replaced — verifier blocks future usage.
+
+**MV refresh telemetry:** TODO — implement refresh timestamp logging for materialized views (`mv_pool_fees_24h`, `mv_pool_volume_7d`, etc.) to track data freshness in analytics endpoints.
+
+**Result:** ✅ Price unification complete; verifiers added; build/lint pass; Flare-only policy enforced across all client components.
+
+---
+
+## Changelog — 2025-11-14
+
+### Flare-Only Price Hardening: Symbol Normalization + Alias Mapping + Legacy Deprecation
+
+**Problem:** `/api/prices/current` lacked robust symbol normalization for Flare tokens with special characters (USDT₀, USDC.e), no alias mapping (FXRP→XRP, USDT0→USDT), and legacy `/api/prices/ankr*` endpoints still active.
+
+**Solution:**
+- Enhanced `tokenPriceService` with `canonicalSymbol()` normalization (uppercase A-Z0-9; ₮→T, ₀→0, .→removed).
+- Added alias mapping via `config/token-price.aliases.json` (USDT0→USDT, USDCE→USDC, WFLR→FLR, FXRP→XRP via Ripple CoinGecko ID).
+- Added optional address-based lookup via `config/token-price.addresses.json` (Flare contract addresses → CoinGecko IDs).
+- Updated `/api/prices/current` to use canonical symbols and return normalized symbols in response.
+- Deprecated `/api/prices/ankr.ts` and `/api/prices/ankr 2.ts` with **410 Gone** status and migration message.
+- Hardened verifiers: `verify:api:prices` now tests FXRP, USDT0, WFLR (requires ≥2 prices); `scan:prices` blocks `/api/prices/ankr` imports and usage.
+
+**Files changed:**
+- `config/token-price.aliases.json` — new symbol→canonical alias map (USDT0→USDT, FXRP→XRP, etc.)
+- `config/token-price.addresses.json` — new Flare contract→CoinGecko ID map (FXRP address→ripple, etc.)
+- `src/services/tokenPriceService.ts` — added canonicalSymbol(), alias/address resolution, updated batch fetcher
+- `pages/api/prices/current.ts` — updated to use canonical symbols and return normalized responses
+- `pages/api/prices/ankr.ts` — deprecated with 410 Gone + migration message
+- `pages/api/prices/ankr 2.ts` — deprecated with 410 Gone + migration message
+- `scripts/verify-api/prices-current.mjs` — updated to test FXRP, USDT0, WFLR (min 2 prices required)
+- `scripts/scan/prices-sources.mjs` — updated to scan for `/api/prices/ankr` imports + usage
+
+**Policy reaffirmation:**
+- ✅ Flare-only: All price data via CoinGecko with Flare-specific token mappings (FXRP=Ripple, WFLR=Flare Networks).
+- ✅ No DexScreener price calls in runtime code (icon metadata allowed in `tokenIconService.ts`).
+- ✅ Legacy `/api/prices/ankr*` endpoints return 410 Gone — verifiers block future usage.
+- ✅ Robust normalization handles USDT₀, USDC.e, FXRP, and other Flare token variants.
+
+**Result:** ✅ Symbol coverage extended for Flare tokens; legacy endpoints deprecated; verifiers hardened; Flare-only policy enforced.
+
+---
+
+## Changelog — 2025-11-14
+
+### Price Unification MVP: Symbol Normalization + Address Mapping + Verifier Hardening
+
+**Files changed:**
+- `src/lib/prices/tokenPriceService.ts` — moved from services/, added address mapping (USDT0/FXRP), TTL 60s cache
+- `pages/api/prices/current.ts` — recreated, uses canonical symbols, partial failures return warnings
+- `config/token-price.aliases.json` — confirmed aliases (USDT0→USDT, USDCE→USDC, FXRP→XRP, WFLR→FLR)
+- `config/token-price.addresses.json` — Flare address map (USDT0 0x96b4...→tether, FXRP 0xad55...→ripple)
+- `pages/api/prices/ankr.ts` — 410 Gone with deprecation message
+- `pages/api/prices/ankr 2.ts` — 410 Gone with deprecation message
+- `scripts/verify-api/prices-current.mjs` — tests FXRP,USDT0,WFLR, requires ≥2 prices
+- `scripts/scan/prices-sources.mjs` — blocks /api/prices/ankr imports/require/fetch, DexScreener price calls
+- `package.json` — verify script includes verify:api:prices + scan:prices
+
+**Notes:** MVP coverage for WFLR/FXRP/USDT0/USDCE/USD0/FLR; address-based lookup prioritizes contract addresses; verifiers wired into CI via `npm run verify`.

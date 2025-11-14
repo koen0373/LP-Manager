@@ -6,18 +6,20 @@ import Link from 'next/link';
 
 import { LiquiLabLogo } from '@/components/LiquiLabLogo';
 import { Button } from '@/components/ui/Button';
-import DemoSection from '@/components/demo/DemoSection';
-import ConnectWalletModal from '@/components/onboarding/ConnectWalletModal';
+import { InlineReal } from '@/components/rangeband/InlineReal';
+import DemoPoolsTable from '@/components/demo/DemoPoolsTable';
+import { PoolsGrid } from '@/components/pools/PoolsGrid';
+import WalletConnect from '@/components/WalletConnect';
 import { useAccount, useDisconnect } from 'wagmi';
+import type { PositionData } from '@/components/PositionsTable';
+
+type ViewMode = 'table' | 'grid';
 
 export default function Homepage() {
-  const [isConnectOpen, setIsConnectOpen] = React.useState(false);
+  const [viewMode, setViewMode] = React.useState<ViewMode>('table');
+  const [demoPositions, setDemoPositions] = React.useState<PositionData[]>([]);
   const { address } = useAccount();
   const { disconnect } = useDisconnect();
-
-  function handleConnect() {
-    setIsConnectOpen(true);
-  }
 
   async function handleDisconnect() {
     try {
@@ -27,13 +29,20 @@ export default function Homepage() {
     }
   }
 
+  function scrollToDemo() {
+    const demoSection = document.getElementById('demo');
+    if (demoSection) {
+      demoSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+
   return (
     <>
       <Head>
         <title>LiquiLab · The Liquidity Pool Intelligence Platform</title>
         <meta
           name="description"
-          content="One clean dashboard for your liquidity pools. First pool is free; each additional pool is $1.99/month."
+          content="The easy way to manage your liquidity pools. Monitor cross-DEX positions with live RangeBand™ insights."
         />
       </Head>
 
@@ -68,7 +77,7 @@ export default function Homepage() {
           </header>
 
           <main className="mt-14 space-y-24 sm:mt-20 sm:space-y-32">
-            {/* UNIFIED HERO: Proposition + Trial CTA */}
+            {/* HERO WITH RANGEBAND EXPLAINER */}
             <section
               aria-label="Hero"
               className="mx-auto w-[75vw] max-w-[1200px] rounded-3xl border border-white/5 p-10 text-center backdrop-blur-xl sm:p-14"
@@ -76,7 +85,11 @@ export default function Homepage() {
                 background: 'rgba(10, 15, 26, 0.88)',
               }}
             >
-              <h1 className="font-brand text-4xl font-semibold leading-tight text-white sm:text-5xl">
+              <p className="font-brand text-sm uppercase tracking-[0.4em] text-[#1BE8D2]">
+                Liquidity intelligence
+              </p>
+              
+              <h1 className="mt-4 font-brand text-4xl font-semibold leading-tight text-white sm:text-5xl">
                 The easy way to manage your liquidity pools.
               </h1>
               
@@ -99,30 +112,77 @@ export default function Homepage() {
                 </li>
               </ul>
 
+              {/* Integrated RangeBand Interactive Explainer */}
+              <div className="mt-12">
+                <InlineReal defaultStrategy="BAL" />
+              </div>
+
               <div className="mt-12 flex flex-col items-center gap-4">
-                <Button
-                  as="button"
-                  onClick={handleConnect}
-                  className="shadow-[0_0_40px_rgba(27,232,210,0.25)]"
-                  aria-label="Connect wallet to start free"
-                >
-                  Connect wallet — start free
-                </Button>
+                <WalletConnect className="shadow-[0_0_40px_rgba(27,232,210,0.25)]" />
                 <span className="text-xs uppercase tracking-[0.3em] text-white/40">
                   Read-only. No approvals.
                 </span>
               </div>
             </section>
 
-            {/* PROOF OF CONCEPT: Live Demo */}
-            <section aria-label="Live demo">
-              <DemoSection />
+            {/* DEMO POOLS SECTION WITH TABLE/GRID TOGGLE */}
+            <section aria-label="Live demo" id="demo">
+              <div
+                className="mx-auto w-[75vw] max-w-[1200px] rounded-3xl border border-white/5 p-10 backdrop-blur-xl sm:p-14"
+                style={{
+                  background: 'rgba(10, 15, 26, 0.88)',
+                }}
+              >
+                <div className="mx-auto max-w-3xl text-center">
+                  <h2 className="font-brand text-3xl font-semibold text-white sm:text-4xl">
+                    See it live: cross-DEX pools, one dashboard
+                  </h2>
+                  <p className="mt-5 font-ui text-base leading-relaxed text-[#9CA3AF] sm:text-lg">
+                    Real pools from Enosys, BlazeSwap, and SparkDEX — see how LiquiLab tracks liquidity, fees, incentives, and range status.
+                  </p>
+                </div>
+
+                {/* View Mode Toggle */}
+                <div className="mt-8 flex justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('table')}
+                    className={`rounded-lg px-4 py-2 font-ui text-sm font-semibold transition ${
+                      viewMode === 'table'
+                        ? 'bg-[#3B82F6] text-white'
+                        : 'bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white/80'
+                    }`}
+                    aria-label="Table view"
+                  >
+                    Table
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('grid')}
+                    className={`rounded-lg px-4 py-2 font-ui text-sm font-semibold transition ${
+                      viewMode === 'grid'
+                        ? 'bg-[#3B82F6] text-white'
+                        : 'bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white/80'
+                    }`}
+                    aria-label="Grid view"
+                  >
+                    Grid
+                  </button>
+                </div>
+
+                {/* Demo Pools Content */}
+                <div className="mt-10">
+                  {viewMode === 'table' ? (
+                    <DemoPoolsTable onPositionsChange={setDemoPositions} />
+                  ) : (
+                    <PoolsGrid positions={demoPositions} />
+                  )}
+                </div>
+              </div>
             </section>
           </main>
         </div>
       </div>
-
-      <ConnectWalletModal isOpen={isConnectOpen} onClose={() => setIsConnectOpen(false)} />
     </>
   );
 }

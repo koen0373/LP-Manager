@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { flare } from 'wagmi/chains';
 import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
 import qrcodeGenerator from 'qrcode-generator';
+import { getWalletIcon } from '@/lib/assets';
 
 interface WalletConnectProps {
   className?: string;
@@ -26,7 +27,7 @@ const WALLET_OPTIONS: WalletOption[] = [
     description: 'Browser extension on Chrome, Brave, Edge, and Firefox.',
     type: 'connector',
     connectorId: 'injected',
-    icon: '/media/wallets/metamask.svg',
+    icon: getWalletIcon('metamask'),
   },
   {
     id: 'phantom',
@@ -34,7 +35,7 @@ const WALLET_OPTIONS: WalletOption[] = [
     description: 'Multi-chain wallet with browser extension and mobile app.',
     type: 'connector',
     connectorId: 'injected',
-    icon: '/media/wallets/phantom.png',
+    icon: getWalletIcon('phantom'),
   },
   {
     id: 'okx',
@@ -42,7 +43,7 @@ const WALLET_OPTIONS: WalletOption[] = [
     description: 'Built-in wallet from OKX exchange with multi-chain support.',
     type: 'connector',
     connectorId: 'injected',
-    icon: '/media/wallets/okx.webp',
+    icon: getWalletIcon('okx'),
   },
   {
     id: 'brave',
@@ -50,7 +51,7 @@ const WALLET_OPTIONS: WalletOption[] = [
     description: 'Built-in wallet in Brave browser with native Web3 support.',
     type: 'connector',
     connectorId: 'injected',
-    icon: '/media/wallets/brave.webp',
+    icon: getWalletIcon('brave'),
   },
   {
     id: 'bifrost',
@@ -58,7 +59,7 @@ const WALLET_OPTIONS: WalletOption[] = [
     description: 'Flare network wallet with QR code support.',
     type: 'external',
     href: 'https://www.bifrostwallet.com/',
-    icon: '/media/wallets/bifrost.svg',
+    icon: getWalletIcon('bifrost'),
   },
   {
     id: 'rabby',
@@ -66,7 +67,7 @@ const WALLET_OPTIONS: WalletOption[] = [
     description: 'Flare-ready DeFi wallet with automatic network switching.',
     type: 'connector',
     connectorId: 'injected',
-    icon: '/media/wallets/rabby.svg',
+    icon: getWalletIcon('rabby'),
   },
   {
     id: 'walletconnect',
@@ -74,7 +75,7 @@ const WALLET_OPTIONS: WalletOption[] = [
     description: 'Connect via QR code with any WalletConnect-compatible mobile wallet.',
     type: 'walletconnect',
     connectorId: 'walletConnect',
-    icon: '/media/wallets/walletconnect.webp',
+    icon: getWalletIcon('walletconnect'),
   },
 ];
 
@@ -125,7 +126,7 @@ function generateQRCode(text: string, size = 160): string {
 }
 
 export default function WalletConnect({ className, onWalletConnected, onWalletDisconnected }: WalletConnectProps) {
-  const { address, status, chainId } = useAccount();
+  const { address, status, chainId, isConnected } = useAccount();
   const { connect, connectors, error: connectError, isPending } = useConnect();
   const { disconnect } = useDisconnect();
   const { switchChainAsync } = useSwitchChain();
@@ -190,6 +191,11 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
   }
 
   async function handleConnect(connectorId: string) {
+    // Guard: only connect when disconnected and not already connected
+    if (status !== 'disconnected' || isConnected) {
+      return;
+    }
+
     const connector = connectors.find((item) => item.id === connectorId);
     if (!connector) {
       setLocalError('Connector not available in this browser.');
@@ -205,6 +211,11 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
   }
 
   async function handleShowQR(connectorId: string) {
+    // Guard: only connect when disconnected and not already connected
+    if (status !== 'disconnected' || isConnected) {
+      return;
+    }
+
     const connector = connectors.find((item) => item.id === connectorId);
     if (!connector) {
       setLocalError('WalletConnect not available.');
@@ -233,8 +244,13 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
 
   const buttonLabel = address ? `${address.slice(0, 6)}…${address.slice(-4)}` : 'Connect wallet';
 
+  // Only show connect button when mounted and disconnected
+  if (!mounted) {
+    return null;
+  }
+
   // Render modal content
-  const modalContent = showModal && mounted ? (
+  const modalContent = showModal ? (
     <div 
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#05070C]/80 p-4"
       onClick={handleCloseModal}
@@ -413,11 +429,16 @@ export default function WalletConnect({ className, onWalletConnected, onWalletDi
 
   return (
     <>
-      <button type="button" onClick={address ? handleDisconnect : handleOpenModal} className={buttonClass}>
+      <button 
+        type="button" 
+        onClick={address ? handleDisconnect : handleOpenModal} 
+        className={buttonClass}
+        disabled={!mounted}
+      >
         {address ? `Disconnect ${buttonLabel}` : buttonLabel}
       </button>
 
-      {mounted && modalContent && ReactDOM.createPortal(modalContent, document.body)}
+      {modalContent && ReactDOM.createPortal(modalContent, document.body)}
     </>
   );
 }

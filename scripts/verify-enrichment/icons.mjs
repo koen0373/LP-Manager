@@ -4,8 +4,10 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
 const ROOT = process.cwd();
-const SCAN_DIRECTORIES = ['src', 'pages', 'app'];
-const DISALLOWED_PATTERN = /(["'`])\/(?!media)icons\//g;
+const SOURCE_DIRECTORIES = ['src', 'pages', 'app'];
+const DISALLOWED_ABSOLUTE = /["'`]\/icons\//;
+const DISALLOWED_MEDIA = /["'`]\/media\/icons\//;
+const DISALLOWED_RELATIVE = /["'`]\.\/icons\//;
 
 async function pathExists(relativePath) {
   try {
@@ -32,31 +34,69 @@ async function readDirRecursive(dir, collectors) {
       const content = await fs.readFile(absolute, 'utf8');
       const lines = content.split(/\r?\n/);
       lines.forEach((line, index) => {
-        if (line.includes('/icons/')) {
-          DISALLOWED_PATTERN.lastIndex = 0;
-          if (DISALLOWED_PATTERN.test(line)) {
-            collectors.push({
-              file: relative,
-              line: index + 1,
-              snippet: line.trim(),
-            });
-          }
+        if (DISALLOWED_ABSOLUTE.test(line) || DISALLOWED_MEDIA.test(line) || DISALLOWED_RELATIVE.test(line)) {
+          collectors.push({
+            file: relative,
+            line: index + 1,
+            snippet: line.trim(),
+            issue: 'Legacy /icons path detected (use /media/brand, /media/tokens, or /media/wallets via helpers)',
+          });
         }
       });
     }
   }
 }
 
+async function loadAssetMap() {
+  const assetMapPath = path.join(ROOT, 'config', 'assets.json');
+  const raw = await fs.readFile(assetMapPath, 'utf8');
+  return JSON.parse(raw);
+}
+
+function flattenAssets(map) {
+  const entries = [];
+  for (const [group, values] of Object.entries(map)) {
+    for (const [name, relPath] of Object.entries(values)) {
+      entries.push({ label: `${group}.${name}`, relPath });
+    }
+  }
+  return entries;
+}
+
+async function validateAssetFiles(entries) {
+  const missing = [];
+  for (const entry of entries) {
+    const diskPath = path.join(ROOT, 'public', entry.relPath.replace(/^\//, ''));
+    try {
+      await fs.access(diskPath);
+    } catch {
+      missing.push({ label: entry.label, path: entry.relPath });
+    }
+  }
+  return missing;
+}
+
 async function main() {
   const matches = [];
-  for (const dir of SCAN_DIRECTORIES) {
+  for (const dir of SOURCE_DIRECTORIES) {
     if (await pathExists(dir)) {
       await readDirRecursive(path.join(ROOT, dir), matches);
     }
   }
 
-  const ok = matches.length === 0;
-  console.log(JSON.stringify({ ok, matches }, null, 2));
+  const assetMap = await loadAssetMap();
+  const assetEntries = flattenAssets(assetMap);
+  const missingAssets = await validateAssetFiles(assetEntries);
+
+  const ok = matches.length === 0 && missingAssets.length === 0;
+
+  const result = {
+    ok,
+    legacyIconPaths: matches,
+    missingAssets,
+  };
+
+  console.log(JSON.stringify(result, null, 2));
   process.exit(ok ? 0 : 1);
 }
 

@@ -1,4 +1,6 @@
-export const DEFAULT_ICON = '/media/icons/token-default.svg';
+import { TOKEN_ASSETS } from '@/lib/assets';
+
+export const DEFAULT_ICON = TOKEN_ASSETS.default;
 
 const SUBSCRIPT_ZERO = /\u2080/g;
 const ALIAS_MAP: Record<string, string> = {

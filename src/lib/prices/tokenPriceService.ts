@@ -8,39 +8,17 @@
  */
 
 import NodeCache from 'node-cache';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import ALIASES from '@/config/token-price.aliases';
+import ADDRESS_MAP from '@/config/token-price.addresses';
 
 // Cache prices for 60 seconds (TTL for MVP)
 const priceCache = new NodeCache({ stdTTL: 60 });
 
-// Load alias and address configs
-let ALIASES: Record<string, string> = {};
-let ADDRESS_MAP: Record<string, Record<string, string>> = {};
-let SYMBOL_TO_ADDRESS: Record<string, string> = {};
-
-try {
-  const aliasPath = join(process.cwd(), 'config', 'token-price.aliases.json');
-  ALIASES = JSON.parse(readFileSync(aliasPath, 'utf-8'));
-} catch (error) {
-  console.warn('[tokenPriceService] Failed to load aliases config:', error);
-}
-
-try {
-  const addressPath = join(process.cwd(), 'config', 'token-price.addresses.json');
-  const addressData = JSON.parse(readFileSync(addressPath, 'utf-8'));
-  ADDRESS_MAP = addressData;
-  
-  // Build reverse map: symbol → address (for known Flare tokens)
-  if (addressData.flare) {
-    const flareAddresses = addressData.flare;
-    // Known mappings: USDT0 and FXRP have addresses
-    SYMBOL_TO_ADDRESS['USDT0'] = '0x96b41289d90444b8add57e6f265db5ae8651df29';
-    SYMBOL_TO_ADDRESS['FXRP'] = '0xad552a648c74d49e10027ab8a618a3ad4901c5be';
-  }
-} catch (error) {
-  console.warn('[tokenPriceService] Failed to load address config:', error);
-}
+// Build reverse map: symbol → address (for known Flare tokens)
+const SYMBOL_TO_ADDRESS: Record<string, string> = {
+  USDT0: '0x96b41289d90444b8add57e6f265db5ae8651df29',
+  FXRP: '0xad552a648c74d49e10027ab8a618a3ad4901c5be',
+};
 
 /**
  * Normalize symbol: uppercase A-Z0-9 only
@@ -62,7 +40,7 @@ function resolveSymbolToCoinGeckoId(symbol: string): string | null {
   const canonical = canonicalSymbol(symbol);
   
   // Check alias map first
-  const aliased = ALIASES[canonical] || canonical;
+  const aliased = (ALIASES as Record<string, string>)[canonical] || canonical;
   
   // Hardcoded base mappings (CoinGecko IDs)
   const BASE_MAPPINGS: Record<string, string> = {
@@ -103,7 +81,7 @@ function resolveSymbolToCoinGeckoId(symbol: string): string | null {
  */
 function resolveAddressToCoinGeckoId(address: string, chain = 'flare'): string | null {
   const normalized = address.toLowerCase();
-  return ADDRESS_MAP[chain]?.[normalized] || null;
+  return (ADDRESS_MAP as Record<string, Record<string, string>>)[chain]?.[normalized] || null;
 }
 
 /**
@@ -344,4 +322,3 @@ export function getCacheStats(): { keys: number; hits: number; misses: number } 
     misses: stats.misses
   };
 }
-

@@ -15,7 +15,7 @@
  * - Logs warnings if symbols are unavailable
  */
 
-const BASE_URL = process.env.VERIFY_BASE_URL || 'http://localhost:3000';
+const BASE_URL = process.env.VERIFY_BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
 const TEST_SYMBOLS = ['FXRP', 'USDT0', 'WFLR'];
 const MIN_REQUIRED_PRICES = 2;
 

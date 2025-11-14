@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-
-import { getTokenPriceUsd, getTokenPricesBatch } from '@/services/tokenPriceService';
+import { getTokenPriceUsd, getTokenPricesBatch } from '@/lib/prices/tokenPriceService';
 
 type PriceResponse = {
   prices: Record<string, number>;
@@ -50,8 +49,9 @@ export default async function handler(
     } else if (symbols.length > 1) {
       const batch = await getTokenPricesBatch(symbols);
       for (const sym of symbols) {
-        if (typeof batch[sym] === 'number') {
-          response[sym] = batch[sym];
+        const canonical = sym.toUpperCase();
+        if (typeof batch[canonical] === 'number') {
+          response[sym] = batch[canonical];
         }
       }
     }

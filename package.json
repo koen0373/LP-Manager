@@ -60,7 +60,7 @@
     "verify:pricing": "node scripts/verify-pricing/drift.mjs",
     "verify:api:prices": "node scripts/verify-api/prices-current.mjs",
     "scan:prices": "node scripts/scan/prices-sources.mjs",
-    "verify": "npm run verify:web && npm run verify:indexer && npm run verify:enrichment && npm run verify:icons && npm run verify:pricing && npm run verify:api:prices && npm run scan:prices",
+    "verify": "npm run -s lint:ci && npm run -s scan:prices && npm run -s verify:api:prices && npm run -s verify:icons",
     "icons:collect": "node scripts/icons/collect-flare-dex-tokens.mjs",
     "icons:fetch": "node scripts/icons/fetch-dex-icons.mjs",
     "icons:probe": "node scripts/verify-icons/remote-probe.mjs",

@@ -1,299 +1,138 @@
-// TODO: In the future, make formatting i18n/locale aware
 'use client';
 
 import React from 'react';
-import dayjs from 'dayjs';
 import Header from '@/components/Header';
-import { GroupedPoolsList } from '@/components/GroupedPoolsList';
-import { useWalletSummary } from '@/hooks/useWalletSummary';
-import { formatUsd, formatPercent } from '@/utils/format';
+import { fetchSummary } from '@/lib/api/analytics';
+import type { AnalyticsSummaryData } from '@/lib/api/analytics';
+import { formatUsd } from '@/lib/format';
 
-// API position type from wallet/summary endpoint
-interface ApiPosition {
-  tokenId: string;
-  pool: string;
-  pairLabel?: string;
-  token0Symbol?: string;
-  token1Symbol?: string;
-  status: 'active' | 'inactive';
-  tvlUsd: number;
-  accruedFeesUsd: number;
-  realizedFeesUsd: number;
-  rflrAmount?: number;
-  rflrUsd?: number;
+type SummaryState = {
+  loading: boolean;
+  degrade: boolean;
+  metrics: AnalyticsSummaryData | null;
+  ts: number | null;
+};
+
+const INITIAL_STATE: SummaryState = {
+  loading: true,
+  degrade: false,
+  metrics: null,
+  ts: null,
+};
+
+const METRIC_META: Array<{ key: keyof AnalyticsSummaryData; label: string; description: string }> = [
+  { key: 'tvlTotal', label: 'Total TVL', description: 'USD across tracked pools' },
+  { key: 'poolsActive', label: 'Active Pools', description: 'Pools with non-zero TVL' },
+  { key: 'positionsActive', label: 'Positions', description: 'Distinct LP tokens observed' },
+  { key: 'fees24h', label: 'Fees · 24h', description: 'Last 24 hours (USD)' },
+  { key: 'fees7d', label: 'Fees · 7d', description: 'Trailing 7 days (USD)' },
+];
+
+function formatMetricValue(key: keyof AnalyticsSummaryData, value: number): string {
+  if (key === 'tvlTotal' || key === 'fees24h' || key === 'fees7d') {
+    return `$${formatUsd(value)}`;
+  }
+  return value.toLocaleString();
 }
 
 export default function SummaryPage() {
-  const [walletAddress, setWalletAddress] = React.useState<string>('');
-  const { data, isLoading, isError, refetch } = useWalletSummary(walletAddress);
+  const [state, setState] = React.useState<SummaryState>(INITIAL_STATE);
 
-  // Water background is now visible on all pages
-  // Removed the no-water-bg class toggle
-
-  // Check if wallet is already connected on mount
   React.useEffect(() => {
-    const checkWallet = async () => {
-      if (typeof window !== 'undefined' && window.ethereum && window.ethereum.request) {
-        try {
-          const accounts = await window.ethereum.request({ method: 'eth_accounts' }) as string[];
-          if (accounts && accounts.length > 0) {
-            console.log('[SUMMARY] Found existing wallet connection:', accounts[0]);
-            setWalletAddress(accounts[0]);
-          }
-        } catch (error) {
-          console.error('[SUMMARY] Error checking wallet:', error);
-        }
+    let mounted = true;
+    (async () => {
+      const response = await fetchSummary();
+      if (!mounted) return;
+
+      if (response.degrade) {
+        setState({
+          loading: false,
+          degrade: true,
+          metrics: null,
+          ts: response.ts ?? Date.now(),
+        });
+        return;
       }
-    };
-    checkWallet();
-  }, []);
 
-  // Handle wallet connection
-  const handleWalletConnected = (address: string) => {
-    console.log('[SUMMARY] Wallet connected:', address);
-    setWalletAddress(address);
-  };
-
-  // Handle wallet disconnection
-  const handleWalletDisconnected = () => {
-    console.log('[SUMMARY] Wallet disconnected');
-    setWalletAddress('');
-  };
-
-  // Debug: Log wallet address changes
-  React.useEffect(() => {
-    console.log('[SUMMARY] Wallet address state:', walletAddress);
-  }, [walletAddress]);
-
-  // Wallet not connected
-  if (!walletAddress) {
-    return (
-      <div className="min-h-screen font-ui">
-        <Header currentPage="summary" 
-          showTabs={false}
-          onWalletConnected={handleWalletConnected}
-          onWalletDisconnected={handleWalletDisconnected}
-        />
-        <div className="w-full max-w-[1200px] mx-auto px-4 py-8 font-ui">
-          <div className="bg-liqui-card rounded-lg p-8 text-center">
-            <h2 className="font-brand text-xl font-bold text-white mb-4">Connect Your Wallet</h2>
-            <p className="font-ui text-liqui-subtext mb-6">
-              Please connect your wallet to view your portfolio summary.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen font-ui">
-        <Header currentPage="summary" 
-          showTabs={false}
-          onWalletConnected={handleWalletConnected}
-          onWalletDisconnected={handleWalletDisconnected}
-        />
-        <div className="w-full max-w-[1200px] mx-auto px-4 py-8 font-ui">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-liqui-card rounded-lg p-6 animate-pulse">
-                <div className="h-4 bg-liqui-subcard rounded w-1/2 mb-4"></div>
-                <div className="h-8 bg-liqui-subcard rounded w-3/4"></div>
-              </div>
-            ))}
-          </div>
-          <div className="bg-liqui-card rounded-lg p-6 animate-pulse mb-8">
-            <div className="h-6 bg-liqui-subcard rounded w-1/4 mb-4"></div>
-            <div className="h-64 bg-liqui-subcard rounded"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (isError || !data) {
-    return (
-      <div className="min-h-screen font-ui">
-        <Header currentPage="summary" 
-          showTabs={false}
-          onWalletConnected={handleWalletConnected}
-          onWalletDisconnected={handleWalletDisconnected}
-        />
-        <div className="w-full max-w-[1200px] mx-auto px-4 py-8 font-ui">
-          <div className="bg-liqui-card rounded-lg p-8 text-center">
-            <h2 className="font-brand text-xl font-bold text-red-500 mb-4">Error Loading Summary</h2>
-            <p className="font-ui text-liqui-subtext mb-6">
-              Failed to fetch your portfolio data. Please try again.
-            </p>
-            <button
-              onClick={() => refetch()}
-              className="px-6 py-2 bg-liqui-blue hover:bg-liqui-blueHover text-white rounded-lg transition-colors"
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Data state
-  const { totals, positions, recentActivity } = data;
-
-  // Convert API positions to GroupedPoolsList format
-  const poolsData = positions
-    .filter((pos: ApiPosition) => 
-      // Show all active pools, and inactive pools with rewards
-      pos.status === 'active' || (pos.rflrAmount && pos.rflrAmount > 0)
-    )
-    .map((pos: ApiPosition) => {
-      const token0Symbol = pos.token0Symbol || 'TOKEN0';
-      const token1Symbol = pos.token1Symbol || 'TOKEN1';
-      const pairLabel = pos.pairLabel || `${token0Symbol}/${token1Symbol}`;
-      
-      // Calculate total earnings (fees + RFLR)
-      const earningsUsd = (pos.realizedFeesUsd || 0) + (pos.accruedFeesUsd || 0);
-      
-      return {
-        tokenId: pos.tokenId,
-        pairLabel,
-        token0Symbol,
-        token1Symbol,
-        status: pos.status,
-        tvlUsd: pos.tvlUsd || 0,
-        tvlAtMintUsd: undefined, // TODO: Get from API
-        earningsUsd,
-        unclaimedFeesUsd: pos.accruedFeesUsd || 0,
-        fee0: undefined, // TODO: Get from API
-        fee1: undefined, // TODO: Get from API
-        rflrAmount: pos.rflrAmount || 0,
-        rflrUsd: pos.rflrUsd || 0,
-        roi: undefined, // TODO: Calculate ROI
-      };
+      setState({
+        loading: false,
+        degrade: false,
+        metrics: response.data ?? null,
+        ts: response.ts ?? Date.now(),
+      });
+    })().catch(() => {
+      if (!mounted) return;
+      setState({
+        loading: false,
+        degrade: true,
+        metrics: null,
+        ts: Date.now(),
+      });
     });
 
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const { loading, degrade, metrics, ts } = state;
+
+  const renderMetricValue = (key: keyof AnalyticsSummaryData): string => {
+    if (loading) return '...';
+    if (degrade || !metrics) return '--';
+    const value = metrics[key] ?? 0;
+    return formatMetricValue(key, value);
+  };
+
   return (
-    <div className="min-h-screen font-ui">
-      {/* Anthracite overlay (85% opacity) over water background */}
-      <div className="fixed inset-0 bg-[#0D0F13] opacity-85 pointer-events-none" style={{ zIndex: 1 }}></div>
-      <div className="relative" style={{ zIndex: 2 }}>
-      <Header currentPage="summary" 
-        showTabs={false}
-        onWalletConnected={handleWalletConnected}
-        onWalletDisconnected={handleWalletDisconnected}
-      />
-      <div className="w-full max-w-[1200px] mx-auto px-4 py-8 font-ui">
-        
-        {/* Top Row Cards - Totals */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          {/* Total TVL */}
-          <div className="bg-liqui-card rounded-lg p-6">
-            <div className="font-ui text-liqui-subtext text-sm mb-2">Total TVL</div>
-            <div className="font-ui tnum text-white text-2xl font-bold mb-1">
-              {formatUsd(totals.tvlUsd)}
-            </div>
-            <div className="font-ui text-liqui-subtext text-xs">
-              Current value in pools
-            </div>
-          </div>
-
-          {/* Realized Fees */}
-          <div className="bg-liqui-card rounded-lg p-6">
-            <div className="font-ui text-liqui-subtext text-sm mb-2">Realized Fees</div>
-            <div className="font-ui tnum text-white text-2xl font-bold mb-1">
-              {formatUsd(totals.feesRealizedUsd)}
-            </div>
-            <div className="font-ui text-liqui-subtext text-xs">
-              From collect events
-            </div>
-          </div>
-
-          {/* Total Rewards */}
-          <div className="bg-liqui-card rounded-lg p-6">
-            <div className="font-ui text-liqui-subtext text-sm mb-2">Total Rewards</div>
-            <div className="font-ui tnum text-white text-2xl font-bold mb-1">
-              {formatUsd(totals.rewardsUsd)}
-            </div>
-            <div className="font-ui text-liqui-subtext text-xs space-y-1">
-              <div>Unclaimed fees: <span className="tnum">{formatUsd(totals.unclaimedFeesUsd || 0)}</span></div>
-              <div>RFLR: <span className="tnum">{(totals.rflrAmount || 0).toFixed(2)}</span> (<span className="tnum">{formatUsd(totals.rflrUsd || 0)}</span>)</div>
-            </div>
-          </div>
-
-          {/* ROI */}
-          <div className="bg-liqui-card rounded-lg p-6">
-            <div className="font-ui text-liqui-subtext text-sm mb-2">ROI</div>
-            <div className={`font-ui tnum text-2xl font-bold mb-1 ${totals.roiPct >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-              {totals.roiPct >= 0 ? '+' : ''}{formatPercent(totals.roiPct)}
-            </div>
-            <div className="font-ui text-liqui-subtext text-xs">
-              Return on investment
-            </div>
-          </div>
-        </div>
-
-        {/* Capital Timeline Section */}
-        <div className="bg-liqui-card rounded-lg p-6 mb-8">
-          <h2 className="font-brand text-white text-lg font-bold mb-4">Capital Timeline</h2>
-          {/* TODO: Add Recharts line chart with capitalTimeline data */}
-          {/* TODO: Add time range filters (7d, 30d, 90d, all) */}
-          <div className="h-64 flex items-center justify-center bg-liqui-subcard rounded-lg">
-            <p className="font-ui text-liqui-subtext">Chart Coming Soon</p>
-          </div>
-        </div>
-
-        {/* Grouped Pools by Pairing */}
-        <div className="mb-8">
-          <h2 className="font-brand text-white text-lg font-bold mb-4">Your Pools</h2>
-          <GroupedPoolsList pools={poolsData} />
-        </div>
-
-        {/* Recent Activity Section */}
-        <div className="bg-liqui-card rounded-lg p-6">
-          <h2 className="font-brand text-white text-lg font-bold mb-4">Recent Activity</h2>
-          {/* TODO: Add event type icons (mint, collect, burn, swap) */}
-          {/* TODO: Add pagination for long lists */}
-          <div className="space-y-3">
-            {recentActivity.length === 0 ? (
-              <p className="font-ui text-liqui-subtext text-center py-8">No recent activity</p>
-            ) : (
-              recentActivity.map((activity, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between bg-liqui-subcard rounded-lg p-4"
-                >
-                  <div>
-                    <div className="font-ui text-white font-medium">
-                      {activity.label.charAt(0).toUpperCase() + activity.label.slice(1).toLowerCase()}
-                    </div>
-                    <div className="font-ui text-liqui-subtext text-sm">
-                      {dayjs.unix(activity.timestamp).format('DD MMM YYYY HH:mm')}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="font-ui text-white font-medium">
-                      <span className="tnum">{formatUsd(activity.amountUsd)}</span>
-                    </div>
-                    <a
-                      href={`https://flarescan.com/tx/${activity.txHash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-liqui-blue hover:text-liqui-blueHover text-sm transition-colors"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      View →
-                    </a>
-                  </div>
-                </div>
-              ))
+    <div className="min-h-screen bg-[#010615] text-white font-ui">
+      <div className="fixed inset-0 opacity-90 pointer-events-none" aria-hidden />
+      <div className="relative z-10">
+        <Header currentPage="summary" showTabs={false} showWalletActions={false} />
+        <main className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-4 pb-16 pt-10">
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-[0.2em] text-white/60">Analytics</p>
+            <h1 className="font-brand text-3xl text-white">Network Summary</h1>
+            {!degrade && ts && (
+              <p className="text-sm text-white/60">
+                Last updated {new Date(ts).toLocaleString(undefined, { hour: 'numeric', minute: '2-digit' })}
+              </p>
             )}
           </div>
-        </div>
 
-      </div>
+          {degrade && (
+            <div className="rounded-2xl border border-white/10 bg-[#0B1530] px-6 py-4 text-sm text-white/70">
+              Analytics services are in degrade mode. Tiles show a neutral placeholder until the database is available
+              again. No action required.
+            </div>
+          )}
+
+          <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {METRIC_META.map((metric) => (
+              <article
+                key={metric.key}
+                className={`rounded-2xl border border-white/10 bg-[#0B1530] px-6 py-5 ${
+                  degrade ? 'opacity-70' : ''
+                }`}
+              >
+                <div className="text-xs uppercase tracking-wider text-white/60">{metric.label}</div>
+                <div className="mt-3 text-3xl font-semibold text-white tnum">{renderMetricValue(metric.key)}</div>
+                <p className="mt-2 text-sm text-white/60">{metric.description}</p>
+              </article>
+            ))}
+          </section>
+
+          {loading && (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3" aria-live="polite">
+              {METRIC_META.map((metric) => (
+                <div key={metric.key} className="rounded-2xl bg-white/5 p-6 opacity-60">
+                  <div className="h-4 w-24 animate-pulse rounded bg-white/10" />
+                  <div className="mt-4 h-8 w-32 animate-pulse rounded bg-white/10" />
+                </div>
+              ))}
+            </div>
+          )}
+        </main>
       </div>
     </div>
   );

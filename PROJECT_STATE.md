@@ -1279,5 +1279,9 @@ npm run icons:fetch -- --only-missing --concurrency=8
 
 **Notes:** (a) Price alias+address map bundled to TS (no runtime fs); (b) ANKR price routes return 410; (c) Verifiers tightened + wired into `npm run verify`; (d) Flare-only re-affirmed; (e) MV-refresh telemetry TODO stub added.
 
+## Changelog — 2025-11-15
+
+- S2: Added /api/analytics/{summary,pool} (TTL 60s, degrade-mode), MV refresh orchestrator stub, FE wired /summary & /pool to analytics, verifiers added.
+
 <!-- CHANGELOG_ARCHIVE_INDEX -->
 See archives in /docs/changelog/.

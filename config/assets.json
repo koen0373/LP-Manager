@@ -1,0 +1,22 @@
+{
+  "brand": {
+    "logo": "/media/brand/liquilab_logo.png",
+    "wordmark": "/media/brand/liqui_logo.webp",
+    "rangeband": "/media/brand/rangeband.svg",
+    "reload": "/media/brand/reload.jpg"
+  },
+  "wallets": {
+    "metamask": "/media/wallets/metamask.svg",
+    "phantom": "/media/wallets/phantom.png",
+    "brave": "/media/wallets/brave.webp",
+    "rabby": "/media/wallets/rabby.svg",
+    "okx": "/media/wallets/okx.webp",
+    "walletconnect": "/media/wallets/walletconnect.webp",
+    "bifrost": "/media/wallets/bifrost.svg"
+  },
+  "tokens": {
+    "default": "/media/tokens/token-default.svg"
+  }
+}
+
+

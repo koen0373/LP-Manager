@@ -1,7 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import fs from 'fs';
-import type { DemoPool, DemoSeed, PoolSeed, ProviderSlug, Status } from '@/lib/demo/types';
+import type {
+  DemoPool,
+  DemoSeed,
+  PoolSeed,
+  ProviderSlug,
+  Status,
+  WalletSeed,
+} from '@/lib/demo/types';
 import { classifyStrategy } from '@/lib/demo/strategy';
 import type { PositionRow } from '@/types/positions';
 import { getRangeStatus } from '@/components/pools/PoolRangeIndicator';
@@ -23,6 +30,14 @@ let cachedSelection: { pools: DemoPool[]; timestamp: number } | null = null;
 const CACHE_TTL_MS = 60_000;
 const DEPRECATION_INTERVAL_MS = 60_000;
 let lastDeprecationLog = 0;
+const INTERNAL_BASE_URL =
+  process.env.DEMO_INTERNAL_BASE_URL ?? `http://127.0.0.1:${process.env.PORT || 3000}`;
+const INTERNAL_TIMEOUT_MS = Math.max(
+  1500,
+  Number.parseInt(process.env.DEMO_INTERNAL_TIMEOUT_MS ?? '4000', 10) || 4000,
+);
+const WALLET_BATCH_SIZE = 3;
+const POOL_BATCH_SIZE = 4;
 
 function logDeprecation() {
   const now = Date.now();
@@ -51,11 +66,12 @@ function loadDemoSeeds(): DemoSeed[] {
  */
 async function fetchWalletPositions(address: string): Promise<PositionRow[]> {
   try {
-    const url = `http://localhost:${process.env.PORT || 3000}/api/positions?address=${address}`;
+    const url = new URL('/api/positions', INTERNAL_BASE_URL);
+    url.searchParams.set('address', address);
     const response = await fetch(url, {
       method: 'GET',
-      headers: { 'Accept': 'application/json' },
-      signal: AbortSignal.timeout(10000),
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(INTERNAL_TIMEOUT_MS),
     });
 
     if (!response.ok) {
@@ -63,8 +79,8 @@ async function fetchWalletPositions(address: string): Promise<PositionRow[]> {
       return [];
     }
 
-    const positions = await response.json() as PositionRow[];
-    return Array.isArray(positions) ? positions : [];
+    const positions = await response.json();
+    return Array.isArray(positions) ? (positions as PositionRow[]) : [];
   } catch (error) {
     console.error(`[demo/selection] Failed to fetch positions for ${address}:`, error);
     return [];
@@ -113,16 +129,58 @@ function mapPositionToPool(position: PositionRow, providerSlug: ProviderSlug): D
   }
 }
 
+function isWalletSeed(seed: DemoSeed): seed is WalletSeed {
+  return seed.type === 'wallet';
+}
+
+function isPoolSeed(seed: DemoSeed): seed is PoolSeed {
+  return seed.type === 'pool';
+}
+
+async function resolveWalletSeed(seed: WalletSeed): Promise<DemoPool[]> {
+  const positions = await fetchWalletPositions(seed.address);
+  const pools: DemoPool[] = [];
+  for (const pos of positions) {
+    const pool = mapPositionToPool(pos, seed.provider);
+    if (pool) {
+      pools.push(pool);
+    }
+  }
+  return pools;
+}
+
+async function resolvePoolSeed(seed: PoolSeed): Promise<DemoPool[]> {
+  const pool = await fetchPoolFromSeed(seed);
+  return pool ? [pool] : [];
+}
+
+async function processSeeds<T extends DemoSeed>(
+  seeds: readonly T[],
+  batchSize: number,
+  worker: (seed: T) => Promise<DemoPool[]>,
+): Promise<Array<PromiseSettledResult<DemoPool[]>>> {
+  if (!seeds.length) return [];
+  const settledResults: Array<PromiseSettledResult<DemoPool[]>> = [];
+  for (let i = 0; i < seeds.length; i += batchSize) {
+    const batch = seeds.slice(i, i + batchSize);
+    const settled = await Promise.allSettled(batch.map((seed) => worker(seed)));
+    settledResults.push(...settled);
+  }
+  return settledResults;
+}
+
 /**
  * Fetch pool from pool seed
  */
 async function fetchPoolFromSeed(seed: PoolSeed): Promise<DemoPool | null> {
   try {
-    const url = `http://localhost:${process.env.PORT || 3000}/api/demo/pool-live?provider=${seed.provider}&marketId=${seed.marketId}`;
+    const url = new URL('/api/demo/pool-live', INTERNAL_BASE_URL);
+    url.searchParams.set('provider', seed.provider);
+    url.searchParams.set('marketId', seed.marketId);
     const response = await fetch(url, {
       method: 'GET',
-      headers: { 'Accept': 'application/json' },
-      signal: AbortSignal.timeout(10000),
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(INTERNAL_TIMEOUT_MS),
     });
 
     if (!response.ok) return null;
@@ -132,7 +190,10 @@ async function fetchPoolFromSeed(seed: PoolSeed): Promise<DemoPool | null> {
 
     return data.pool;
   } catch (error) {
-    console.error(`[demo/selection] Failed to fetch pool ${seed.provider}/${seed.marketId}:`, error);
+    console.error(
+      `[demo/selection] Failed to fetch pool ${seed.provider}/${seed.marketId}:`,
+      error,
+    );
     return null;
   }
 }
@@ -255,33 +316,47 @@ export default async function handler(
 
     console.log(`[API demo/selection] Processing ${seeds.length} seeds`);
 
-    // Resolve seeds to candidate pools
+    const walletSeeds = seeds.filter(isWalletSeed);
+    const poolSeeds = seeds.filter(isPoolSeed);
+
+    const [walletResults, poolResults] = await Promise.all([
+      processSeeds(walletSeeds, WALLET_BATCH_SIZE, resolveWalletSeed),
+      processSeeds(poolSeeds, POOL_BATCH_SIZE, resolvePoolSeed),
+    ]);
+
     const candidates: DemoPool[] = [];
     const seen = new Set<string>();
+    let walletFailures = 0;
+    let poolFailures = 0;
 
-    for (const seed of seeds) {
-      if (seed.type === 'wallet') {
-        const positions = await fetchWalletPositions(seed.address);
-        for (const pos of positions) {
-          const pool = mapPositionToPool(pos, seed.provider);
-          if (!pool) continue;
+    const pushCandidate = (pool: DemoPool) => {
+      const key = `${pool.providerSlug}:${pool.marketId}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      candidates.push(pool);
+    };
 
-          const key = `${pool.providerSlug}:${pool.marketId}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            candidates.push(pool);
-          }
-        }
-      } else {
-        const pool = await fetchPoolFromSeed(seed);
-        if (!pool) continue;
-
-        const key = `${pool.providerSlug}:${pool.marketId}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          candidates.push(pool);
-        }
+    walletResults.forEach((result) => {
+      if (result.status !== 'fulfilled') {
+        walletFailures += 1;
+        return;
       }
+      result.value.forEach(pushCandidate);
+    });
+
+    poolResults.forEach((result) => {
+      if (result.status !== 'fulfilled') {
+        poolFailures += 1;
+        return;
+      }
+      result.value.forEach(pushCandidate);
+    });
+
+    if (walletFailures) {
+      warnings.push('wallet_seed_error');
+    }
+    if (poolFailures) {
+      warnings.push('pool_seed_error');
     }
 
     console.log(`[API demo/selection] Collected ${candidates.length} candidate pools`);

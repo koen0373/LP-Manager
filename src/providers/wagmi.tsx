@@ -1,39 +1,9 @@
 'use client';
 
 import React from 'react';
-import { WagmiProvider, createConfig, http } from 'wagmi';
-import { mainnet } from 'wagmi/chains';
+import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { injected, walletConnect } from 'wagmi/connectors';
-
-const wcProjectId = process.env.NEXT_PUBLIC_WC_PROJECT_ID;
-const siteUrl =
-  (typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL) || 'http://localhost:3000';
-
-const connectors = [
-  injected({ shimDisconnect: true }),
-  ...(wcProjectId
-    ? [
-        walletConnect({
-          projectId: wcProjectId,
-          showQrModal: true,
-          metadata: {
-            name: 'LiquiLab',
-            description: 'Follow your liquidity with RangeBand™',
-            url: siteUrl,
-            icons: [`${siteUrl}/media/icon.png`],
-          },
-        }),
-      ]
-    : []),
-];
-
-const config = createConfig({
-  chains: [mainnet],
-  transports: { [mainnet.id]: http() },
-  connectors,
-  ssr: true,
-});
+import { wagmiConfig } from '@/lib/web3/wagmiConfig';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,7 +19,7 @@ export function WagmiRoot({ children }: { children: React.ReactNode }) {
   if (typeof window === 'undefined') return <>{children}</>;
   
   return (
-    <WagmiProvider config={config}>
+    <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </WagmiProvider>
   );

@@ -4,14 +4,13 @@ import React from 'react';
 
 import { PoolCard } from '@/components/pools/PoolCard';
 import WalletConnect from '@/components/WalletConnect';
-import type { PositionRow } from '@/lib/positions/types';
+import type { PositionData } from '@/components/PositionsTable';
 
 const skeletonCards = Array.from({ length: 6 }, (_, idx) => idx);
 
 type PoolsGridProps = {
-  positions: PositionRow[];
-  entitlements: PositionRow['entitlements'];
-  isLoading: boolean;
+  positions: PositionData[];
+  isLoading?: boolean;
   walletAddress?: string;
   connectCta?: React.ReactNode;
   demoMode?: boolean;
@@ -19,17 +18,16 @@ type PoolsGridProps = {
 
 export function PoolsGrid({
   positions,
-  entitlements,
-  isLoading,
+  isLoading = false,
   walletAddress,
   connectCta,
-  demoMode = false,
+  demoMode = true,
 }: PoolsGridProps) {
   const hasWallet = Boolean(walletAddress);
   const hasPositions = positions.length > 0;
   const connectNode = connectCta ?? <WalletConnect />;
 
-  if (!hasWallet) {
+  if (!hasWallet && !demoMode) {
     return (
       <section className="rounded-3xl border border-white/10 bg-[rgba(11,21,48,0.88)] px-8 py-14 text-center shadow-2xl">
         <p className="font-brand text-2xl text-white">Connect your wallet to preview premium insights.</p>
@@ -52,13 +50,21 @@ export function PoolsGrid({
     );
   }
 
-  if (!hasPositions) {
+  if (!hasPositions && !demoMode) {
     return (
       <section className="rounded-3xl border border-dashed border-white/15 bg-[rgba(11,21,48,0.7)] px-8 py-14 text-center">
         <p className="font-brand text-2xl text-white">No pools yet</p>
         <p className="mt-3 font-ui text-sm text-white/65">Provide liquidity on Ēnosys or SparkDEX and refresh to see live RangeBand stats.</p>
         <div className="mt-6 flex justify-center">{connectNode}</div>
       </section>
+    );
+  }
+
+  if (!hasPositions && demoMode) {
+    return (
+      <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-8 text-center font-ui text-sm text-[#B0B9C7]">
+        Loading demo pools...
+      </div>
     );
   }
 

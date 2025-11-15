@@ -1,13 +1,37 @@
-export async function register() {
+export async function register(): Promise<void> {
   const origFetch = globalThis.fetch;
-  globalThis.fetch = async (input: any, init?: any) => {
-    let url = typeof input === 'string' ? input : (input?.url ?? '');
-    if (typeof url === 'string' && url.includes('rpc.ankr.com')) {
-      const replaced = url.replace(/https:\/\/rpc\.ankr\.com\/[a-zA-Z0-9_-]*/g, 'https://flare-api.flare.network/ext/C/rpc');
-      console.log('[instrumentation] Redirecting ANKR → FLARE RPC:', replaced);
-      url = replaced;
+
+  const rewriteUrl = (url: string): string => {
+    if (!url.includes('rpc.ankr.com')) {
+      return url;
     }
-    return origFetch(url as any, init);
+    const replaced = url.replace(
+      /https:\/\/rpc\.ankr\.com\/[a-zA-Z0-9_-]*/g,
+      'https://flare-api.flare.network/ext/C/rpc',
+    );
+    console.log('[instrumentation] Redirecting ANKR → FLARE RPC:', replaced);
+    return replaced;
   };
+
+  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    if (typeof input === 'string') {
+      return origFetch(rewriteUrl(input), init);
+    }
+
+    if (input instanceof URL) {
+      return origFetch(new URL(rewriteUrl(input.toString())), init);
+    }
+
+    if (input instanceof Request) {
+      const updatedUrl = rewriteUrl(input.url);
+      if (updatedUrl !== input.url) {
+        const cloned = new Request(updatedUrl, input);
+        return origFetch(cloned, init);
+      }
+    }
+
+    return origFetch(input, init);
+  };
+
   console.log('[instrumentation] ANKR replaced with Flare RPC');
 }

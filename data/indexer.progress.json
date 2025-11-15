@@ -1,9 +1,9 @@
 {
   "phase": "start",
-  "updatedAt": "2025-11-09T16:42:30.480Z",
+  "updatedAt": "2025-11-12T21:41:53.567Z",
   "mode": "follower",
   "factory": "all",
-  "startSelected": 50355562,
+  "startSelected": 50525369,
   "reason": "checkpoint",
   "rpcBase": "https://rpc.ankr.com/flare/cee6b4f8866b7f8afa826f378953ae26eaa74fd174d1d282460e0fbad2b35b01",
   "streams": [
@@ -19,6 +19,6 @@
   "poolCount": 404,
   "rps": 6,
   "concurrency": 6,
-  "blockWindow": 2000,
+  "blockWindow": 25,
   "allowlistActive": false
 }

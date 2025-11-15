@@ -1,0 +1,12 @@
+# Temporary ignore for clean Railway packaging
+**/node_modules
+**/node_modules.*/
+**/.next
+**/dist
+**/coverage
+**/*.bak
+**/*.bak*/
+**/node_modules.bak*
+.git
+.git/**
+.DS_Store

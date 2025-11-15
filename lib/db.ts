@@ -6,6 +6,7 @@
  */
 
 import { Pool } from 'pg';
+import type { PoolConfig } from 'pg';
 
 let pool: Pool | null = null;
 
@@ -34,7 +35,6 @@ export function getDbPool(): Pool {
   // Detect Railway connections (proxy or internal)
   const isRailwayProxy = databaseUrl.includes('rlwy.net') || databaseUrl.includes('railway.app');
   const isRailwayInternal = databaseUrl.includes('railway.internal');
-  const isRailway = isRailwayProxy || isRailwayInternal;
   
   // Clean URL: remove sslmode parameter if present
   // pg's sslmode=require conflicts with our ssl config object
@@ -50,7 +50,7 @@ export function getDbPool(): Pool {
   }
   
   // Determine SSL configuration
-  let sslConfig: boolean | { rejectUnauthorized: boolean } | undefined = undefined;
+  let sslConfig: PoolConfig['ssl'];
   
   if (isRailwayProxy) {
     // Railway proxy (rlwy.net) uses self-signed certs - always need SSL
@@ -74,7 +74,7 @@ export function getDbPool(): Pool {
     });
   }
 
-  const poolConfig: any = {
+  const poolConfig: PoolConfig = {
     connectionString: cleanUrl,
     connectionTimeoutMillis: 5000, // 5s timeout for Railway proxy connections
     idleTimeoutMillis: 10000, // 10s idle timeout
@@ -156,4 +156,3 @@ export async function closeDbPool(): Promise<void> {
     pool = null;
   }
 }
-

@@ -5,13 +5,21 @@ import React from 'react';
 export default function ScreenshotButton() {
   const [busy, setBusy] = React.useState(false);
 
+  const isBrowser = typeof window !== 'undefined';
+
+  if (!isBrowser) return null;
+
   async function handleClick() {
+    const isBrowser = typeof window !== 'undefined';
+    if (!isBrowser) return;
+
     try {
       setBusy(true);
       const { toPng } = await import('html-to-image');
       const node = document.documentElement;
       const dataUrl = await toPng(node, {
-        pixelRatio: 2,
+        cacheBust: true,
+        pixelRatio: window.devicePixelRatio || 2,
         backgroundColor: '#0B0F13',
       });
       const link = document.createElement('a');

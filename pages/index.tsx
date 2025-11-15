@@ -1,268 +1,188 @@
-import { useMemo, useState } from "react";
-import Head from "next/head";
-import Link from "next/link";
-import { useRouter } from "next/router";
+'use client';
 
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import PoolsTable, { type PoolsTableItem } from "@/components/pools/PoolsTable";
-import { RangeBand } from "@/components/pools/PoolRangeIndicator";
-import PremiumCard from "@/components/pricing/PremiumCard";
-import {
-  RoleOverrideToggle,
-  formatRoleLabel,
-  getRoleFlags,
-  normalizeRoleParam,
-  type RoleOverride,
-} from "@/components/dev/RoleOverrideToggle";
+import React from 'react';
+import Head from 'next/head';
+import Link from 'next/link';
 
-const HERO = {
-  eyebrow: "Built for FLR Liquidity Providers",
-  heading: "All your liquidity pools, in one clear dashboard.",
-  subheading:
-    "See every position across Flare, track fees in real-time, and spot pool health instantly — without moving your assets.",
-};
+import { LiquiLabLogo } from '@/components/LiquiLabLogo';
+import { Button } from '@/components/ui/Button';
+import { InlineReal } from '@/components/rangeband/InlineReal';
+import DemoPoolsTable from '@/components/demo/DemoPoolsTable';
+import { PoolsGrid } from '@/components/pools/PoolsGrid';
+import WalletConnect from '@/components/WalletConnect';
+import { useAccount, useDisconnect } from 'wagmi';
+import type { PositionData } from '@/components/PositionsTable';
 
-const POOLS_SAMPLE: PoolsTableItem[] = [
-  {
-    provider: "enosys-v3",
-    token0: { symbol: "WFLR", address: "0x0001" },
-    token1: { symbol: "USDT₀", address: "0x0002" },
-    tvlUsd: 482_520,
-    unclaimedFeesUsd: 1293.42,
-    incentivesUsd: 540.1,
-    incentivesToken: "WFLR",
-    incentivesTokenAmount: 120.4,
-    apr24h: 18.5,
-    isInRange: true,
-    status: "in",
-    range: { min: 0.00021, max: 0.00028, current: 0.00024 },
-    tokenId: "13241",
-    poolAddress: "0xpool1",
-    marketId: "0xpool1",
-    poolFeeBps: 30,
-    amount0: 1204.42,
-    amount1: 1320.55,
-    fee0: 12.4,
-    fee1: 11.2,
-    liquidityShare: 0.94,
-  },
-  {
-    provider: "sparkdex-v3",
-    token0: { symbol: "FXRP", address: "0x0003" },
-    token1: { symbol: "USDC.e", address: "0x0004" },
-    tvlUsd: 289_150,
-    unclaimedFeesUsd: 845.76,
-    incentivesUsd: 0,
-    incentivesToken: null,
-    incentivesTokenAmount: null,
-    apr24h: 22.1,
-    isInRange: false,
-    status: "near",
-    range: { min: 0.98, max: 1.03, current: 0.975 },
-    tokenId: "9982",
-    poolAddress: "0xpool2",
-    marketId: "0xpool2",
-    poolFeeBps: 5,
-    amount0: 980.1,
-    amount1: 1023.8,
-    fee0: 6.2,
-    fee1: 7.1,
-    liquidityShare: 0.42,
-  },
-  {
-    provider: "enosys-v3",
-    token0: { symbol: "JOULE", address: "0x0005" },
-    token1: { symbol: "USDT₀", address: "0x0006" },
-    tvlUsd: 64_980,
-    unclaimedFeesUsd: 192.31,
-    incentivesUsd: 86.45,
-    incentivesToken: "JOULE",
-    incentivesTokenAmount: 220.12,
-    apr24h: 9.3,
-    isInRange: true,
-    status: "in",
-    range: { min: 2.1, max: 2.6, current: 2.22 },
-    tokenId: "22114",
-    poolAddress: "0xpool3",
-    marketId: "0xpool3",
-    poolFeeBps: 10,
-    amount0: 412.2,
-    amount1: 202.4,
-    fee0: 1.2,
-    fee1: 0.8,
-    liquidityShare: 0.73,
-  },
-];
+type ViewMode = 'table' | 'grid';
 
-const RANGE_SAMPLE = {
-  min: 0.00021,
-  max: 0.00028,
-  current: 0.00024,
-  status: "in" as const,
-  token0Symbol: "FXRP",
-  token1Symbol: "USD₮0",
-};
+export default function Homepage() {
+  const [viewMode, setViewMode] = React.useState<ViewMode>('table');
+  const [demoPositions, setDemoPositions] = React.useState<PositionData[]>([]);
+  const { address } = useAccount();
+  const { disconnect } = useDisconnect();
 
-export default function HomePage() {
-  const router = useRouter();
-  const role = useMemo<RoleOverride>(() => normalizeRoleParam(router.query?.role) ?? "VISITOR", [router.query?.role]);
-  const flags = getRoleFlags(role);
-  const tableEntitlements = useMemo(
-    () => ({
-      role: flags.analytics ? ("PRO" as const) : flags.premium ? ("PREMIUM" as const) : ("VISITOR" as const),
-      fields: {
-        apr: flags.premium,
-        incentives: flags.premium,
-        rangeBand: flags.premium,
-      },
-    }),
-    [role],
-  );
+  async function handleDisconnect() {
+    try {
+      await disconnect();
+    } catch (error) {
+      console.error('[Homepage] Disconnect failed', error);
+    }
+  }
+
+  function scrollToDemo() {
+    const demoSection = document.getElementById('demo');
+    if (demoSection) {
+      demoSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
 
   return (
     <>
       <Head>
-        <title>LiquiLab · Clarity for your Flare liquidity</title>
+        <title>LiquiLab · The Liquidity Pool Intelligence Platform</title>
         <meta
           name="description"
-          content="Monitor every Flare liquidity position in one dashboard. RangeBand™ health, real-time fees, and optional alerts."
+          content="The easy way to manage your liquidity pools. Monitor cross-DEX positions with live RangeBand™ insights."
         />
       </Head>
-      <div className="relative min-h-screen overflow-hidden text-white">
-        <RoleOverrideToggle activeRole={role} />
-        <div className="page-bg" aria-hidden="true" />
-        <Header currentPage="home" />
 
-        <main className="relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-10 px-6 py-20 sm:px-8 md:gap-14 md:py-24">
-          <HeroSection />
-          <PoolsTableSection role={role} entitlements={tableEntitlements} flags={flags} />
-          <RangeBandCard />
-          <section className="flex justify-center">
-            <PremiumCard showExtras />
-          </section>
-        </main>
-        <Footer />
+      <div className="relative min-h-screen overflow-hidden text-white">
+        <div className="page-bg" aria-hidden="true" />
+        <div className="relative z-10 mx-auto flex min-h-screen w-[94vw] max-w-[1200px] flex-col pb-20 pt-6 lg:w-[75vw]">
+          <header className="flex items-center justify-between">
+            <LiquiLabLogo variant="full" size="sm" theme="dark" />
+            <div className="flex items-center gap-4">
+              {address ? (
+                <div className="flex items-center gap-3">
+                  <span className="font-ui text-sm text-white/80">
+                    {address.slice(0, 6)}...{address.slice(-4)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleDisconnect}
+                    className="rounded-lg border border-white/20 bg-white/[0.05] px-3 py-1.5 font-ui text-xs font-semibold text-white/80 transition hover:border-[#3B82F6] hover:bg-[#3B82F6]/10 hover:text-white"
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="text-sm font-semibold text-white/80 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
+                >
+                  Sign in
+                </Link>
+              )}
+            </div>
+          </header>
+
+          <main className="mt-14 space-y-24 sm:mt-20 sm:space-y-32">
+            {/* HERO WITH RANGEBAND EXPLAINER */}
+            <section
+              aria-label="Hero"
+              className="mx-auto w-[75vw] max-w-[1200px] rounded-3xl border border-white/5 p-10 text-center backdrop-blur-xl sm:p-14"
+              style={{
+                background: 'rgba(10, 15, 26, 0.88)',
+              }}
+            >
+              <p className="font-brand text-sm uppercase tracking-[0.4em] text-[#1BE8D2]">
+                Liquidity intelligence
+              </p>
+              
+              <h1 className="mt-4 font-brand text-4xl font-semibold leading-tight text-white sm:text-5xl">
+                The easy way to manage your liquidity pools.
+              </h1>
+              
+              <p className="mt-5 font-ui text-base leading-relaxed text-[#9CA3AF] sm:text-lg">
+                One clean dashboard for all your LPs — powered by live RangeBand™ insights.
+              </p>
+
+              <ul className="mt-10 space-y-4 text-left sm:text-center">
+                <li className="flex items-start gap-3 font-ui text-sm text-white/90 sm:inline-flex sm:text-base">
+                  <span className="flex-shrink-0 text-[#1BE8D2]" aria-hidden="true">✓</span>
+                  <span>See every position in one view — ranges, fees, incentives, and status.</span>
+                </li>
+                <li className="flex items-start gap-3 font-ui text-sm text-white/90 sm:inline-flex sm:text-base">
+                  <span className="flex-shrink-0 text-[#1BE8D2]" aria-hidden="true">✓</span>
+                  <span>Make smarter moves with live RangeBand™ and actionable alerts.</span>
+                </li>
+                <li className="flex items-start gap-3 font-ui text-sm text-white/90 sm:inline-flex sm:text-base">
+                  <span className="flex-shrink-0 text-[#1BE8D2]" aria-hidden="true">✓</span>
+                  <span>Start free with one pool — upgrade in bundles of 5 at <span className="font-num font-semibold">$1.99</span> per pool/month.</span>
+                </li>
+              </ul>
+
+              {/* Integrated RangeBand Interactive Explainer */}
+              <div className="mt-12">
+                <InlineReal defaultStrategy="BAL" />
+              </div>
+
+              <div className="mt-12 flex flex-col items-center gap-4">
+                <WalletConnect className="shadow-[0_0_40px_rgba(27,232,210,0.25)]" />
+                <span className="text-xs uppercase tracking-[0.3em] text-white/40">
+                  Read-only. No approvals.
+                </span>
+              </div>
+            </section>
+
+            {/* DEMO POOLS SECTION WITH TABLE/GRID TOGGLE */}
+            <section aria-label="Live demo" id="demo">
+              <div
+                className="mx-auto w-[75vw] max-w-[1200px] rounded-3xl border border-white/5 p-10 backdrop-blur-xl sm:p-14"
+                style={{
+                  background: 'rgba(10, 15, 26, 0.88)',
+                }}
+              >
+                <div className="mx-auto max-w-3xl text-center">
+                  <h2 className="font-brand text-3xl font-semibold text-white sm:text-4xl">
+                    See it live: cross-DEX pools, one dashboard
+                  </h2>
+                  <p className="mt-5 font-ui text-base leading-relaxed text-[#9CA3AF] sm:text-lg">
+                    Real pools from Enosys, BlazeSwap, and SparkDEX — see how LiquiLab tracks liquidity, fees, incentives, and range status.
+                  </p>
+                </div>
+
+                {/* View Mode Toggle */}
+                <div className="mt-8 flex justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('table')}
+                    className={`rounded-lg px-4 py-2 font-ui text-sm font-semibold transition ${
+                      viewMode === 'table'
+                        ? 'bg-[#3B82F6] text-white'
+                        : 'bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white/80'
+                    }`}
+                    aria-label="Table view"
+                  >
+                    Table
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('grid')}
+                    className={`rounded-lg px-4 py-2 font-ui text-sm font-semibold transition ${
+                      viewMode === 'grid'
+                        ? 'bg-[#3B82F6] text-white'
+                        : 'bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white/80'
+                    }`}
+                    aria-label="Grid view"
+                  >
+                    Grid
+                  </button>
+                </div>
+
+                {/* Demo Pools Content */}
+                <div className="mt-10">
+                  {viewMode === 'table' ? (
+                    <DemoPoolsTable onPositionsChange={setDemoPositions} />
+                  ) : (
+                    <PoolsGrid positions={demoPositions} />
+                  )}
+                </div>
+              </div>
+            </section>
+          </main>
+        </div>
       </div>
     </>
-  );
-}
-
-function HeroSection() {
-  return (
-    <section className="card space-y-6 text-center">
-      <p className="font-ui text-xs uppercase tracking-[0.3em] text-white/60">{HERO.eyebrow}</p>
-      <h1 className="font-brand text-4xl font-semibold text-white sm:text-5xl">{HERO.heading}</h1>
-      <p className="mx-auto max-w-3xl font-ui text-base text-white/75">{HERO.subheading}</p>
-      <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-        <a href="/pricing#trial" className="btn-primary">
-          Start free trial
-        </a>
-        <Link
-          href="/pricing"
-          className="inline-flex items-center justify-center radius-ctrl bg-white/10 px-5 py-3 font-ui text-sm font-semibold text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60A5FA] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1530]"
-        >
-          See pricing
-        </Link>
-      </div>
-    </section>
-  );
-}
-
-type TableEntitlements = {
-  role: "VISITOR" | "PREMIUM" | "PRO";
-  fields: { apr: boolean; incentives: boolean; rangeBand: boolean };
-};
-
-type TableFlags = ReturnType<typeof getRoleFlags>;
-
-function PoolsTableSection({
-  role,
-  entitlements,
-  flags,
-}: {
-  role: RoleOverride;
-  entitlements: TableEntitlements;
-  flags: TableFlags;
-}) {
-  const premiumView = flags.premium;
-  const viewerLabel = formatRoleLabel(role);
-  const statusText = premiumView
-    ? flags.analytics
-      ? "Premium + Analytics visible"
-      : "Premium metrics visible"
-    : "APR & incentives masked for this view";
-
-  return (
-    <section className="card space-y-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="font-brand text-2xl font-semibold text-white">Your pools at a glance</h2>
-          <p className="font-ui text-xs text-white/55">
-            Viewing as <span className="font-semibold text-white">{viewerLabel}</span> · {statusText}
-          </p>
-        </div>
-      </div>
-      <PoolsTable
-        title="POOLS TABLE"
-        items={POOLS_SAMPLE}
-        entitlements={entitlements}
-        defaultExpanded={false}
-      />
-    </section>
-  );
-}
-
-function RangeBandCard() {
-  const [variant, setVariant] = useState<"stacked" | "inline">("stacked");
-
-  return (
-    <section className="card space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-2">
-          <h2 className="font-brand text-2xl font-semibold text-white">Interactive Explainer</h2>
-          <p className="max-w-lg font-ui text-sm text-white/70">
-            Switch display mode and preview how RangeBand™ reflects pool health.
-          </p>
-        </div>
-        <div className="segmented" role="group" aria-label="Toggle RangeBand display mode">
-          <button
-            type="button"
-            className={variant === "stacked" ? "btn-primary" : "segmented-btn--off"}
-            aria-pressed={variant === "stacked"}
-            onClick={() => setVariant("stacked")}
-          >
-            +
-          </button>
-          <button
-            type="button"
-            className={variant === "inline" ? "btn-primary" : "segmented-btn--off"}
-            aria-pressed={variant === "inline"}
-            onClick={() => setVariant("inline")}
-          >
-            −
-          </button>
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-2xl">
-        <RangeBand
-          min={RANGE_SAMPLE.min}
-          max={RANGE_SAMPLE.max}
-          current={RANGE_SAMPLE.current}
-          status={RANGE_SAMPLE.status}
-          token0Symbol={RANGE_SAMPLE.token0Symbol}
-          token1Symbol={RANGE_SAMPLE.token1Symbol}
-          explainer
-          variant={variant}
-        />
-      </div>
-
-      <p className="text-center font-ui text-sm text-white/60">
-        Range: <span className="font-num text-white">{RANGE_SAMPLE.min.toFixed(5)}</span> —
-        <span className="font-num text-white"> {RANGE_SAMPLE.max.toFixed(5)}</span> · Current
-        <span className="font-num text-white"> {RANGE_SAMPLE.current.toFixed(5)}</span>
-      </p>
-    </section>
   );
 }

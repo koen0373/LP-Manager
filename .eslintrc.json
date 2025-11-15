@@ -1,0 +1,10 @@
+{
+  "overrides": [
+    {
+      "files": ["src/**/*.ts", "src/**/*.tsx", "scripts/**/*.ts", "scripts/**/*.mjs"],
+      "rules": {
+        "no-undef": "error"
+      }
+    }
+  ]
+}

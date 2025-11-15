@@ -7,14 +7,16 @@
 import { PrismaClient } from '@prisma/client';
 import { promises as fs } from 'fs';
 import path from 'path';
+import type { Log } from 'viem';
 import { RpcScanner } from './rpcScanner';
 import { EventDecoder } from './eventDecoder';
 import { DbWriter, type PoolEventRow } from './dbWriter';
 import { CheckpointManager } from './checkpointManager';
 import { indexerConfig } from '../../indexer.config';
 import { FactoryScanner } from './factoryScanner';
-import { PoolScanner } from './poolScanner';
+import { PoolScanner, type PoolScanResult } from './poolScanner';
 import { PoolRegistry } from './poolRegistry';
+import { normalizeScanResult } from '@/lib/indexer/scan';
 
 export interface IndexOptions {
   fromBlock?: number;
@@ -108,17 +110,36 @@ export class IndexerCore {
     console.log(`[INDEXER] 📍 Scanning ${npmAddresses.length} NFPM contract(s): ${npmAddresses.join(', ')}`);
 
     // Scan all NFPM contracts
-    let allLogs: any[] = [];
+    let allLogs: Log[] = [];
+    let totalLogsFound = 0;
     for (const npmAddress of npmAddresses) {
-      const scanResult = await this.scanner.scan({
-        fromBlock,
-        toBlock,
-        contractAddress: npmAddress,
-        tokenIds,
-        dryRun,
-      });
-      console.log(`[INDEXER] ✓ Found ${scanResult.logs.length} logs from ${npmAddress}`);
-      allLogs = allLogs.concat(scanResult.logs);
+      let chunkEvents: Log[] = [];
+      let chunkNextFrom = fromBlock;
+      try {
+        const raw = await this.scanner.scan({
+          fromBlock,
+          toBlock,
+          contractAddress: npmAddress,
+          tokenIds,
+          dryRun,
+        });
+        const normalized = normalizeScanResult<Log>(
+          { events: raw.logs as Log[], nextFrom: (raw as any)?.nextFrom ?? null },
+          fromBlock,
+        );
+        chunkEvents = normalized.events;
+        chunkNextFrom = normalized.nextFrom ?? fromBlock;
+      } catch (error) {
+        console.error(`[INDEXER] scan failed for ${npmAddress}`, error);
+        const fallback = normalizeScanResult<Log>(undefined, fromBlock);
+        chunkEvents = fallback.events;
+        chunkNextFrom = fallback.nextFrom ?? fromBlock;
+      }
+      console.log(
+        `[INDEXER] ✓ Found ${chunkEvents.length} logs from ${npmAddress} (nextFrom=${chunkNextFrom})`
+      );
+      totalLogsFound += chunkEvents.length;
+      allLogs = allLogs.concat(chunkEvents);
     }
 
     console.log(`[INDEXER] ✓ Total logs found: ${allLogs.length}`);
@@ -168,7 +189,7 @@ export class IndexerCore {
 
     return {
       blocksScanned: toBlock - fromBlock + 1,
-      logsFound: scanResult.logs.length,
+      logsFound: totalLogsFound,
       eventsDecoded: decodedEvents.length,
       eventsWritten: writeStats.transfersWritten + writeStats.eventsWritten,
       duplicates: writeStats.duplicates,
@@ -388,11 +409,22 @@ export class IndexerCore {
       })
     );
 
-    const scanResult = await this.poolScanner.scan({
-      fromBlock,
-      toBlock,
-      pools,
-    });
+    let scanResult: PoolScanResult;
+    try {
+      scanResult = await this.poolScanner.scan({
+        fromBlock,
+        toBlock,
+        pools,
+      });
+    } catch (error) {
+      console.error('[INDEXER] pool scan failed', error);
+      scanResult = {
+        rows: [],
+        logsFound: 0,
+        scannedBlocks: toBlock - fromBlock + 1,
+        elapsedMs: 0,
+      };
+    }
 
     let writeStats = { written: 0, duplicates: 0, errors: 0 };
 

@@ -9,6 +9,7 @@ import {
   getStrategy,
   type RangeStatus,
 } from '@/components/pools/PoolRangeIndicator';
+import { getTokenAsset } from '@/lib/assets';
 
 const DEMO_ENDPOINT = '/api/demo/pools?limit=9&minTvl=150';
 const DEFAULT_BADGE = 'Demo · generated from live prices';
@@ -17,7 +18,7 @@ const REQUIRED_TOKENS = ['FXRP', 'WFLR', 'SFLR', 'FLR'] as const;
 const PROVIDER_TARGETS = ['enosys', 'sparkdex', 'blazeswap'] as const;
 const STRATEGY_TARGETS: StrategyTone[] = ['aggressive', 'balanced', 'conservative'];
 const STATUS_TARGETS: RangeStatus[] = ['in', 'near', 'out'];
-const UNKNOWN_ICON = '/icons/unknown.webp';
+const UNKNOWN_ICON = getTokenAsset('default');
 const MAX_ITEMS = 9;
 const APR_TOOLTIP = 'APR recomputed for consistency';
 const REQUIRED_TOKEN_SET = new Set<string>(REQUIRED_TOKENS as readonly string[]);
@@ -86,7 +87,11 @@ interface SelectionResult {
   warnings: string[];
 }
 
-export default function DemoPoolsTable() {
+interface DemoPoolsTableProps {
+  onPositionsChange?: (positions: PositionData[]) => void;
+}
+
+export default function DemoPoolsTable({ onPositionsChange }: DemoPoolsTableProps = {}) {
   const [positions, setPositions] = React.useState<PositionData[] | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -131,6 +136,7 @@ export default function DemoPoolsTable() {
         setWarning(combinedWarnings.length > 0 ? combinedWarnings.join(' ') : null);
         setPositions(mapped.positions);
         setNoteIds(mapped.recomputedIds);
+        onPositionsChange?.(mapped.positions);
       } catch (err) {
         if (cancelled) {
           return;
@@ -153,6 +159,7 @@ export default function DemoPoolsTable() {
       cancelled = true;
       controller.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   React.useEffect(() => {
@@ -233,7 +240,10 @@ export default function DemoPoolsTable() {
 
 function selectDemoPools(items: DemoPoolItem[], limit: number): SelectionResult {
   const extended = items.map<ExtendedItem>((item) => {
-    const tokens = [item.token0Symbol.toUpperCase(), item.token1Symbol.toUpperCase()];
+    const tokens = [
+      (item.token0Symbol || '').toUpperCase(),
+      (item.token1Symbol || '').toUpperCase(),
+    ];
     const providerNormalized = (item.providerSlug || '').toLowerCase();
     const strategyTone =
       item.strategy ??
@@ -246,7 +256,8 @@ function selectDemoPools(items: DemoPoolItem[], limit: number): SelectionResult 
       (item.dailyIncentivesUsd ?? 0);
     const isFlaro =
       (item.domain && item.domain.toLowerCase().includes('flaro.org')) ||
-      item.pairLabel.toLowerCase().includes('flaro.org');
+      (item.pairLabel && item.pairLabel.toLowerCase().includes('flaro.org')) ||
+      false;
 
     return {
       ...item,
@@ -353,12 +364,40 @@ function mapToPositionData(items: ExtendedItem[]): { positions: PositionData[]; 
     const rewardsUsd = Number((feesUsd + incentivesUsd).toFixed(2));
     const poolFeeBps = Number.isFinite(item.feeTierBps) ? item.feeTierBps : 0;
     const isInRange = item.statusTone === 'in';
+    const dex: PositionData['dex'] = providerSlug === 'sparkdex' ? 'sparkdex-v3' : 'enosys-v3';
+    const pair = {
+      symbol0: item.token0Symbol || 'TOKEN0',
+      symbol1: item.token1Symbol || 'TOKEN1',
+      feeBps: poolFeeBps,
+    };
+    const amountsUsd = {
+      total: tvl,
+      token0: tvl ? tvl / 2 : null,
+      token1: tvl ? tvl / 2 : null,
+    };
 
     return {
+      tokenId,
+      dex,
+      poolAddress: item.poolId || tokenId,
+      pair,
+      liquidity: String(tvl ?? 0),
+      amountsUsd,
+      fees24hUsd: dailyFees,
+      incentivesUsdPerDay: dailyIncentives,
+      incentivesTokens: [],
+      status: item.statusTone,
+      claim: null,
+      entitlements: {
+        role: 'VISITOR' as const,
+        flags: {
+          premium: false,
+          analytics: false,
+        },
+      },
       provider: providerSlug,
       dexName: item.providerName,
       marketId: item.poolId,
-      tokenId,
       poolId: item.poolId,
       poolFeeBps,
       tvlUsd: tvl,
@@ -366,13 +405,12 @@ function mapToPositionData(items: ExtendedItem[]): { positions: PositionData[]; 
       incentivesUsd,
       rewardsUsd,
       isInRange,
-      status: item.statusTone,
       token0: {
-        symbol: item.token0Symbol,
+        symbol: item.token0Symbol || '',
         address: '',
       },
       token1: {
-        symbol: item.token1Symbol,
+        symbol: item.token1Symbol || '',
         address: '',
       },
       token0Icon: ensureIcon(item.token0Icon),

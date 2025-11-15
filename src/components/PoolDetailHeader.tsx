@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { useRouter } from 'next/router';
-import Image from 'next/image';
 import WalletConnect from './WalletConnect';
+import { TokenIcon } from '@/components/TokenIcon';
 
 interface PoolDetailHeaderProps {
   tokenId: string;
@@ -34,40 +34,6 @@ export default function PoolDetailHeader({
 
   const handleBackToOverview = () => {
     router.push('/');
-  };
-
-  // Helper function to get the correct icon path for tokens
-  const getTokenIconPath = (symbol: string): string => {
-    const symbolLower = symbol.toLowerCase();
-    
-    // Handle special cases
-    switch (symbolLower) {
-      case 'wflr':
-        return 'flr.webp';
-      case 'usd₮0':
-      case 'usd0':
-        return 'usd0.webp';
-      case 'fxrp':
-        return 'fxrp.webp';
-      case 'eeth':
-        return 'eeth.webp';
-      case 'eqnt':
-        return 'eqnt.webp';
-      case 'eusdt':
-        return 'eusdt.webp';
-      case 'aps':
-        return 'aps.webp';
-      case 'hln':
-        return 'hln.webp';
-      case 'sflr':
-        return 'sflr.webp';
-      case 'usdcsg':
-        return 'usdcsg.webp';
-      case 'usdx':
-        return 'usdx.webp';
-      default:
-        return `${symbolLower}.webp`;
-    }
   };
 
   // Use the actual pool address from position data
@@ -159,20 +125,8 @@ export default function PoolDetailHeader({
                {/* Icons + Pool Pair */}
                <div className="flex items-center space-x-4">
                  <div className="flex -space-x-3">
-                   <Image
-                     src={`/icons/${getTokenIconPath(token0Symbol)}`}
-                     alt={token0Symbol}
-                     width={48}
-                     height={48}
-                     className="rounded-full"
-                   />
-                   <Image
-                     src={`/icons/${getTokenIconPath(token1Symbol)}`}
-                     alt={token1Symbol}
-                     width={48}
-                     height={48}
-                     className="rounded-full"
-                   />
+                   <TokenIcon symbol={token0Symbol} size={48} className="ring-2 ring-[#0B1530]" />
+                   <TokenIcon symbol={token1Symbol} size={48} className="ring-2 ring-[#0B1530]" />
                  </div>
                  <div className="text-white text-xl font-semibold">
                    {token0Symbol} - {token1Symbol}

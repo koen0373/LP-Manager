@@ -35,12 +35,14 @@ export function InlineReal({
 
     async function fetchPrice() {
       try {
-        const response = await fetch('/api/prices/ankr');
+        const response = await fetch('/api/prices/current?symbols=WFLR');
         if (!response.ok) throw new Error('price_fetch_failed');
         const data = await response.json();
-        const value = Number(data?.prices?.WFLR ?? data?.prices?.wflr ?? data?.price);
-        if (active && Number.isFinite(value)) {
-          setRemotePrice(value);
+        if (data.ok && data.prices && data.prices.length > 0) {
+          const value = data.prices[0].priceUsd;
+          if (active && Number.isFinite(value)) {
+            setRemotePrice(value);
+          }
         }
       } catch (error) {
         if (active && remotePrice == null) {

@@ -43,8 +43,13 @@ function useBrandAvailability() {
 
 export default function ConnectWalletModal() {
   const router = useRouter();
-  const { address, isConnected } = useAccount();
-  const { connect, connectors, status, error } = useConnect();
+  const { address, isConnected, status } = useAccount();
+  const { connect, connectors, error } = useConnect();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const injectedConnector = useMemo(() => connectors.find((c) => c.id === 'injected'), [connectors]);
   const wcConnector = useMemo(() => connectors.find((c) => c.id === 'walletConnect'), [connectors]);
@@ -52,11 +57,15 @@ export default function ConnectWalletModal() {
   const ready = useBrandAvailability();
 
   function connectInjected() {
-    if (injectedConnector) connect({ connector: injectedConnector });
+    if (injectedConnector && status === 'disconnected' && !isConnected) {
+      connect({ connector: injectedConnector });
+    }
   }
 
   function connectWalletConnect() {
-    if (wcConnector) connect({ connector: wcConnector });
+    if (wcConnector && status === 'disconnected' && !isConnected) {
+      connect({ connector: wcConnector });
+    }
   }
 
   const canContinue = isConnected && address;
